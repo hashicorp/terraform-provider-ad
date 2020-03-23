@@ -1,13 +1,10 @@
 package msad
 
 import (
+	"github.com/go-ldap/ldap/v3"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
-
-type ProviderMeta struct {
-	LDAPClient interface{}
-}
 
 // Provider exports the provider schema
 func Provider() terraform.ResourceProvider {
@@ -38,7 +35,7 @@ func Provider() terraform.ResourceProvider {
 				Description: "The username used to authenticate to the AD's LDAP service.",
 			},
 			"allow_insecure_certs": {
-				Type:        schema.TypeString,
+				Type:        schema.TypeBool,
 				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("AD_INSECURE", false),
 				Description: "The username used to authenticate to the AD's LDAP service.",
@@ -52,15 +49,40 @@ func Provider() terraform.ResourceProvider {
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"msad_domain": dataSourceMSADDomain(),
+			"msad_user":   dataSourceMSADUser(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
-			// "scaffolding_resource": resourceScaffolding(),
+			"msad_user": resourceMSADUser(),
 		},
-		ConfigureFunc: getProviderConfig,
+		ConfigureFunc: initProviderConfig,
 	}
 }
 
-func getProviderConfig(d *schema.ResourceData) (interface{}, error) {
+// ProviderConf holds structures that are useful to the provider at runtime.
+type ProviderConf struct {
+	Configuration *ProviderConfig
+	LDAPConn      *ldap.Conn
+	LDAPDSEConn   *ldap.Conn
+}
 
-	return nil, nil
+func initProviderConfig(d *schema.ResourceData) (interface{}, error) {
+
+	cfg := NewConfig(d)
+	conn, err := GetConnection(cfg, false)
+	if err != nil {
+		return nil, err
+	}
+
+	rootDseConn, err := GetConnection(cfg, true)
+	if err != nil {
+		return nil, err
+	}
+
+	pcfg := ProviderConf{
+		Configuration: &cfg,
+		LDAPConn:      conn,
+		LDAPDSEConn:   rootDseConn,
+	}
+
+	return pcfg, nil
 }

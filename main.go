@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/plugin"
-	"github.com/hashicorp/terraform-provider-scaffolding/msad" // change this to the import path of your provider
+	"github.com/hashicorp/terraform-provider-msad/msad"
 )
 
 func main() {
