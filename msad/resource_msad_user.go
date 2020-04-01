@@ -37,11 +37,6 @@ func resourceMSADUser() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
-			"change_at_next_login": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  false,
-			},
 		},
 	}
 }
@@ -76,7 +71,6 @@ func resourceMSADUserRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("sam_account_name", u.SAMAccountName)
 	d.Set("display_name", u.DisplayName)
 	d.Set("principal_name", u.PrincipalName)
-	d.Set("change_at_next_login", u.ChangeAtLogin)
 
 	return nil
 }

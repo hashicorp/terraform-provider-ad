@@ -16,7 +16,6 @@ type User struct {
 	PrincipalName  string
 	UserContainer  string
 	DomainDN       string
-	ChangeAtLogin  bool
 }
 
 // BuildDN returns a User's DN
@@ -44,9 +43,7 @@ func (u *User) AddUser(conn *ldap.Conn) (*string, error) {
 	addReq.Attribute("unicodePwd", []string{unicodePwd})
 	addReq.Attribute("userAccountControl", []string{"512"})
 	addReq.Attribute("objectClass", []string{"top", "person", "organizationalPerson", "user"})
-	if u.ChangeAtLogin {
-		addReq.Attribute("pwdLastSet", []string{"0"})
-	}
+
 	err = conn.Add(addReq)
 	if err != nil {
 		return nil, err
@@ -84,14 +81,6 @@ func (u *User) ModifyUser(d *schema.ResourceData, conn *ldap.Conn) error {
 		modReq.Replace("unicodePwd", []string{string(unicodePwd)})
 	}
 
-	if d.HasChange("change_at_next_login") {
-		_, newVal := d.Get("change_at_next_login").(bool)
-		if newVal {
-			modReq.Replace("pwdLastSet", []string{"0"})
-		} else {
-			modReq.Delete("pwdLastSet", []string{"0"})
-		}
-	}
 	err := conn.Modify(modReq)
 	return err
 }
@@ -104,7 +93,6 @@ func GetUserFromResource(d *schema.ResourceData) *User {
 		Password:       d.Get("initial_password").(string),
 		PrincipalName:  d.Get("principal_name").(string),
 		DomainDN:       d.Get("domain_dn").(string),
-		ChangeAtLogin:  d.Get("change_at_next_login").(bool),
 		UserContainer:  "Users",
 	}
 
@@ -126,19 +114,11 @@ func GetUserFromLDAP(conn *ldap.Conn, dn, domainDN string) (*User, error) {
 		return nil, fmt.Errorf("No entries found for filter %q", filter)
 	}
 	entry := entries[0]
-	pwdLastSet := entry.GetAttributeValue("pwdLastSet")
-	var changePassword bool
-	if pwdLastSet != "0" {
-		changePassword = false
-	} else {
-		changePassword = true
-	}
 
 	u := &User{
 		SAMAccountName: entry.GetAttributeValue("sAMAccountName"),
 		DisplayName:    entry.GetAttributeValue("displayName"),
 		PrincipalName:  entry.GetAttributeValue("userPrincipalName"),
-		ChangeAtLogin:  changePassword,
 		UserContainer:  "Users",
 	}
 
