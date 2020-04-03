@@ -1,8 +1,8 @@
-package msad
+package ad
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-provider-msad/msad/internal/ldaphelper"
+	"github.com/hashicorp/terraform-provider-ad/ad/internal/ldaphelper"
 )
 
 func dataSourceMSADDomain() *schema.Resource {

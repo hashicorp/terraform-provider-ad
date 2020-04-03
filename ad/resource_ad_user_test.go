@@ -1,4 +1,4 @@
-package msad
+package ad
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
-	"github.com/hashicorp/terraform-provider-msad/msad/internal/ldaphelper"
+	"github.com/hashicorp/terraform-provider-ad/ad/internal/ldaphelper"
 )
 
 func testAccPreCheck(t *testing.T) {
@@ -18,13 +18,13 @@ func TestAccUser_basic(t *testing.T) {
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		CheckDestroy: resource.ComposeTestCheckFunc(
-			testAccUserExists("msad_user.a", "yourdomain.com", "testuser", false),
+			testAccUserExists("ad_user.a", "yourdomain.com", "testuser", false),
 		),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccUserConfigBasic("yourdomain.com", "testuser", "thu2too'W?ieJ}a^g0zo"),
 				Check: resource.ComposeTestCheckFunc(
-					testAccUserExists("msad_user.a", "yourdomain.com", "testuser", true),
+					testAccUserExists("ad_user.a", "yourdomain.com", "testuser", true),
 				),
 			},
 		},
@@ -49,7 +49,7 @@ func testAccUserConfigBasic(domain, username, password string) string {
 	variable password { default = "%s" }
 	variable samaccountname { default = "%s" }
 
-	resource "msad_user" "a" {
+	resource "ad_user" "a" {
 		domain_dn = var.domain_dn
 		principal_name = var.principal_name
 		sam_account_name = var.samaccountname

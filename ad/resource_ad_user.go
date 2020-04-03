@@ -1,4 +1,4 @@
-package msad
+package ad
 
 import (
 	"log"
@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-ldap/ldap/v3"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-provider-msad/msad/internal/ldaphelper"
+	"github.com/hashicorp/terraform-provider-ad/ad/internal/ldaphelper"
 )
 
 func resourceMSADUser() *schema.Resource {
@@ -53,7 +53,7 @@ func resourceMSADUserCreate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceMSADUserRead(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("Reading msad_user resource for DN: %q", d.Id())
+	log.Printf("Reading ad_user resource for DN: %q", d.Id())
 	conn := meta.(ProviderConf).LDAPConn
 	domainDN := d.Get("domain_dn").(string)
 	u, err := ldaphelper.GetUserFromLDAP(conn, d.Id(), domainDN)

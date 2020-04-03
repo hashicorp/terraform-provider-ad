@@ -1,4 +1,4 @@
-module github.com/hashicorp/terraform-provider-msad
+module github.com/hashicorp/terraform-provider-ad
 
 go 1.12
 

@@ -1,9 +1,9 @@
-package msad
+package ad
 
 import (
 	"fmt"
 
-	"github.com/hashicorp/terraform-provider-msad/msad/internal/ldaphelper"
+	"github.com/hashicorp/terraform-provider-ad/ad/internal/ldaphelper"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )

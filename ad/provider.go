@@ -1,4 +1,4 @@
-package msad
+package ad
 
 import (
 	"github.com/go-ldap/ldap/v3"
@@ -48,11 +48,11 @@ func Provider() terraform.ResourceProvider {
 			},
 		},
 		DataSourcesMap: map[string]*schema.Resource{
-			"msad_domain": dataSourceMSADDomain(),
-			"msad_user":   dataSourceMSADUser(),
+			"ad_domain": dataSourceMSADDomain(),
+			"ad_user":   dataSourceMSADUser(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
-			"msad_user": resourceMSADUser(),
+			"ad_user": resourceMSADUser(),
 		},
 		ConfigureFunc: initProviderConfig,
 	}

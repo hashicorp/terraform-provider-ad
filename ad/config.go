@@ -1,4 +1,4 @@
-package msad
+package ad
 
 import (
 	"crypto/tls"
