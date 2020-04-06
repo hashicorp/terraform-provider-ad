@@ -10,9 +10,6 @@ import (
 	"github.com/hashicorp/terraform-provider-ad/ad/internal/ldaphelper"
 )
 
-func testAccPreCheck(t *testing.T) {
-
-}
 func TestAccUser_basic(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
@@ -29,15 +26,6 @@ func TestAccUser_basic(t *testing.T) {
 			},
 		},
 	})
-}
-
-func getDomainFromDNSDomain(dnsDomain string) string {
-	toks := strings.Split(dnsDomain, ".")
-	for idx, tok := range toks {
-		toks[idx] = fmt.Sprintf("dc=%s", tok)
-	}
-	domainDN := strings.Join(toks, ",")
-	return domainDN
 }
 
 func testAccUserConfigBasic(domain, username, password string) string {
