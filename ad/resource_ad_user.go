@@ -9,12 +9,12 @@ import (
 	"github.com/hashicorp/terraform-provider-ad/ad/internal/ldaphelper"
 )
 
-func resourceMSADUser() *schema.Resource {
+func resourceADUser() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceMSADUserCreate,
-		Read:   resourceMSADUserRead,
-		Update: resourceMSADUserUpdate,
-		Delete: resourceMSADUserDelete,
+		Create: resourceADUserCreate,
+		Read:   resourceADUserRead,
+		Update: resourceADUserUpdate,
+		Delete: resourceADUserDelete,
 
 		Schema: map[string]*schema.Schema{
 			"domain_dn": {
@@ -41,7 +41,7 @@ func resourceMSADUser() *schema.Resource {
 	}
 }
 
-func resourceMSADUserCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceADUserCreate(d *schema.ResourceData, meta interface{}) error {
 	u := ldaphelper.GetUserFromResource(d)
 	conn := meta.(ProviderConf).LDAPConn
 	dn, err := u.AddUser(conn)
@@ -49,10 +49,10 @@ func resourceMSADUserCreate(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 	d.SetId(*dn)
-	return resourceMSADUserRead(d, meta)
+	return resourceADUserRead(d, meta)
 }
 
-func resourceMSADUserRead(d *schema.ResourceData, meta interface{}) error {
+func resourceADUserRead(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("Reading ad_user resource for DN: %q", d.Id())
 	conn := meta.(ProviderConf).LDAPConn
 	domainDN := d.Get("domain_dn").(string)
@@ -75,17 +75,17 @@ func resourceMSADUserRead(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func resourceMSADUserUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceADUserUpdate(d *schema.ResourceData, meta interface{}) error {
 	u := ldaphelper.GetUserFromResource(d)
 	conn := meta.(ProviderConf).LDAPConn
 	err := u.ModifyUser(d, conn)
 	if err != nil {
 		return err
 	}
-	return resourceMSADUserRead(d, meta)
+	return resourceADUserRead(d, meta)
 }
 
-func resourceMSADUserDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceADUserDelete(d *schema.ResourceData, meta interface{}) error {
 	conn := meta.(ProviderConf).LDAPConn
 	delReq := ldap.NewDelRequest(d.Id(), []ldap.Control{})
 	delReq.DN = d.Id()
@@ -93,5 +93,5 @@ func resourceMSADUserDelete(d *schema.ResourceData, meta interface{}) error {
 	if err != nil {
 		return err
 	}
-	return resourceMSADUserRead(d, meta)
+	return resourceADUserRead(d, meta)
 }

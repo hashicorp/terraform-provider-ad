@@ -8,9 +8,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
-func dataSourceMSADUser() *schema.Resource {
+func dataSourceADUser() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceMSADUserRead,
+		Read: dataSourceADUserRead,
 
 		Schema: map[string]*schema.Schema{
 			"user_dn": {
@@ -37,7 +37,7 @@ func dataSourceMSADUser() *schema.Resource {
 	}
 }
 
-func dataSourceMSADUserRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceADUserRead(d *schema.ResourceData, meta interface{}) error {
 	conn := meta.(ProviderConf).LDAPConn
 	dn := d.Get("user_dn").(string)
 	domainDN := d.Get("domain_dn").(string)

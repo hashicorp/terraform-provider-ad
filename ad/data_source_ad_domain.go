@@ -5,9 +5,9 @@ import (
 	"github.com/hashicorp/terraform-provider-ad/ad/internal/ldaphelper"
 )
 
-func dataSourceMSADDomain() *schema.Resource {
+func dataSourceADDomain() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceMSADDomainRead,
+		Read: dataSourceADDomainRead,
 
 		Schema: map[string]*schema.Schema{
 			"netbios_name": {
@@ -26,7 +26,7 @@ func dataSourceMSADDomain() *schema.Resource {
 	}
 }
 
-func dataSourceMSADDomainRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceADDomainRead(d *schema.ResourceData, meta interface{}) error {
 	nb := d.Get("netbios_name").(string)
 	dns := d.Get("domain_name").(string)
 	dn := d.Get("domain_dn").(string)

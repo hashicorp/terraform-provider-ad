@@ -48,11 +48,11 @@ func Provider() terraform.ResourceProvider {
 			},
 		},
 		DataSourcesMap: map[string]*schema.Resource{
-			"ad_domain": dataSourceMSADDomain(),
-			"ad_user":   dataSourceMSADUser(),
+			"ad_domain": dataSourceADDomain(),
+			"ad_user":   dataSourceADUser(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
-			"ad_user": resourceMSADUser(),
+			"ad_user":  resourceADUser(),
 		},
 		ConfigureFunc: initProviderConfig,
 	}
