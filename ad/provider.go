@@ -53,6 +53,7 @@ func Provider() terraform.ResourceProvider {
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"ad_user":  resourceADUser(),
+			"ad_group": resourceADGroup(),
 		},
 		ConfigureFunc: initProviderConfig,
 	}
