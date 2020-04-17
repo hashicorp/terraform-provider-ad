@@ -4,6 +4,7 @@ import (
 	"github.com/go-ldap/ldap/v3"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/masterzen/winrm"
 )
 
 // Provider exports the provider schema
@@ -46,6 +47,42 @@ func Provider() terraform.ResourceProvider {
 				DefaultFunc: schema.EnvDefaultFunc("AD_PROTO", "ldap"),
 				Description: "The protocol to use when talking to AD. Valid choices are ldap or ldaps",
 			},
+			"winrm_username": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				DefaultFunc: schema.EnvDefaultFunc("AD_WINRM_USER", nil),
+				Description: "The username used to authenticate to the the server's WinRM service.",
+			},
+			"winrm_password": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				DefaultFunc: schema.EnvDefaultFunc("AD_WINRM_PASSWORD", nil),
+				Description: "The password used to authenticate to the the server's WinRM service.",
+			},
+			"winrm_hostname": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				DefaultFunc: schema.EnvDefaultFunc("AD_WINRM_HOSTNAME", nil),
+				Description: "The hostname of the server we will use to run powershell scripts over WinRM.",
+			},
+			"winrm_port": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				DefaultFunc: schema.EnvDefaultFunc("AD_WINRM_PORT", 5985),
+				Description: "The port WinRM is listening for connections. (default: 5985)",
+			},
+			"winrm_proto": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				DefaultFunc: schema.EnvDefaultFunc("AD_WINRM_PROTO", "http"),
+				Description: "The WinRM protocol we will use. (default: http)",
+			},
+			"winrm_insecure": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				DefaultFunc: schema.EnvDefaultFunc("AD_WINRM_INSECURE", false),
+				Description: "Trust unknown certificates. (default: false)",
+			},
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"ad_domain": dataSourceADDomain(),
@@ -55,6 +92,7 @@ func Provider() terraform.ResourceProvider {
 		ResourcesMap: map[string]*schema.Resource{
 			"ad_user":  resourceADUser(),
 			"ad_group": resourceADGroup(),
+			"ad_gpo":   resourceADGPO(),
 		},
 		ConfigureFunc: initProviderConfig,
 	}
@@ -65,25 +103,31 @@ type ProviderConf struct {
 	Configuration *ProviderConfig
 	LDAPConn      *ldap.Conn
 	LDAPDSEConn   *ldap.Conn
+	WinRMClient   *winrm.Client
 }
 
 func initProviderConfig(d *schema.ResourceData) (interface{}, error) {
 
 	cfg := NewConfig(d)
-	conn, err := GetConnection(cfg, false)
+	conn, err := GetLDAPConnection(cfg, false)
 	if err != nil {
 		return nil, err
 	}
 
-	rootDseConn, err := GetConnection(cfg, true)
+	rootDseConn, err := GetLDAPConnection(cfg, true)
 	if err != nil {
 		return nil, err
 	}
 
+	winRMClient, err := GetWinRMConnection(cfg)
+	if err != nil {
+		return nil, err
+	}
 	pcfg := ProviderConf{
 		Configuration: &cfg,
 		LDAPConn:      conn,
 		LDAPDSEConn:   rootDseConn,
+		WinRMClient:   winRMClient,
 	}
 
 	return pcfg, nil
