@@ -1,7 +1,6 @@
 package ad
 
 import (
-	"log"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -78,7 +77,6 @@ func resourceADGPORead(d *schema.ResourceData, meta interface{}) error {
 func resourceADGPOUpdate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(ProviderConf).WinRMClient
 	g := winrmhelper.GetGPOFromResource(d)
-	log.Printf("[DEBUG] TTTTT %#v", g)
 	_, err := g.UpdateGPO(client, d)
 	if err != nil {
 		return err
