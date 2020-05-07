@@ -29,9 +29,10 @@ func resourceADGPO() *schema.Resource {
 			"status": {
 				Type:     schema.TypeString,
 				Optional: true,
+				Default:  "AllSettingsEnabled",
 			},
 			"numeric_status": {
-				Type:     schema.TypeString,
+				Type:     schema.TypeInt,
 				Computed: true,
 			},
 			"dn": {
@@ -66,10 +67,10 @@ func resourceADGPORead(d *schema.ResourceData, meta interface{}) error {
 		}
 		return err
 	}
-
 	d.Set("domain", g.Domain)
 	d.Set("description", g.Description)
 	d.Set("status", g.Status)
+	d.Set("numeric_status", g.NumericStatus)
 	d.Set("name", g.Name)
 	return nil
 }

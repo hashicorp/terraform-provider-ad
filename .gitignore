@@ -20,9 +20,10 @@ website/node_modules
 *~
 .*.swp
 .idea
+tst/
 *.iml
 *.test
-*.iml
+.vscode
 
 website/vendor
 
