@@ -204,7 +204,6 @@ func TestLoadRestrictedGroupsFromIni(t *testing.T) {
 	}
 
 	if len(cfg.RestrictedGroups.Groups) != 1 {
-		t.Logf("%#v", cfg.RestrictedGroups.Groups)
 		t.Errorf("Invalid number of Groups found in RestrictedGroups struct. Expected 1 got %d", len(cfg.RestrictedGroups.Groups))
 		t.FailNow()
 	}

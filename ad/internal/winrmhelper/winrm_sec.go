@@ -35,7 +35,6 @@ func GetSecIniFromResource(d *schema.ResourceData, schemaKeys map[string]*schema
 		return nil, err
 	}
 
-	log.Printf("[DEBUG] TTTTTT cfg is : %#v", cfg)
 	return iniFile, nil
 
 }

@@ -230,7 +230,6 @@ func ParseIniFile(iniBytes []byte, utf16Decode bool) (*SecuritySettings, error) 
 	} else {
 		reader = buf
 	}
-	log.Printf("[DEBUG] TTTTTTT %s", string(iniBytes))
 
 	loadOpts := ini.LoadOptions{
 		AllowBooleanKeys:         true,
@@ -260,8 +259,6 @@ func ParseIniFile(iniBytes []byte, utf16Decode bool) (*SecuritySettings, error) 
 		}
 	}
 
-	log.Printf("[DEBUG] TTTT Ini file contents:\n%s", string(iniBytes))
-	log.Printf("[DEBUG] TTTT services: %#v - %#v - %#v", cfg.SystemServices, cfg.SystemServices.Services, f)
 	return cfg, err
 }
 
