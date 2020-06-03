@@ -37,7 +37,7 @@ func RunWinRMCommand(conn *winrm.Client, cmds []string, json bool) (*WinRMResult
 	}
 
 	result := &WinRMResult{
-		Stdout:   stdout,
+		Stdout:   strings.TrimSpace(stdout),
 		StdErr:   stderr,
 		ExitCode: res,
 	}
@@ -49,5 +49,7 @@ func RunWinRMCommand(conn *winrm.Client, cmds []string, json bool) (*WinRMResult
 // to protect ourselves from command injection
 func SanitiseTFInput(d *schema.ResourceData, key string) string {
 	// placeholder for now.
-	return d.Get(key).(string)
+	out := d.Get(key).(string)
+	log.Printf("[DEBUG] sanitising key %q to: %s", key, out)
+	return out
 }

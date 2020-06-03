@@ -61,7 +61,7 @@ func testAccResourceADGPOExists(resourceName, name string, expected bool) resour
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[resourceName]
 		if !ok {
-			return fmt.Errorf("%s key not found on the server", name)
+			return fmt.Errorf("%s key not found in state", name)
 		}
 		guid := rs.Primary.ID
 		client := testAccProvider.Meta().(ProviderConf).WinRMClient
