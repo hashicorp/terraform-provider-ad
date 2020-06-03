@@ -5,6 +5,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 	"github.com/masterzen/winrm"
+	"github.com/packer-community/winrmcp/winrmcp"
 )
 
 // Provider exports the provider schema
@@ -90,9 +91,10 @@ func Provider() terraform.ResourceProvider {
 			"ad_group":  dataSourceADGroup(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
-			"ad_user":  resourceADUser(),
-			"ad_group": resourceADGroup(),
-			"ad_gpo":   resourceADGPO(),
+			"ad_user":         resourceADUser(),
+			"ad_group":        resourceADGroup(),
+			"ad_gpo":          resourceADGPO(),
+			"ad_gpo_security": resourceADGPOSecurity(),
 		},
 		ConfigureFunc: initProviderConfig,
 	}
@@ -104,6 +106,7 @@ type ProviderConf struct {
 	LDAPConn      *ldap.Conn
 	LDAPDSEConn   *ldap.Conn
 	WinRMClient   *winrm.Client
+	WinRMCPClient *winrmcp.Winrmcp
 }
 
 func initProviderConfig(d *schema.ResourceData) (interface{}, error) {
@@ -123,11 +126,18 @@ func initProviderConfig(d *schema.ResourceData) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	winRMCPClient, err := GetWinRMCPConnection(cfg)
+	if err != nil {
+		return nil, err
+	}
+
 	pcfg := ProviderConf{
 		Configuration: &cfg,
 		LDAPConn:      conn,
 		LDAPDSEConn:   rootDseConn,
 		WinRMClient:   winRMClient,
+		WinRMCPClient: winRMCPClient,
 	}
 
 	return pcfg, nil
