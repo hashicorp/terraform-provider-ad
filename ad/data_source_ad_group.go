@@ -8,12 +8,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
-func dataSourceADUser() *schema.Resource {
+func dataSourceADGroup() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceADUserRead,
+		Read: dataSourceADGroupRead,
 
 		Schema: map[string]*schema.Schema{
-			"user_dn": {
+			"dn": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
@@ -29,7 +29,7 @@ func dataSourceADUser() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
-			"principal_name": {
+			"name": {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
@@ -37,21 +37,23 @@ func dataSourceADUser() *schema.Resource {
 	}
 }
 
-func dataSourceADUserRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceADGroupRead(d *schema.ResourceData, meta interface{}) error {
 	conn := meta.(ProviderConf).LDAPConn
-	dn := d.Get("user_dn").(string)
+	dn := d.Get("dn").(string)
 	domainDN := d.Get("domain_dn").(string)
 
-	u, err := ldaphelper.GetUserFromLDAP(conn, dn, domainDN)
+	g, err := ldaphelper.GetGroupFromLDAP(conn, dn, domainDN)
 	if err != nil {
 		return err
 	}
-	if u == nil {
-		return fmt.Errorf("No user found with dn %q", dn)
+	if g == nil {
+		return fmt.Errorf("No group found with dn %q", dn)
 	}
-	d.Set("sam_account_name", u.SAMAccountName)
-	d.Set("display_name", u.DisplayName)
-	d.Set("principal_name", u.PrincipalName)
+	d.Set("sam_account_name", g.SAMAccountName)
+	d.Set("display_name", g.Name)
+	d.Set("scope", g.Scope)
+	d.Set("type", g.Type)
+
 	d.SetId(dn)
 	return nil
 }
