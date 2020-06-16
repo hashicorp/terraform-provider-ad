@@ -43,7 +43,7 @@ func TestAccResourceADGPO_basic(t *testing.T) {
 func testAccResourceADGPOConfigBasic(domain, name, description, status string) string {
 	return fmt.Sprintf(`
 
-	variable"domain"      { default = "%s" }
+	variable "domain"      { default = "%s" }
 	variable "name"        { default = "%s" }
 	variable "description" { default = "%s" }
 	variable "status"      { default = "%s" }

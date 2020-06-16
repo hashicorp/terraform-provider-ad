@@ -8,7 +8,7 @@ import (
 	"gopkg.in/ini.v1"
 )
 
-// RegistryValues is used to popullate the Registry Values section of the inf file that is used by
+// RegistryValues is used to populate the Registry Values section of the inf file that is used by
 // many GPO features to set values in the registry
 type RegistryValues struct {
 	Values []string
