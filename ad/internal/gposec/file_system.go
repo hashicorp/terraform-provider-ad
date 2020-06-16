@@ -39,7 +39,7 @@ func (r *FileSystem) SetIniData(f *ini.File) error {
 	return nil
 }
 
-// NewFileSystemFromResource returns a new struct based on the resoruce's values
+// NewFileSystemFromResource returns a new struct based on the resource's values
 func NewFileSystemFromResource(data interface{}) (IniSetSection, error) {
 	out := &FileSystem{Paths: []string{}}
 	for _, item := range data.(*schema.Set).List() {
