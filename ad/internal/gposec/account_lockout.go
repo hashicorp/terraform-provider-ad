@@ -16,7 +16,6 @@ type AccountLockout struct {
 // SetResourceData populates resource data based on the AccountLockout field values
 func (p *AccountLockout) SetResourceData(section string, d *schema.ResourceData) error {
 	return genericSetResourceData(section, p, d)
-
 }
 
 // WriteAccountLockout populates an AccountLockout struct from resource data
