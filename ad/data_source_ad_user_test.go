@@ -28,10 +28,10 @@ func testAccDataSourceADUserBasic(domain, username, password string) string {
 	domainDN := getDomainFromDNSDomain(domain)
 	principalName := fmt.Sprintf("%s@%s", username, domain)
 	return fmt.Sprintf(`
-	variable domain_dn { default = "%s" }
-	variable principal_name { default = "%s" }
-	variable password { default = "%s" }
-	variable samaccountname { default = "%s" }
+	variable "domain_dn" { default = "%s" }
+	variable "principal_name" { default = "%s" }
+	variable "password" { default = "%s" }
+	variable "samaccountname" { default = "%s" }
 
 	resource "ad_user" "a" {
 		domain_dn = var.domain_dn

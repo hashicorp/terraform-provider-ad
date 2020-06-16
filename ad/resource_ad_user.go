@@ -37,6 +37,21 @@ func resourceADUser() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			// "cannot_change_password": {
+			// 	Type:     schema.TypeBool,
+			// 	Optional: true,
+			// 	Default:  false,
+			// },
+			"password_never_expires": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
+			"disabled": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
 		},
 	}
 }
