@@ -53,7 +53,7 @@ func (s *SecuritySettings) PopulateSecuritySettings(d *schema.ResourceData, iniF
 	for section, fn := range ListSectionGeneratorMap {
 		keyFunc := fn.(func(interface{}, *SecuritySettings) error)
 		l := d.Get(section).([]interface{})
-		if len(l) == 0 {
+		if len(l) == 0 || l[0] == nil {
 			continue
 		}
 		// All TypeLists in the resource schema have MaxItems set to 1
