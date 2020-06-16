@@ -18,6 +18,9 @@ func (r *RegistryKeys) SetResourceData(section string, d *schema.ResourceData) e
 	out := []map[string]interface{}{}
 	for _, valuesLine := range r.Keys {
 		values := strings.SplitN(valuesLine, ",", 3)
+		if len(values) != 3 {
+			return fmt.Errorf("invalid registry keys line: %s", valuesLine)
+		}
 		value := map[string]interface{}{
 			"key_name":         values[0],
 			"propagation_mode": values[1],
