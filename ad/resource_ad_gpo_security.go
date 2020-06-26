@@ -104,7 +104,7 @@ func resourceADGPOSecurityUpdate(d *schema.ResourceData, meta interface{}) error
 
 	gpo, err := winrmhelper.GetGPOFromHost(winrmClient, "", guid)
 	if err != nil {
-		return err
+		return fmt.Errorf("error while retrieving GPO with guid %q: %s", guid, err)
 	}
 
 	iniFile, err := winrmhelper.GetSecIniFromResource(d, adschema.GpoSecuritySchema())
@@ -121,7 +121,7 @@ func resourceADGPOSecurityUpdate(d *schema.ResourceData, meta interface{}) error
 
 	hostSecIniBytes, err := winrmhelper.GetSecIniContents(winrmClient, gpo)
 	if err != nil {
-		return err
+		return fmt.Errorf("error while retrieving security settings contents for GPO with guid %q: %s", guid, err)
 	}
 
 	hostSum := sha256.Sum256(hostSecIniBytes)
@@ -129,7 +129,7 @@ func resourceADGPOSecurityUpdate(d *schema.ResourceData, meta interface{}) error
 	if iniSum != hostSum {
 		err = winrmhelper.UploadSecIni(winrmClient, winrmCPClient, gpo, iniFile)
 		if err != nil {
-			return err
+			return fmt.Errorf("error while uploading security settings file for GPO with guid %q: %s", guid, err)
 		}
 
 	}
@@ -148,12 +148,12 @@ func resourceADGPOSecurityDelete(d *schema.ResourceData, meta interface{}) error
 
 	gpo, err := winrmhelper.GetGPOFromHost(winrmClient, "", guid)
 	if err != nil {
-		return err
+		return fmt.Errorf("error while retrieving GPO with guid %q: %s", guid, err)
 	}
 
 	err = winrmhelper.RemoveSecIni(winrmClient, winrmCPClient, gpo)
 	if err != nil {
-		return err
+		return fmt.Errorf("error while removing security settings INF file for GPO with guid %q: %s", guid, err)
 	}
 	return resourceADGPOSecurityRead(d, meta)
 }
