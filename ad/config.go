@@ -8,6 +8,7 @@ import (
 	"github.com/go-ldap/ldap/v3"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/masterzen/winrm"
+	"github.com/packer-community/winrmcp/winrmcp"
 )
 
 // ProviderConfig holds all the information necessary to configure the provider
@@ -131,4 +132,23 @@ func GetWinRMConnection(config ProviderConfig) (*winrm.Client, error) {
 	}
 
 	return client, nil
+}
+
+// GetWinRMCPConnection sets up a winrmcp client that can be used to upload files to the DC.
+func GetWinRMCPConnection(config ProviderConfig) (*winrmcp.Winrmcp, error) {
+	useHTTPS := false
+	if config.WinRMProto == "https" {
+		useHTTPS = true
+	}
+	addr := fmt.Sprintf("%s:%d", config.WinRMHost, config.WinRMPort)
+	cfg := winrmcp.Config{
+		Auth: winrmcp.Auth{
+			User:     config.WinRMUsername,
+			Password: config.WinRMPassword,
+		},
+		Https:                 useHTTPS,
+		Insecure:              config.WinRMInsecure,
+		MaxOperationsPerShell: 15,
+	}
+	return winrmcp.New(addr, &cfg)
 }

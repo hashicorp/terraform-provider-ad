@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"github.com/hashicorp/terraform-provider-ad/ad/internal/winrmhelper"
 )
 
@@ -27,11 +28,13 @@ func resourceADGPO() *schema.Resource {
 				Optional: true,
 			},
 			"status": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:         schema.TypeString,
+				Optional:     true,
+				Default:      "AllSettingsEnabled",
+				ValidateFunc: validation.StringInSlice([]string{"AllSettingsEnabled", "UserSettingsDisabled", "ComputerSettingsDisabled", "AllSettingsDisabled"}, false),
 			},
 			"numeric_status": {
-				Type:     schema.TypeString,
+				Type:     schema.TypeInt,
 				Computed: true,
 			},
 			"dn": {
@@ -66,10 +69,10 @@ func resourceADGPORead(d *schema.ResourceData, meta interface{}) error {
 		}
 		return err
 	}
-
 	d.Set("domain", g.Domain)
 	d.Set("description", g.Description)
 	d.Set("status", g.Status)
+	d.Set("numeric_status", g.NumericStatus)
 	d.Set("name", g.Name)
 	return nil
 }
