@@ -18,7 +18,6 @@ func (r *SystemServices) SetResourceData(section string, d *schema.ResourceData)
 	out := []map[string]interface{}{}
 	for _, svcLine := range r.Services {
 		fields := strings.SplitN(svcLine, ",", 3)
-
 		if len(fields) != 3 {
 			return fmt.Errorf("invalid services line: %s", svcLine)
 		}
