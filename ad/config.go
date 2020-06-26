@@ -3,6 +3,7 @@ package ad
 import (
 	"crypto/tls"
 	"fmt"
+	"strings"
 
 	"github.com/go-ldap/ldap/v3"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -89,7 +90,7 @@ func GetLDAPConnection(config ProviderConfig, rootDSE bool) (*ldap.Conn, error) 
 	var err error
 	if config.LDAPProtocol == "ldap" {
 		conn, err = ldap.DialURL(ldapURL)
-	} else if config.LDAPProtocol == "ldaps" {
+	} else if strings.ToLower(config.LDAPProtocol) == "ldaps" {
 		conn, err = ldap.DialURL(ldapURL, ldap.DialWithTLSConfig(&tls.Config{InsecureSkipVerify: config.LDAPInsecure}))
 	} else {
 		return nil, fmt.Errorf("invalid protocol %q specified", config.LDAPProtocol)
@@ -108,7 +109,7 @@ func GetLDAPConnection(config ProviderConfig, rootDSE bool) (*ldap.Conn, error) 
 // GetWinRMConnection returns a WinRM connection
 func GetWinRMConnection(config ProviderConfig) (*winrm.Client, error) {
 	useHTTPS := false
-	if config.WinRMProto == "https" {
+	if strings.ToLower(config.WinRMProto) == "https" {
 		useHTTPS = true
 	}
 	if config.WinRMHost == "" {
