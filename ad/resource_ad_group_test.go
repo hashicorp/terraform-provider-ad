@@ -31,11 +31,11 @@ func TestAccGroup_basic(t *testing.T) {
 func testAccGroupConfigBasic(domain, name, sam, scope, gtype string) string {
 	domainDN := getDomainFromDNSDomain(domain)
 	return fmt.Sprintf(`
-	variable "domain_dn" { default = "%s" }
-	variable "display_name" { default = "%s" }
-	variable "sam_account_name" { default = "%s" }
-	variable "scope" { default = "%s" }
-	variable "type" { default = "%s" }
+	variable "domain_dn" { default = %q }
+	variable "display_name" { default = %q }
+	variable "sam_account_name" { default = %q }
+	variable "scope" { default = %q }
+	variable "type" { default = %q }
 
 	resource "ad_group" "g" {
 		domain_dn = var.domain_dn

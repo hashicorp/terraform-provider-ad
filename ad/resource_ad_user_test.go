@@ -92,10 +92,10 @@ func defaultVariablesSection(domain, username, password string) string {
 	domainDN := getDomainFromDNSDomain(domain)
 	principalName := fmt.Sprintf("%s@%s", username, domain)
 	return fmt.Sprintf(`
-	variable "domain_dn" { default = "%s" }
-	variable "principal_name" { default = "%s" }
-	variable "password" { default = "%s" }
-	variable "samaccountname" { default = "%s" }
+	variable "domain_dn" { default = %q }
+	variable "principal_name" { default = %q }
+	variable "password" { default = %q }
+	variable "samaccountname" { default = %q }
 
 	`, domainDN, principalName, password, username)
 
@@ -119,8 +119,8 @@ func testAccUserConfigBasic(domain, username, password string) string {
 
 func testAccUserConfigUAC(domain, username, password, disabled, expires string) string {
 	return fmt.Sprintf(`%s
-	variable "disabled" { default = "%s" }
-	variable "password_never_expires" { default = "%s" }
+	variable "disabled" { default = %q }
+	variable "password_never_expires" { default = %q }
 
 	resource "ad_user" "a" {%s
 		disabled = var.disabled
