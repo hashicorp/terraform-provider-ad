@@ -155,14 +155,14 @@ func (g *GPO) NewGPO(client *winrm.Client) (string, error) {
 		return "", fmt.Errorf("gpo name required")
 	}
 	cmds := []string{}
-	cmds = append(cmds, fmt.Sprintf("New-GPO -Name %s", g.Name))
+	cmds = append(cmds, fmt.Sprintf("New-GPO -Name %q", g.Name))
 
 	if g.Domain != "" {
-		cmds = append(cmds, fmt.Sprintf("-Domain %s", g.Domain))
+		cmds = append(cmds, fmt.Sprintf("-Domain %q", g.Domain))
 	}
 
 	if g.Description != "" {
-		cmds = append(cmds, fmt.Sprintf("-Comment '%s'", g.Description))
+		cmds = append(cmds, fmt.Sprintf("-Comment %q", g.Description))
 	}
 
 	result, err := RunWinRMCommand(client, cmds, true)

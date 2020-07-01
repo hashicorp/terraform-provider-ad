@@ -91,7 +91,7 @@ func Provider() terraform.ResourceProvider {
 			"ad_group":    dataSourceADGroup(),
 			"ad_gpo":      dataSourceADGPO(),
 			"ad_computer": dataSourceADComputer(),
-      
+			"ad_ou":       dataSourceADOU(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"ad_user":         resourceADUser(),
@@ -99,6 +99,7 @@ func Provider() terraform.ResourceProvider {
 			"ad_gpo":          resourceADGPO(),
 			"ad_gpo_security": resourceADGPOSecurity(),
 			"ad_computer":     resourceADComputer(),
+			"ad_ou":           resourceADOU(),
 		},
 		ConfigureFunc: initProviderConfig,
 	}
