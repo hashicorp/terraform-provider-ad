@@ -24,6 +24,11 @@ func TestAccGroup_basic(t *testing.T) {
 					testAccGroupExists("ad_group.g", "yourdomain.com", "testgroup", true),
 				),
 			},
+			{
+				ResourceName:      "ad_group.g",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
 		},
 	})
 }
@@ -48,7 +53,6 @@ func testAccGroupConfigBasic(domain, name, sam, scope, gtype string) string {
 }
 
 func testAccGroupExists(name, domain, groupSAM string, expected bool) resource.TestCheckFunc {
-	domainDN := getDomainFromDNSDomain(domain)
 
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[name]
@@ -57,7 +61,7 @@ func testAccGroupExists(name, domain, groupSAM string, expected bool) resource.T
 			return fmt.Errorf("%s key not found on the server", name)
 		}
 		ldapConn := testAccProvider.Meta().(ProviderConf).LDAPConn
-		u, err := ldaphelper.GetGroupFromLDAP(ldapConn, rs.Primary.ID, domainDN)
+		u, err := ldaphelper.GetGroupFromLDAP(ldapConn, rs.Primary.ID)
 		if err != nil {
 			if strings.Contains(err.Error(), "No entries found for filter") && !expected {
 				return nil

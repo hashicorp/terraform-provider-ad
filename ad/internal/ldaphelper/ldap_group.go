@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 
 	"github.com/go-ldap/ldap/v3"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -161,8 +162,10 @@ func GetGroupFromResource(d *schema.ResourceData) *Group {
 
 // GetGroupFromLDAP returns a Group struct based on data
 // retrieved from the LDAP server.
-func GetGroupFromLDAP(conn *ldap.Conn, dn, domainDN string) (*Group, error) {
+func GetGroupFromLDAP(conn *ldap.Conn, dn string) (*Group, error) {
 	filter := fmt.Sprintf("(&(distinguishedName=%s)(objectClass=group))", dn)
+	domainDNIdx := strings.Index(dn, "dc=")
+	domainDN := dn[domainDNIdx:]
 	entries, err := GetResultFromLDAP(conn, filter, domainDN, ldap.ScopeWholeSubtree, nil)
 	if err != nil {
 		return nil, err
