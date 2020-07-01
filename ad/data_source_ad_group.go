@@ -10,32 +10,38 @@ import (
 
 func dataSourceADGroup() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceADGroupRead,
-
+		Description: "Get the details of an Active Directory Group object.",
+		Read:        dataSourceADGroupRead,
 		Schema: map[string]*schema.Schema{
-			"group_dn": {
-				Type:     schema.TypeString,
-				Required: true,
+			"guid": {
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The GUID of the Group object.",
 			},
 			"sam_account_name": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The SAM account name of the Group object.",
 			},
 			"display_name": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The display name of the Group object.",
 			},
 			"name": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The name of the Group object.",
 			},
 			"category": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The Group's category.",
 			},
 			"scope": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The Group's scope.",
 			},
 		},
 	}
@@ -43,7 +49,7 @@ func dataSourceADGroup() *schema.Resource {
 
 func dataSourceADGroupRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(ProviderConf).WinRMClient
-	dn := d.Get("group_dn").(string)
+	dn := d.Get("guid").(string)
 
 	g, err := winrmhelper.GetGroupFromHost(client, dn)
 	if err != nil {
@@ -57,6 +63,7 @@ func dataSourceADGroupRead(d *schema.ResourceData, meta interface{}) error {
 	_ = d.Set("scope", g.Scope)
 	_ = d.Set("category", g.Category)
 	_ = d.Set("container", g.Container)
+	_ = d.Set("name", g.Name)
 
 	d.SetId(dn)
 	return nil

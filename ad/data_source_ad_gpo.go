@@ -9,20 +9,23 @@ import (
 
 func dataSourceADGPO() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceADGPORead,
-
+		Description: "Get the details of an Active Directory Group Policy Object",
+		Read:        dataSourceADGPORead,
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Description: "Name of the GPO.",
+				Optional:    true,
 			},
 			"guid": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "GUID of the GPO.",
 			},
 			"domain": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "Domain of the GPO.",
 			},
 		},
 	}

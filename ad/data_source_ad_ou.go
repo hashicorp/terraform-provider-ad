@@ -10,27 +10,33 @@ import (
 
 func dataSourceADOU() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceADOURead,
+		Description: "Get the details of an Organizational Unit Active Directory object.",
+		Read:        dataSourceADOURead,
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Name of the OU object. If this is used then the `path` attribute needs to be set as well.",
 			},
 			"path": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Path of the OU object. If this is used then the `Name` attribute needs to be set as well.",
 			},
 			"dn": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Distinguished Name of the OU object.",
 			},
 			"description": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The OU's description",
 			},
 			"protected": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The OU's protected status",
 			},
 		},
 	}
@@ -58,7 +64,7 @@ func dataSourceADOURead(d *schema.ResourceData, meta interface{}) error {
 	_ = d.Set("protected", strconv.FormatBool(ou.Protected))
 	_ = d.Set("dn", ou.DistinguishedName)
 
-	d.SetId(ou.DistinguishedName)
+	d.SetId(ou.GUID)
 	return nil
 
 }

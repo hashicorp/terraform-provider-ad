@@ -11,10 +11,11 @@ import (
 
 func resourceADGPLink() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceADGPLinkCreate,
-		Read:   resourceADGPLinkRead,
-		Update: resourceADGPLinkUpdate,
-		Delete: resourceADGPLinkDelete,
+		Description: "`ad_gplink` manages links between GPOs and container objects such as OUs.",
+		Create:      resourceADGPLinkCreate,
+		Read:        resourceADGPLinkRead,
+		Update:      resourceADGPLinkUpdate,
+		Delete:      resourceADGPLinkDelete,
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
 		},
@@ -30,25 +31,30 @@ func resourceADGPLink() *schema.Resource {
 					}
 					return
 				},
+				Description: "The GUID of the GPO that will be linked to the container object.",
 			},
 			"target_dn": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Description: "The DN of the object the GPO will be linked to.",
 			},
 			"enforced": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  false,
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+				Description: "If set to true the GPO will be enforced on the container object.",
 			},
 			"enabled": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  true,
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+				Description: "Controls the state of the GP link between a GPO and a container object.",
 			},
 			"order": {
-				Type:     schema.TypeInt,
-				Optional: true,
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Description: "Sets the precedence between multiple GPOs linked to the same container object.",
 			},
 		},
 	}

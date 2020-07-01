@@ -11,37 +11,43 @@ import (
 
 func resourceADGroup() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceADGroupCreate,
-		Read:   resourceADGroupRead,
-		Update: resourceADGroupUpdate,
-		Delete: resourceADGroupDelete,
+		Description: "`ad_group` manages Group objects in an Active directory tree.",
+		Create:      resourceADGroupCreate,
+		Read:        resourceADGroupRead,
+		Update:      resourceADGroupUpdate,
+		Delete:      resourceADGroupDelete,
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
 		},
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The name of the group.",
 			},
 			"sam_account_name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The pre-win2k name of the group.",
 			},
 			"scope": {
 				Type:         schema.TypeString,
 				Optional:     true,
 				Default:      "global",
 				ValidateFunc: validation.StringInSlice([]string{"global", "local", "universal"}, false),
+				Description:  "The group's scope. Can be one of `global`, `local`, or `universal` (case sensitive).",
 			},
 			"category": {
 				Type:         schema.TypeString,
 				Optional:     true,
 				Default:      "security",
 				ValidateFunc: validation.StringInSlice([]string{"system", "security"}, false),
+				Description:  "The group's category. Can be one of `system` or `security` (case sensitive).",
 			},
 			"container": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "A DN of a container object holding the group.",
 			},
 		},
 	}

@@ -9,34 +9,39 @@ import (
 
 func resourceADOU() *schema.Resource {
 	return &schema.Resource{
-		Read:   resourceADOURead,
-		Create: resourceADOUCreate,
-		Update: resourceADOUUpdate,
-		Delete: resourceADOUDelete,
+		Description: "`ad_ou` manages OU objects in an AD tree.",
+		Read:        resourceADOURead,
+		Create:      resourceADOUCreate,
+		Update:      resourceADOUUpdate,
+		Delete:      resourceADOUDelete,
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
 		},
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "Name of the OU.",
 			},
 			"path": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "DN of the object that contains the OU.",
 			},
 			"description": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Description of the OU.",
+			},
+			"protected": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+				Description: "Protect this OU from being deleted accidentaly.",
 			},
 			"dn": {
 				Type:     schema.TypeString,
 				Computed: true,
-			},
-			"protected": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  true,
 			},
 			"guid": {
 				Type:     schema.TypeString,

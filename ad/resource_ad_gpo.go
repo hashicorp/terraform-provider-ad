@@ -10,31 +10,36 @@ import (
 
 func resourceADGPO() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceADGPOCreate,
-		Read:   resourceADGPORead,
-		Update: resourceADGPOUpdate,
-		Delete: resourceADGPODelete,
+		Description: "`ad_gpo` manages Group Policy Objects (GPOs).",
+		Create:      resourceADGPOCreate,
+		Read:        resourceADGPORead,
+		Update:      resourceADGPOUpdate,
+		Delete:      resourceADGPODelete,
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
 		},
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "Name of the Group Policy Object.",
 			},
 			"domain": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Domain of the GPO.",
 			},
 			"description": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Description of the GPO.",
 			},
 			"status": {
 				Type:         schema.TypeString,
 				Optional:     true,
 				Default:      "AllSettingsEnabled",
 				ValidateFunc: validation.StringInSlice([]string{"AllSettingsEnabled", "UserSettingsDisabled", "ComputerSettingsDisabled", "AllSettingsDisabled"}, false),
+				Description:  "Status of the GPO. Can be one of `AllSettingsEnabled`, `UserSettingsDisabled`, `ComputerSettingsDisabled`, or `AllSettingsDisabled` (case sensitive).",
 			},
 			"numeric_status": {
 				Type:     schema.TypeInt,
