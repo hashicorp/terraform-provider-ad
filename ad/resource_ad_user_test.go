@@ -15,14 +15,20 @@ func TestAccUser_basic(t *testing.T) {
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		CheckDestroy: resource.ComposeTestCheckFunc(
-			testAccUserExists("ad_user.a", "yourdomain.com", "testuser", false),
+			testAccUserExists("ad_user.a", "dc=yourdomain,dc=com", "testuser", false),
 		),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccUserConfigBasic("yourdomain.com", "testuser", "thu2too'W?ieJ}a^g0zo"),
+				Config: testAccUserConfigBasic("dc=yourdomain,dc=com", "testuser", "thu2too'W?ieJ}a^g0zo"),
 				Check: resource.ComposeTestCheckFunc(
-					testAccUserExists("ad_user.a", "yourdomain.com", "testuser", true),
+					testAccUserExists("ad_user.a", "dc=yourdomain,dc=com", "testuser", true),
 				),
+			},
+			{
+				ResourceName:            "ad_user.a",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"initial_password"},
 			},
 		},
 	})
@@ -33,19 +39,19 @@ func TestAccUser_modify(t *testing.T) {
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		CheckDestroy: resource.ComposeTestCheckFunc(
-			testAccUserExists("ad_user.a", "yourdomain.com", "testuser123", false),
+			testAccUserExists("ad_user.a", "dc=yourdomain,dc=com", "testuser123", false),
 		),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccUserConfigBasic("yourdomain.com", "testuser", "thu2too'W?ieJ}a^g0zo"),
+				Config: testAccUserConfigBasic("dc=yourdomain,dc=com", "testuser", "thu2too'W?ieJ}a^g0zo"),
 				Check: resource.ComposeTestCheckFunc(
-					testAccUserExists("ad_user.a", "yourdomain.com", "testuser", true),
+					testAccUserExists("ad_user.a", "dc=yourdomain,dc=com", "testuser", true),
 				),
 			},
 			{
-				Config: testAccUserConfigBasic("yourdomain.com", "testuser123", "thu2too'W?ieJ}a^g0zo"),
+				Config: testAccUserConfigBasic("dc=yourdomain,dc=com", "testuser123", "thu2too'W?ieJ}a^g0zo"),
 				Check: resource.ComposeTestCheckFunc(
-					testAccUserExists("ad_user.a", "yourdomain.com", "testuser123", true),
+					testAccUserExists("ad_user.a", "dc=yourdomain,dc=com", "testuser123", true),
 				),
 			},
 		},
@@ -57,31 +63,31 @@ func TestAccUser_UAC(t *testing.T) {
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		CheckDestroy: resource.ComposeTestCheckFunc(
-			testAccUserExists("ad_user.a", "yourdomain.com", "testuser", false),
+			testAccUserExists("ad_user.a", "dc=yourdomain,dc=com", "testuser", false),
 		),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccUserConfigUAC("yourdomain.com", "testuser", "thu2too'W?ieJ}a^g0zo", "false", "false"),
+				Config: testAccUserConfigUAC("dc=yourdomain,dc=com", "testuser", "thu2too'W?ieJ}a^g0zo", "false", "false"),
 				Check: resource.ComposeTestCheckFunc(
-					testCheckADUserUAC("ad_user.a", "yourdomain.com", false, false),
+					testCheckADUserUAC("ad_user.a", "dc=yourdomain,dc=com", false, false),
 				),
 			},
 			{
-				Config: testAccUserConfigUAC("yourdomain.com", "testuser", "thu2too'W?ieJ}a^g0zo", "true", "false"),
+				Config: testAccUserConfigUAC("dc=yourdomain,dc=com", "testuser", "thu2too'W?ieJ}a^g0zo", "true", "false"),
 				Check: resource.ComposeTestCheckFunc(
-					testCheckADUserUAC("ad_user.a", "yourdomain.com", true, false),
+					testCheckADUserUAC("ad_user.a", "dc=yourdomain,dc=com", true, false),
 				),
 			},
 			{
-				Config: testAccUserConfigUAC("yourdomain.com", "testuser", "thu2too'W?ieJ}a^g0zo", "false", "true"),
+				Config: testAccUserConfigUAC("dc=yourdomain,dc=com", "testuser", "thu2too'W?ieJ}a^g0zo", "false", "true"),
 				Check: resource.ComposeTestCheckFunc(
-					testCheckADUserUAC("ad_user.a", "yourdomain.com", false, true),
+					testCheckADUserUAC("ad_user.a", "dc=yourdomain,dc=com", false, true),
 				),
 			},
 			{
-				Config: testAccUserConfigUAC("yourdomain.com", "testuser", "thu2too'W?ieJ}a^g0zo", "true", "true"),
+				Config: testAccUserConfigUAC("dc=yourdomain,dc=com", "testuser", "thu2too'W?ieJ}a^g0zo", "true", "true"),
 				Check: resource.ComposeTestCheckFunc(
-					testCheckADUserUAC("ad_user.a", "yourdomain.com", true, true),
+					testCheckADUserUAC("ad_user.a", "dc=yourdomain,dc=com", true, true),
 				),
 			},
 		},
@@ -89,7 +95,6 @@ func TestAccUser_UAC(t *testing.T) {
 }
 
 func defaultVariablesSection(domain, username, password string) string {
-	domainDN := getDomainFromDNSDomain(domain)
 	principalName := fmt.Sprintf("%s@%s", username, domain)
 	return fmt.Sprintf(`
 	variable "domain_dn" { default = %q }
@@ -97,7 +102,7 @@ func defaultVariablesSection(domain, username, password string) string {
 	variable "password" { default = %q }
 	variable "samaccountname" { default = %q }
 
-	`, domainDN, principalName, password, username)
+	`, domain, principalName, password, username)
 
 }
 
@@ -135,9 +140,8 @@ func retrieveADUserFromRunningState(name, domain string, s *terraform.State) (*l
 	if !ok {
 		return nil, fmt.Errorf("%s key not found in stater", name)
 	}
-	domainDN := getDomainFromDNSDomain(domain)
 	ldapConn := testAccProvider.Meta().(ProviderConf).LDAPConn
-	u, err := ldaphelper.GetUserFromLDAP(ldapConn, rs.Primary.ID, domainDN)
+	u, err := ldaphelper.GetUserFromLDAP(ldapConn, rs.Primary.ID)
 
 	return u, err
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 
 	"github.com/go-ldap/ldap/v3"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -140,8 +141,10 @@ func GetUserFromResource(d *schema.ResourceData) *User {
 
 // GetUserFromLDAP returns a User struct based on data
 // retrieved from the LDAP server.
-func GetUserFromLDAP(conn *ldap.Conn, dn, domainDN string) (*User, error) {
+func GetUserFromLDAP(conn *ldap.Conn, dn string) (*User, error) {
 	filter := fmt.Sprintf("(&(distinguishedName=%s)(objectClass=user))", dn)
+	domainDNIdx := strings.Index(dn, "dc=")
+	domainDN := dn[domainDNIdx:]
 	entries, err := GetResultFromLDAP(conn, filter, domainDN, ldap.ScopeWholeSubtree, nil)
 	if err != nil {
 		return nil, err
@@ -168,6 +171,7 @@ func GetUserFromLDAP(conn *ldap.Conn, dn, domainDN string) (*User, error) {
 		UserContainer:        "Users",
 		Disabled:             disabled,
 		PasswordNeverExpires: passwordNeverExpires,
+		DomainDN:             domainDN,
 	}
 
 	return u, nil

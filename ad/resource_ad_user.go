@@ -15,7 +15,9 @@ func resourceADUser() *schema.Resource {
 		Read:   resourceADUserRead,
 		Update: resourceADUserUpdate,
 		Delete: resourceADUserDelete,
-
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 		Schema: map[string]*schema.Schema{
 			"domain_dn": {
 				Type:     schema.TypeString,
@@ -68,10 +70,10 @@ func resourceADUserCreate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceADUserRead(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("Reading ad_user resource for DN: %q", d.Id())
+	log.Printf("[DEBUG] Reading ad_user resource for DN: %q", d.Id())
 	conn := meta.(ProviderConf).LDAPConn
-	domainDN := d.Get("domain_dn").(string)
-	u, err := ldaphelper.GetUserFromLDAP(conn, d.Id(), domainDN)
+	// domainDN := d.Get("domain_dn").(string)
+	u, err := ldaphelper.GetUserFromLDAP(conn, d.Id())
 	if err != nil {
 		if strings.Contains(err.Error(), "No entries found for filter") {
 			d.SetId("")
@@ -86,6 +88,9 @@ func resourceADUserRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("sam_account_name", u.SAMAccountName)
 	d.Set("display_name", u.DisplayName)
 	d.Set("principal_name", u.PrincipalName)
+	d.Set("disabled", u.Disabled)
+	d.Set("domain_dn", u.DomainDN)
+	d.Set("password_never_expires", u.PasswordNeverExpires)
 
 	return nil
 }

@@ -36,6 +36,11 @@ func TestAccResourceADGPO_basic(t *testing.T) {
 					testAccResourceADGPOExists("ad_gpo.gpo", "tfgpo123", true),
 				),
 			},
+			{
+				ResourceName:      "ad_gpo.gpo",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
 		},
 	})
 }
