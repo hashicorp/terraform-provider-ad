@@ -40,9 +40,8 @@ func dataSourceADUser() *schema.Resource {
 func dataSourceADUserRead(d *schema.ResourceData, meta interface{}) error {
 	conn := meta.(ProviderConf).LDAPConn
 	dn := d.Get("user_dn").(string)
-	domainDN := d.Get("domain_dn").(string)
 
-	u, err := ldaphelper.GetUserFromLDAP(conn, dn, domainDN)
+	u, err := ldaphelper.GetUserFromLDAP(conn, dn)
 	if err != nil {
 		return err
 	}

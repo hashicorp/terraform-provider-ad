@@ -16,7 +16,9 @@ func resourceADGroup() *schema.Resource {
 		Read:   resourceADGroupRead,
 		Update: resourceADGroupUpdate,
 		Delete: resourceADGroupDelete,
-
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 		Schema: map[string]*schema.Schema{
 			"domain_dn": {
 				Type:     schema.TypeString,
@@ -60,8 +62,7 @@ func resourceADGroupCreate(d *schema.ResourceData, meta interface{}) error {
 func resourceADGroupRead(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("Reading ad_Group resource for DN: %q", d.Id())
 	conn := meta.(ProviderConf).LDAPConn
-	domainDN := d.Get("domain_dn").(string)
-	g, err := ldaphelper.GetGroupFromLDAP(conn, d.Id(), domainDN)
+	g, err := ldaphelper.GetGroupFromLDAP(conn, d.Id())
 	if err != nil {
 		if strings.Contains(err.Error(), "No entries found for filter") {
 			d.SetId("")

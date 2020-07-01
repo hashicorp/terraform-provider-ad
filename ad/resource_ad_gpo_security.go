@@ -20,6 +20,9 @@ func resourceADGPOSecurity() *schema.Resource {
 		Read:   resourceADGPOSecurityRead,
 		Update: resourceADGPOSecurityUpdate,
 		Delete: resourceADGPOSecurityDelete,
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 		Schema: adschema.GpoSecuritySchema(),
 	}
 }

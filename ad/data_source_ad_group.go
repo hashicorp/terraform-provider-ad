@@ -40,9 +40,8 @@ func dataSourceADGroup() *schema.Resource {
 func dataSourceADGroupRead(d *schema.ResourceData, meta interface{}) error {
 	conn := meta.(ProviderConf).LDAPConn
 	dn := d.Get("dn").(string)
-	domainDN := d.Get("domain_dn").(string)
 
-	g, err := ldaphelper.GetGroupFromLDAP(conn, dn, domainDN)
+	g, err := ldaphelper.GetGroupFromLDAP(conn, dn)
 	if err != nil {
 		return err
 	}

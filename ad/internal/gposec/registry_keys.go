@@ -19,7 +19,7 @@ func (r *RegistryKeys) SetResourceData(section string, d *schema.ResourceData) e
 	for _, valuesLine := range r.Keys {
 		values := strings.SplitN(valuesLine, ",", 3)
 
-    if len(values) != 3 {
+		if len(values) != 3 {
 			return fmt.Errorf("invalid registry keys line: %s", valuesLine)
 		}
 

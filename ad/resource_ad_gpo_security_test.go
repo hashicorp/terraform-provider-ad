@@ -22,6 +22,11 @@ func TestAccResourceADGPOSecurity_basic(t *testing.T) {
 					testAccResourceADGPOSecurityExists("ad_gpo_security.gpo_sec", true),
 				),
 			},
+			{
+				ResourceName:      "ad_gpo_security.gpo_sec",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
 		},
 	})
 }
