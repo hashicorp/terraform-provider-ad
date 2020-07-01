@@ -22,7 +22,7 @@ func (r *SystemServices) SetResourceData(section string, d *schema.ResourceData)
 			return fmt.Errorf("invalid services line: %s", svcLine)
 		}
 
-    svc := map[string]interface{}{
+		svc := map[string]interface{}{
 			"service_name": fields[0],
 			"startup_mode": fields[1],
 			"acl":          fields[2],
