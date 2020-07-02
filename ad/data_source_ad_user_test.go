@@ -25,25 +25,22 @@ func TestAccDataSourceADUser_basic(t *testing.T) {
 }
 
 func testAccDataSourceADUserBasic(domain, username, password string) string {
-	domainDN := getDomainFromDNSDomain(domain)
 	principalName := fmt.Sprintf("%s@%s", username, domain)
 	return fmt.Sprintf(`
-	variable "domain_dn" { default = %q }
 	variable "principal_name" { default = %q }
 	variable "password" { default = %q }
 	variable "samaccountname" { default = %q }
 
 	resource "ad_user" "a" {
-		domain_dn = var.domain_dn
 		principal_name = var.principal_name
 		sam_account_name = var.samaccountname
 		initial_password = var.password
-		display_name = "Terraform Test User"		
-	 }
+		display_name = "Terraform Test User"
+		container = "CN=Users,DC=yourdomain,DC=com"	
+	}
 	 
 	 data "ad_user" "d" {
-		 domain_dn = var.domain_dn
 		 user_dn = ad_user.a.id
 	 }
-`, domainDN, principalName, password, username)
+`, principalName, password, username)
 }

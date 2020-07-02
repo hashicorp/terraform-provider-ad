@@ -4,7 +4,6 @@ go 1.12
 
 require (
 	github.com/dylanmei/iso8601 v0.1.0 // indirect
-	github.com/go-ldap/ldap/v3 v3.1.8
 	github.com/hashicorp/go-uuid v1.0.2
 	github.com/hashicorp/terraform-plugin-sdk v1.9.1
 	github.com/masterzen/winrm v0.0.0-20190308153735-1d17eaf15943

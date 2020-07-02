@@ -4,10 +4,9 @@ import (
 	"log"
 	"strings"
 
-	"github.com/go-ldap/ldap/v3"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
-	"github.com/hashicorp/terraform-provider-ad/ad/internal/ldaphelper"
+	"github.com/hashicorp/terraform-provider-ad/ad/internal/winrmhelper"
 )
 
 func resourceADGroup() *schema.Resource {
@@ -20,11 +19,7 @@ func resourceADGroup() *schema.Resource {
 			State: schema.ImportStatePassthrough,
 		},
 		Schema: map[string]*schema.Schema{
-			"domain_dn": {
-				Type:     schema.TypeString,
-				Required: true,
-			},
-			"display_name": {
+			"name": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
@@ -38,33 +33,37 @@ func resourceADGroup() *schema.Resource {
 				Default:      "global",
 				ValidateFunc: validation.StringInSlice([]string{"global", "local", "universal"}, false),
 			},
-			"type": {
+			"category": {
 				Type:         schema.TypeString,
 				Optional:     true,
 				Default:      "security",
 				ValidateFunc: validation.StringInSlice([]string{"system", "security"}, false),
+			},
+			"container": {
+				Type:     schema.TypeString,
+				Required: true,
 			},
 		},
 	}
 }
 
 func resourceADGroupCreate(d *schema.ResourceData, meta interface{}) error {
-	u := ldaphelper.GetGroupFromResource(d)
-	conn := meta.(ProviderConf).LDAPConn
-	dn, err := u.AddGroup(conn)
+	u := winrmhelper.GetGroupFromResource(d)
+	client := meta.(ProviderConf).WinRMClient
+	guid, err := u.AddGroup(client)
 	if err != nil {
 		return err
 	}
-	d.SetId(*dn)
+	d.SetId(guid)
 	return resourceADGroupRead(d, meta)
 }
 
 func resourceADGroupRead(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("Reading ad_Group resource for DN: %q", d.Id())
-	conn := meta.(ProviderConf).LDAPConn
-	g, err := ldaphelper.GetGroupFromLDAP(conn, d.Id())
+	log.Printf("Reading ad_Group resource for group with GUID: %q", d.Id())
+	client := meta.(ProviderConf).WinRMClient
+	g, err := winrmhelper.GetGroupFromHost(client, d.Id())
 	if err != nil {
-		if strings.Contains(err.Error(), "No entries found for filter") {
+		if strings.Contains(err.Error(), "ADIdentityNotFoundException") {
 			d.SetId("")
 			return nil
 		}
@@ -75,18 +74,17 @@ func resourceADGroupRead(d *schema.ResourceData, meta interface{}) error {
 		return nil
 	}
 	_ = d.Set("sam_account_name", g.SAMAccountName)
-	_ = d.Set("display_name", g.Name)
-	_ = d.Set("domain_dn", g.DomainDN)
+	_ = d.Set("name", g.Name)
 	_ = d.Set("scope", g.Scope)
-	_ = d.Set("type", g.Type)
+	_ = d.Set("category", g.Category)
 
 	return nil
 }
 
 func resourceADGroupUpdate(d *schema.ResourceData, meta interface{}) error {
-	u := ldaphelper.GetGroupFromResource(d)
-	conn := meta.(ProviderConf).LDAPConn
-	err := u.ModifyGroup(d, conn)
+	g := winrmhelper.GetGroupFromResource(d)
+	client := meta.(ProviderConf).WinRMClient
+	err := g.ModifyGroup(d, client)
 	if err != nil {
 		return err
 	}
@@ -94,12 +92,14 @@ func resourceADGroupUpdate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceADGroupDelete(d *schema.ResourceData, meta interface{}) error {
-	conn := meta.(ProviderConf).LDAPConn
-	delReq := ldap.NewDelRequest(d.Id(), []ldap.Control{})
-	delReq.DN = d.Id()
-	err := conn.Del(delReq)
+	conn := meta.(ProviderConf).WinRMClient
+	g, err := winrmhelper.GetGroupFromHost(conn, d.Id())
 	if err != nil {
+		if strings.Contains(err.Error(), "ADIdentityNotFoundException") {
+			return nil
+		}
 		return err
 	}
+	g.DeleteGroup(conn)
 	return resourceADGroupRead(d, meta)
 }

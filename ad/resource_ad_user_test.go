@@ -7,7 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
-	"github.com/hashicorp/terraform-provider-ad/ad/internal/ldaphelper"
+	"github.com/hashicorp/terraform-provider-ad/ad/internal/winrmhelper"
 )
 
 func TestAccUser_basic(t *testing.T) {
@@ -97,22 +97,20 @@ func TestAccUser_UAC(t *testing.T) {
 func defaultVariablesSection(domain, username, password string) string {
 	principalName := fmt.Sprintf("%s@%s", username, domain)
 	return fmt.Sprintf(`
-	variable "domain_dn" { default = %q }
 	variable "principal_name" { default = %q }
 	variable "password" { default = %q }
 	variable "samaccountname" { default = %q }
 
-	`, domain, principalName, password, username)
-
+	`, principalName, password, username)
 }
 
 func defaultUserSection() string {
 	return `
-	domain_dn = var.domain_dn
 	principal_name = var.principal_name
 	sam_account_name = var.samaccountname
 	initial_password = var.password
-	display_name = "Terraform Test User"	
+	display_name = "Terraform Test User"
+	container = "CN=Users,DC=yourdomain,DC=com"	
 	`
 }
 func testAccUserConfigBasic(domain, username, password string) string {
@@ -122,26 +120,26 @@ func testAccUserConfigBasic(domain, username, password string) string {
 
 }
 
-func testAccUserConfigUAC(domain, username, password, disabled, expires string) string {
+func testAccUserConfigUAC(domain, username, password, enabled, expires string) string {
 	return fmt.Sprintf(`%s
-	variable "disabled" { default = %q }
+	variable "enabled" { default = %q }
 	variable "password_never_expires" { default = %q }
 
 	resource "ad_user" "a" {%s
-		disabled = var.disabled
+		enabled = var.enabled
 		password_never_expires = var.password_never_expires
  	}
-`, defaultVariablesSection(domain, username, password), disabled, expires, defaultUserSection())
+`, defaultVariablesSection(domain, username, password), enabled, expires, defaultUserSection())
 }
 
-func retrieveADUserFromRunningState(name, domain string, s *terraform.State) (*ldaphelper.User, error) {
+func retrieveADUserFromRunningState(name, domain string, s *terraform.State) (*winrmhelper.User, error) {
 	rs, ok := s.RootModule().Resources[name]
 
 	if !ok {
-		return nil, fmt.Errorf("%s key not found in stater", name)
+		return nil, fmt.Errorf("%s key not found in state", name)
 	}
-	ldapConn := testAccProvider.Meta().(ProviderConf).LDAPConn
-	u, err := ldaphelper.GetUserFromLDAP(ldapConn, rs.Primary.ID)
+	client := testAccProvider.Meta().(ProviderConf).WinRMClient
+	u, err := winrmhelper.GetUserFromHost(client, rs.Primary.ID)
 
 	return u, err
 
@@ -151,7 +149,7 @@ func testAccUserExists(name, domain, username string, expected bool) resource.Te
 	return func(s *terraform.State) error {
 		u, err := retrieveADUserFromRunningState(name, domain, s)
 		if err != nil {
-			if strings.Contains(err.Error(), "No entries found for filter") && !expected {
+			if strings.Contains(err.Error(), "ADIdentityNotFoundException") && !expected {
 				return nil
 			}
 			return err
@@ -164,7 +162,7 @@ func testAccUserExists(name, domain, username string, expected bool) resource.Te
 	}
 }
 
-func testCheckADUserUAC(name, domain string, disabledState, passwordNeverExpires bool) resource.TestCheckFunc {
+func testCheckADUserUAC(name, domain string, enabledState, passwordNeverExpires bool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		u, err := retrieveADUserFromRunningState(name, domain, s)
 
@@ -172,12 +170,12 @@ func testCheckADUserUAC(name, domain string, disabledState, passwordNeverExpires
 			return err
 		}
 
-		if u.Disabled != disabledState {
-			return fmt.Errorf("disabled state in AD did not match expected value. AD: %t, expected: %t", u.Disabled, disabledState)
+		if u.Enabled != enabledState {
+			return fmt.Errorf("enabled state in AD did not match expected value. AD: %t, expected: %t", u.Enabled, enabledState)
 		}
 
 		if u.PasswordNeverExpires != passwordNeverExpires {
-			return fmt.Errorf("password_never_expires state in AD did not match expected value. AD: %t, expected: %t", u.PasswordNeverExpires, disabledState)
+			return fmt.Errorf("password_never_expires state in AD did not match expected value. AD: %t, expected: %t", u.PasswordNeverExpires, enabledState)
 		}
 		return nil
 	}

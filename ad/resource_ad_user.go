@@ -4,9 +4,8 @@ import (
 	"log"
 	"strings"
 
-	"github.com/go-ldap/ldap/v3"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-provider-ad/ad/internal/ldaphelper"
+	"github.com/hashicorp/terraform-provider-ad/ad/internal/winrmhelper"
 )
 
 func resourceADUser() *schema.Resource {
@@ -19,10 +18,6 @@ func resourceADUser() *schema.Resource {
 			State: schema.ImportStatePassthrough,
 		},
 		Schema: map[string]*schema.Schema{
-			"domain_dn": {
-				Type:     schema.TypeString,
-				Required: true,
-			},
 			"display_name": {
 				Type:     schema.TypeString,
 				Required: true,
@@ -39,43 +34,46 @@ func resourceADUser() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
-			// "cannot_change_password": {
-			// 	Type:     schema.TypeBool,
-			// 	Optional: true,
-			// 	Default:  false,
-			// },
+			"container": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"cannot_change_password": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
 			"password_never_expires": {
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  false,
 			},
-			"disabled": {
+			"enabled": {
 				Type:     schema.TypeBool,
 				Optional: true,
-				Default:  false,
+				Default:  true,
 			},
 		},
 	}
 }
 
 func resourceADUserCreate(d *schema.ResourceData, meta interface{}) error {
-	u := ldaphelper.GetUserFromResource(d)
-	conn := meta.(ProviderConf).LDAPConn
-	dn, err := u.AddUser(conn)
+	u := winrmhelper.GetUserFromResource(d)
+	client := meta.(ProviderConf).WinRMClient
+	guid, err := u.NewUser(client)
 	if err != nil {
 		return err
 	}
-	d.SetId(*dn)
+	d.SetId(guid)
 	return resourceADUserRead(d, meta)
 }
 
 func resourceADUserRead(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("[DEBUG] Reading ad_user resource for DN: %q", d.Id())
-	conn := meta.(ProviderConf).LDAPConn
-	// domainDN := d.Get("domain_dn").(string)
-	u, err := ldaphelper.GetUserFromLDAP(conn, d.Id())
+	log.Printf("Reading ad_user resource for user with guid: %q", d.Id())
+	client := meta.(ProviderConf).WinRMClient
+	u, err := winrmhelper.GetUserFromHost(client, d.Id())
 	if err != nil {
-		if strings.Contains(err.Error(), "No entries found for filter") {
+		if strings.Contains(err.Error(), "ADIdentityNotFoundException") {
 			d.SetId("")
 			return nil
 		}
@@ -88,17 +86,18 @@ func resourceADUserRead(d *schema.ResourceData, meta interface{}) error {
 	_ = d.Set("sam_account_name", u.SAMAccountName)
 	_ = d.Set("display_name", u.DisplayName)
 	_ = d.Set("principal_name", u.PrincipalName)
-	_ = d.Set("disabled", u.Disabled)
-	_ = d.Set("domain_dn", u.DomainDN)
+	_ = d.Set("container", u.Container)
+	_ = d.Set("enabled", u.Enabled)
 	_ = d.Set("password_never_expires", u.PasswordNeverExpires)
+	_ = d.Set("cannot_change_password", u.CannotChangePassword)
 
 	return nil
 }
 
 func resourceADUserUpdate(d *schema.ResourceData, meta interface{}) error {
-	u := ldaphelper.GetUserFromResource(d)
-	conn := meta.(ProviderConf).LDAPConn
-	err := u.ModifyUser(d, conn)
+	u := winrmhelper.GetUserFromResource(d)
+	client := meta.(ProviderConf).WinRMClient
+	err := u.ModifyUser(d, client)
 	if err != nil {
 		return err
 	}
@@ -106,12 +105,14 @@ func resourceADUserUpdate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceADUserDelete(d *schema.ResourceData, meta interface{}) error {
-	conn := meta.(ProviderConf).LDAPConn
-	delReq := ldap.NewDelRequest(d.Id(), []ldap.Control{})
-	delReq.DN = d.Id()
-	err := conn.Del(delReq)
+	client := meta.(ProviderConf).WinRMClient
+	u, err := winrmhelper.GetUserFromHost(client, d.Id())
 	if err != nil {
+		if strings.Contains(err.Error(), "ADIdentityNotFoundException") {
+			return nil
+		}
 		return err
 	}
+	u.DeleteUser(client)
 	return resourceADUserRead(d, meta)
 }

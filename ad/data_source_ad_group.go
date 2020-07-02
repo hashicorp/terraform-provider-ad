@@ -3,7 +3,7 @@ package ad
 import (
 	"fmt"
 
-	"github.com/hashicorp/terraform-provider-ad/ad/internal/ldaphelper"
+	"github.com/hashicorp/terraform-provider-ad/ad/internal/winrmhelper"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
@@ -13,11 +13,7 @@ func dataSourceADGroup() *schema.Resource {
 		Read: dataSourceADGroupRead,
 
 		Schema: map[string]*schema.Schema{
-			"dn": {
-				Type:     schema.TypeString,
-				Required: true,
-			},
-			"domain_dn": {
+			"group_dn": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
@@ -33,15 +29,23 @@ func dataSourceADGroup() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			"category": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"scope": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 		},
 	}
 }
 
 func dataSourceADGroupRead(d *schema.ResourceData, meta interface{}) error {
-	conn := meta.(ProviderConf).LDAPConn
-	dn := d.Get("dn").(string)
+	client := meta.(ProviderConf).WinRMClient
+	dn := d.Get("group_dn").(string)
 
-	g, err := ldaphelper.GetGroupFromLDAP(conn, dn)
+	g, err := winrmhelper.GetGroupFromHost(client, dn)
 	if err != nil {
 		return err
 	}
@@ -51,7 +55,8 @@ func dataSourceADGroupRead(d *schema.ResourceData, meta interface{}) error {
 	_ = d.Set("sam_account_name", g.SAMAccountName)
 	_ = d.Set("display_name", g.Name)
 	_ = d.Set("scope", g.Scope)
-	_ = d.Set("type", g.Type)
+	_ = d.Set("category", g.Category)
+	_ = d.Set("container", g.Container)
 
 	d.SetId(dn)
 	return nil

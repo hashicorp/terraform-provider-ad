@@ -3,7 +3,7 @@ package ad
 import (
 	"fmt"
 
-	"github.com/hashicorp/terraform-provider-ad/ad/internal/ldaphelper"
+	"github.com/hashicorp/terraform-provider-ad/ad/internal/winrmhelper"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
@@ -14,10 +14,6 @@ func dataSourceADUser() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"user_dn": {
-				Type:     schema.TypeString,
-				Required: true,
-			},
-			"domain_dn": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
@@ -38,19 +34,20 @@ func dataSourceADUser() *schema.Resource {
 }
 
 func dataSourceADUserRead(d *schema.ResourceData, meta interface{}) error {
-	conn := meta.(ProviderConf).LDAPConn
 	dn := d.Get("user_dn").(string)
-
-	u, err := ldaphelper.GetUserFromLDAP(conn, dn)
+	client := meta.(ProviderConf).WinRMClient
+	u, err := winrmhelper.GetUserFromHost(client, dn)
 	if err != nil {
 		return err
 	}
+
 	if u == nil {
 		return fmt.Errorf("No user found with dn %q", dn)
 	}
 	_ = d.Set("sam_account_name", u.SAMAccountName)
 	_ = d.Set("display_name", u.DisplayName)
 	_ = d.Set("principal_name", u.PrincipalName)
-	d.SetId(dn)
+	d.SetId(u.GUID)
+
 	return nil
 }

@@ -26,25 +26,23 @@ func TestAccDatasourceADGroup_basic(t *testing.T) {
 }
 
 func testAccDatasourceADGroupConfigBasic(domain, name, sam, scope, gtype string) string {
-	domainDN := getDomainFromDNSDomain(domain)
 	return fmt.Sprintf(`
-	variable "domain_dn" { default = "%s" }
-	variable "display_name" { default = "%s" }
+	variable "name" { default = "%s" }
 	variable "sam_account_name" { default = "%s" }
 	variable "scope" { default = "%s" }
-	variable "type" { default = "%s" }
+	variable "category" { default = "%s" }
+	variable "container" { default = "cn=Users,dc=yourdomain,dc=com" }
 
 	resource "ad_group" "g" {
-		domain_dn = var.domain_dn
-		display_name = var.display_name
+		name = var.name
 		sam_account_name = var.sam_account_name
 		scope = var.scope
-		type = var.type
+		category = var.category
+		container = var.container
 	 }
 	 
 	 data "ad_group" "d" {
-		 domain_dn = var.domain_dn
-		 dn = ad_group.g.id
+		 group_dn = ad_group.g.id
 	 }
-`, domainDN, name, sam, scope, gtype)
+`, name, sam, scope, gtype)
 }
