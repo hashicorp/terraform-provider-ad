@@ -100,6 +100,7 @@ func Provider() terraform.ResourceProvider {
 			"ad_gpo_security": resourceADGPOSecurity(),
 			"ad_computer":     resourceADComputer(),
 			"ad_ou":           resourceADOU(),
+			"ad_gplink":       resourceADGPLink(),
 		},
 		ConfigureFunc: initProviderConfig,
 	}
