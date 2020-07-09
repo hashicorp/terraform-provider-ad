@@ -37,7 +37,7 @@ func testAccDatasourceADGPOConfigBasic(domain, name string) string {
 	}
 
 	data "ad_gpo" "g" {
-	    name = var.name
+	    name = ad_gpo.gpo.name
 	}
 	`, domain, name)
 }
