@@ -92,11 +92,16 @@ func GetGPOFromHost(conn *winrm.Client, name, guid string) (*GPO, error) {
 	}
 	gpo.basePath = basePath
 
-	gpo.loadGPTIni(conn)
-	gpo.loadGPOVersions(conn, basePath)
+	err = gpo.loadGPTIni(conn)
 	if err != nil {
 		return nil, err
 	}
+
+	err = gpo.loadGPOVersions(conn, basePath)
+	if err != nil {
+		return nil, err
+	}
+
 	end := time.Now().Unix()
 	log.Printf("[DEBUG] GPO from host took %d seconds", end-start)
 	return gpo, nil
@@ -328,6 +333,9 @@ func (g *GPO) SetGPOVersions(client *winrm.Client, cpConn *winrmcp.Winrmcp, user
 	}
 
 	err = g.SetADGPOVersions(client, newVersion)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -355,7 +363,10 @@ func (g *GPO) loadGPTIni(client *winrm.Client) error {
 
 	// initialise version if not present.
 	if !iniFile.Section("General").HasKey("Version") {
-		iniFile.Section("General").NewKey("Version", "0")
+		_, err := iniFile.Section("General").NewKey("Version", "0")
+		if err != nil {
+			return fmt.Errorf("error while adding Version key to General section: %s", err)
+		}
 	}
 	g.gptIni = iniFile
 

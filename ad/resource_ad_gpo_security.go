@@ -76,7 +76,7 @@ func resourceADGPOSecurityRead(d *schema.ResourceData, meta interface{}) error {
 		}
 		return err
 	}
-	d.Set("gpo_container", guid)
+	_ = d.Set("gpo_container", guid)
 
 	hostSecIni, err := winrmhelper.GetSecIniFromHost(client, gpo)
 	if err != nil {

@@ -37,9 +37,9 @@ func dataSourceADDomainRead(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	d.Set("netbios_name", domain.NetbiosName)
-	d.Set("domain_name", domain.DomainName)
-	d.Set("domain_dn", domain.DN)
+	_ = d.Set("netbios_name", domain.NetbiosName)
+	_ = d.Set("domain_name", domain.DomainName)
+	_ = d.Set("domain_dn", domain.DN)
 	d.SetId(domain.DN)
 
 	return nil

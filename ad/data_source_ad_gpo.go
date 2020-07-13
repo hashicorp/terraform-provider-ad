@@ -43,8 +43,8 @@ func dataSourceADGPORead(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	d.Set("name", gpo.Name)
-	d.Set("domain", gpo.Domain)
+	_ = d.Set("name", gpo.Name)
+	_ = d.Set("domain", gpo.Domain)
 	d.SetId(gpo.ID)
 
 	return nil

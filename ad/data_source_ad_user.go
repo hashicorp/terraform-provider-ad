@@ -48,9 +48,9 @@ func dataSourceADUserRead(d *schema.ResourceData, meta interface{}) error {
 	if u == nil {
 		return fmt.Errorf("No user found with dn %q", dn)
 	}
-	d.Set("sam_account_name", u.SAMAccountName)
-	d.Set("display_name", u.DisplayName)
-	d.Set("principal_name", u.PrincipalName)
+	_ = d.Set("sam_account_name", u.SAMAccountName)
+	_ = d.Set("display_name", u.DisplayName)
+	_ = d.Set("principal_name", u.PrincipalName)
 	d.SetId(dn)
 	return nil
 }

@@ -54,7 +54,7 @@ func NewOrgUnitFromHost(conn *winrm.Client, guid, name, path string) (*OrgUnit, 
 		return nil, fmt.Errorf("Get-ADOrganizationalUnit exited with a non-zero exit code %d, stderr :%s", result.ExitCode, result.StdErr)
 	}
 	ou, err := unmarshallOU([]byte(result.Stdout))
-	if err != err {
+	if err != nil {
 		return nil, err
 	}
 	ou.Path = strings.TrimPrefix(ou.DistinguishedName, fmt.Sprintf("OU=%s,", ou.Name))

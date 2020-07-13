@@ -36,7 +36,10 @@ func TestKerberosPolicySetResourceData(t *testing.T) {
 	al := KerberosPolicy{
 		MaxTicketAge: "10",
 	}
-	al.SetResourceData("kerberos_policy", d)
+	err := al.SetResourceData("kerberos_policy", d)
+	if err != nil {
+		t.Errorf("error while setting resource data: %s", err)
+	}
 
 	mls := d.Get("kerberos_policy.0.max_ticket_age").(string)
 

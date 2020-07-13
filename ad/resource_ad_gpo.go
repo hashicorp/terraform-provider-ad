@@ -72,11 +72,11 @@ func resourceADGPORead(d *schema.ResourceData, meta interface{}) error {
 		}
 		return err
 	}
-	d.Set("domain", g.Domain)
-	d.Set("description", g.Description)
-	d.Set("status", g.Status)
-	d.Set("numeric_status", g.NumericStatus)
-	d.Set("name", g.Name)
+	_ = d.Set("domain", g.Domain)
+	_ = d.Set("description", g.Description)
+	_ = d.Set("status", g.Status)
+	_ = d.Set("numeric_status", g.NumericStatus)
+	_ = d.Set("name", g.Name)
 	return nil
 }
 

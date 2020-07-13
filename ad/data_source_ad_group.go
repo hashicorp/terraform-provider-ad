@@ -48,10 +48,10 @@ func dataSourceADGroupRead(d *schema.ResourceData, meta interface{}) error {
 	if g == nil {
 		return fmt.Errorf("No group found with dn %q", dn)
 	}
-	d.Set("sam_account_name", g.SAMAccountName)
-	d.Set("display_name", g.Name)
-	d.Set("scope", g.Scope)
-	d.Set("type", g.Type)
+	_ = d.Set("sam_account_name", g.SAMAccountName)
+	_ = d.Set("display_name", g.Name)
+	_ = d.Set("scope", g.Scope)
+	_ = d.Set("type", g.Type)
 
 	d.SetId(dn)
 	return nil

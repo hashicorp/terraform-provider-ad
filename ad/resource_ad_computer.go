@@ -9,10 +9,9 @@ import (
 )
 
 func suppressCaseDiff(k, old, new string, d *schema.ResourceData) bool {
-	if strings.ToLower(old) == strings.ToLower(new) {
-		return true
-	}
-	return false
+	// k is ignored here, but wee need to include it in the function's
+	// signature in order to match the one defined for DiffSuppressFunc
+	return strings.EqualFold(old, new)
 }
 
 func resourceADComputer() *schema.Resource {

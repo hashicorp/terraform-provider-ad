@@ -74,11 +74,11 @@ func resourceADGroupRead(d *schema.ResourceData, meta interface{}) error {
 		d.SetId("")
 		return nil
 	}
-	d.Set("sam_account_name", g.SAMAccountName)
-	d.Set("display_name", g.Name)
-	d.Set("domain_dn", g.DomainDN)
-	d.Set("scope", g.Scope)
-	d.Set("type", g.Type)
+	_ = d.Set("sam_account_name", g.SAMAccountName)
+	_ = d.Set("display_name", g.Name)
+	_ = d.Set("domain_dn", g.DomainDN)
+	_ = d.Set("scope", g.Scope)
+	_ = d.Set("type", g.Type)
 
 	return nil
 }

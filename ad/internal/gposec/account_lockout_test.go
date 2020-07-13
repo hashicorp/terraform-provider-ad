@@ -36,7 +36,10 @@ func TestALSetResourceData(t *testing.T) {
 	pp := AccountLockout{
 		LockoutBadCount: "10",
 	}
-	pp.SetResourceData("account_lockout", d)
+	err := pp.SetResourceData("account_lockout", d)
+	if err != nil {
+		t.Errorf("error while setting resource data: %s", err)
+	}
 
 	mpa := d.Get("account_lockout.0.lockout_bad_count").(string)
 
