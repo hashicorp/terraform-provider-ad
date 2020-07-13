@@ -85,12 +85,12 @@ func resourceADUserRead(d *schema.ResourceData, meta interface{}) error {
 		d.SetId("")
 		return nil
 	}
-	d.Set("sam_account_name", u.SAMAccountName)
-	d.Set("display_name", u.DisplayName)
-	d.Set("principal_name", u.PrincipalName)
-	d.Set("disabled", u.Disabled)
-	d.Set("domain_dn", u.DomainDN)
-	d.Set("password_never_expires", u.PasswordNeverExpires)
+	_ = d.Set("sam_account_name", u.SAMAccountName)
+	_ = d.Set("display_name", u.DisplayName)
+	_ = d.Set("principal_name", u.PrincipalName)
+	_ = d.Set("disabled", u.Disabled)
+	_ = d.Set("domain_dn", u.DomainDN)
+	_ = d.Set("password_never_expires", u.PasswordNeverExpires)
 
 	return nil
 }

@@ -36,8 +36,10 @@ func TestApplicationLogSetResourceData(t *testing.T) {
 	al := ApplicationLog{
 		EventLogPolicy: EventLogPolicy{MaximumLogSize: "10"},
 	}
-	al.SetResourceData("application_log", d)
-
+	err := al.SetResourceData("application_log", d)
+	if err != nil {
+		t.Errorf("error while setting resource data: %s", err)
+	}
 	mls := d.Get("application_log.0.maximum_log_size").(string)
 
 	if mls != "10" {

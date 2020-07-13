@@ -37,7 +37,10 @@ func TestPasswordPoliciesSetResourceData(t *testing.T) {
 	pp := PasswordPolicies{
 		MaximumPasswordAge: "10",
 	}
-	pp.SetResourceData("password_policies", d)
+	err := pp.SetResourceData("password_policies", d)
+	if err != nil {
+		t.Errorf("error while setting resource data: %s", err)
+	}
 
 	mpa := d.Get("password_policies.0.maximum_password_age").(string)
 

@@ -40,7 +40,10 @@ func (r *RegistryKeys) SetIniData(f *ini.File) error {
 	}
 	sectionName := "Registry Keys"
 	sectionBody := strings.Join(r.Keys, "\r\n")
-	f.NewRawSection(sectionName, fmt.Sprintf("%s\r\n", sectionBody))
+	_, err := f.NewRawSection(sectionName, fmt.Sprintf("%s\r\n", sectionBody))
+	if err != nil {
+		return fmt.Errorf("error while setting section %q: %s", sectionName, err)
+	}
 	return nil
 }
 

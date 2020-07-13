@@ -19,7 +19,10 @@ func TestFileSystemSetResourceData(t *testing.T) {
 		},
 	}
 
-	fs.SetResourceData("filesystem", d)
+	err := fs.SetResourceData("filesystem", d)
+	if err != nil {
+		t.Errorf("error while setting resource data: %s", err)
+	}
 
 	if d.Get("filesystem") == nil {
 		t.Error("filesystem set is nil")

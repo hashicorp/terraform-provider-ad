@@ -232,10 +232,10 @@ func getGPLinksFromADObject(input []byte) ([][]string, error) {
 
 	out := [][]string{}
 	gpLinks := strings.Split(ado.GPLink, "[")
-	re := regexp.MustCompile("{([\\w-]+)}[\\w,=-]+;([0-9])")
+	re := regexp.MustCompile(`{([\w-]+)}[\w,=-]+;([0-9])`)
 	for idx, gpLink := range gpLinks {
 		gpoGUIDs := re.FindAllStringSubmatch(gpLink, -1)
-		if gpoGUIDs != nil && len(gpoGUIDs) == 1 && len(gpoGUIDs[0]) == 3 {
+		if len(gpoGUIDs) == 1 && len(gpoGUIDs[0]) == 3 {
 			// gpoGUIDs has three elements. First is the whole matched string,
 			// second is the GPO GUID and third is the gpLinkOptions field
 			out = append(out, []string{gpoGUIDs[0][1], fmt.Sprintf("%d", idx), gpoGUIDs[0][2], ado.DistinguishedName})

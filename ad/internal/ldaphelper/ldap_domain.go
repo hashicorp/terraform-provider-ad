@@ -50,7 +50,7 @@ func GetDomainFromLDAP(dseConn *ldap.Conn, dn, netbiosName, domainName string) (
 	if len(filters) > 1 {
 		filter = fmt.Sprintf("(&%s)", strings.Join(filters, ""))
 	} else {
-		filter = fmt.Sprintf("%s", filters[0])
+		filter = filters[0]
 	}
 
 	entries, err := GetResultFromLDAP(dseConn, filter, base, ldap.ScopeWholeSubtree, nil)

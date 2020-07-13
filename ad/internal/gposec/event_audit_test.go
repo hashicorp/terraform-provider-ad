@@ -36,7 +36,10 @@ func TestEventAuditSetResourceData(t *testing.T) {
 	al := EventAudit{
 		AuditAccountLogon: "10",
 	}
-	al.SetResourceData("event_audit", d)
+	err := al.SetResourceData("event_audit", d)
+	if err != nil {
+		t.Errorf("error while setting resource data: %s", err)
+	}
 
 	mls := d.Get("event_audit.0.audit_account_logon").(string)
 

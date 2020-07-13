@@ -69,11 +69,11 @@ func resourceADGPLinkRead(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("while reading resource with id %q: %s", d.Id(), err)
 	}
 
-	d.Set("gpo_guid", gplink.GPOGuid)
-	d.Set("target_dn", strings.ToLower(gplink.Target))
-	d.Set("enforced", gplink.Enforced)
-	d.Set("enabled", gplink.Enabled)
-	d.Set("order", gplink.Order)
+	_ = d.Set("gpo_guid", gplink.GPOGuid)
+	_ = d.Set("target_dn", strings.ToLower(gplink.Target))
+	_ = d.Set("enforced", gplink.Enforced)
+	_ = d.Set("enabled", gplink.Enabled)
+	_ = d.Set("order", gplink.Order)
 
 	return nil
 }
