@@ -104,10 +104,6 @@ func resourceADOUUpdate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceADOUDelete(d *schema.ResourceData, meta interface{}) error {
-	if d.Id() == "" {
-		return nil
-	}
-
 	client := meta.(ProviderConf).WinRMClient
 	ou := winrmhelper.NewOrgUnitFromResource(d)
 	err := ou.Delete(client)
@@ -115,5 +111,5 @@ func resourceADOUDelete(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	return resourceADOURead(d, meta)
+	return nil
 }

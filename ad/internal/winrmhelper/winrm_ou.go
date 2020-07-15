@@ -66,11 +66,10 @@ func NewOrgUnitFromHost(conn *winrm.Client, guid, name, path string) (*OrgUnit, 
 func (o *OrgUnit) Create(conn *winrm.Client) (string, error) {
 
 	cmd := "New-ADOrganizationalUnit -Passthru"
-	if o.Name != "" {
-		cmd = fmt.Sprintf("%s -Name %q", cmd, o.Name)
-	} else {
+	if o.Name == "" {
 		return "", fmt.Errorf("missing required attribute name, cannot create OU")
 	}
+	cmd = fmt.Sprintf("%s -Name %q", cmd, o.Name)
 
 	if o.Description != "" {
 		cmd = fmt.Sprintf("%s -Description %q", cmd, o.Description)
@@ -105,7 +104,6 @@ func (o *OrgUnit) Update(conn *winrm.Client, changes map[string]interface{}) err
 	cmd := fmt.Sprintf("Set-ADOrganizationalUnit -Identity %q", o.DistinguishedName)
 
 	keyMap := map[string]string{
-		// "name":         "Name",
 		"display_name": "DisplayName",
 		"description":  "Description",
 		"path":         "Path",
@@ -157,7 +155,7 @@ func (o *OrgUnit) Delete(conn *winrm.Client) error {
 	if o.DistinguishedName == "" {
 		return fmt.Errorf("Cannot remove OU with name %q, distiguished name is empty", o.Name)
 	}
-	cmd := fmt.Sprintf(" Get-ADObject -Properties * -Identity %q | Set-ADObject -ProtectedFromAccidentalDeletion:$false -Passthru | Remove-ADOrganizationalUnit -confirm:$false", o.DistinguishedName)
+	cmd := fmt.Sprintf("Get-ADObject -Properties * -Identity %q | Set-ADObject -ProtectedFromAccidentalDeletion:$false -Passthru | Remove-ADOrganizationalUnit -confirm:$false", o.DistinguishedName)
 	result, err := RunWinRMCommand(conn, []string{cmd}, true)
 	if err != nil {
 		return err
@@ -172,7 +170,7 @@ func unmarshallOU(input []byte) (*OrgUnit, error) {
 	var ou OrgUnit
 	err := json.Unmarshal(input, &ou)
 	if err != nil {
-		log.Printf("[DEBUG] Failed to unmarshall json document with error %q, document was: %s", err, string(input))
+		log.Printf("[ERROR] Failed to unmarshall json document with error %q, document was: %s", err, string(input))
 		return nil, fmt.Errorf("failed while unmarshalling json response: %s", err)
 	}
 	return &ou, nil

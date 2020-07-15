@@ -52,30 +52,11 @@ func dataSourceADOURead(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	err = d.Set("name", ou.Name)
-	if err != nil {
-		return fmt.Errorf("error setting key %q to value %#v: %s", "name", ou.Name, err)
-	}
-
-	err = d.Set("description", ou.Description)
-	if err != nil {
-		return fmt.Errorf("error setting key %q to value %#v: %s", "description", ou.Description, err)
-	}
-
-	err = d.Set("path", ou.Path)
-	if err != nil {
-		return fmt.Errorf("error setting key %q to value %#v: %s", "path", ou.Path, err)
-	}
-
-	err = d.Set("protected", strconv.FormatBool(ou.Protected))
-	if err != nil {
-		return fmt.Errorf("error setting key %q to value %#v: %s", "protected", ou.Protected, err)
-	}
-
-	err = d.Set("dn", ou.DistinguishedName)
-	if err != nil {
-		return fmt.Errorf("error setting key %q to value %#v: %s", "dn", ou.DistinguishedName, err)
-	}
+	_ = d.Set("name", ou.Name)
+	_ = d.Set("description", ou.Description)
+	_ = d.Set("path", ou.Path)
+	_ = d.Set("protected", strconv.FormatBool(ou.Protected))
+	_ = d.Set("dn", ou.DistinguishedName)
 
 	d.SetId(ou.DistinguishedName)
 	return nil
