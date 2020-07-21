@@ -48,8 +48,23 @@ func RunWinRMCommand(conn *winrm.Client, cmds []string, json bool) (*WinRMResult
 // SanitiseTFInput returns the value of a resource field after some basic sanitisation checks
 // to protect ourselves from command injection
 func SanitiseTFInput(d *schema.ResourceData, key string) string {
+	cleanupReplacer := strings.NewReplacer(
+		"`", "``",
+		`"`, "`\"",
+		"$", "`$",
+		"\x00", "`0",
+		"\x07", "`a",
+		"\x08", "`b",
+		"\x1f", "`e",
+		"\x0c", "`f",
+		"\n", "`n",
+		"\r", "`r",
+		"\t", "`t",
+		"\v", "`v",
+	)
+
 	// placeholder for now.
-	out := d.Get(key).(string)
+	out := cleanupReplacer.Replace(d.Get(key).(string))
 	log.Printf("[DEBUG] sanitising key %q to: %s", key, out)
 	return out
 }
