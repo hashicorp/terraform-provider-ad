@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hashicorp/go-uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-provider-ad/ad/internal/winrmhelper"
 )
@@ -22,6 +23,13 @@ func resourceADGPLink() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
+				ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
+					_, err := uuid.ParseUUID(val.(string))
+					if err != nil {
+						errs = append(errs, fmt.Errorf("%q is not a valid uuid", val.(string)))
+					}
+					return
+				},
 			},
 			"target_dn": {
 				Type:     schema.TypeString,

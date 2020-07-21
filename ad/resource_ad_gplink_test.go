@@ -2,6 +2,7 @@ package ad
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -25,16 +26,31 @@ func TestAccResourceADGPLink_basic(t *testing.T) {
 				),
 			},
 			{
+				ResourceName:      "ad_gplink.og",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			{
 				Config: testAccResourceADGPLinkConfigBasic(true, false, 1),
 				Check: resource.ComposeTestCheckFunc(
 					testAccResourceADGPLinkExists("ad_gplink.og", 1, true, false, true),
 				),
 			},
 			{
+				ResourceName:      "ad_gplink.og",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			{
 				Config: testAccResourceADGPLinkConfigBasic(false, true, 1),
 				Check: resource.ComposeTestCheckFunc(
 					testAccResourceADGPLinkExists("ad_gplink.og", 1, false, true, true),
 				),
+			},
+			{
+				ResourceName:      "ad_gplink.og",
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 			{
 				Config: testAccResourceADGPLinkConfigBasic(false, false, 1),
@@ -49,6 +65,40 @@ func TestAccResourceADGPLink_basic(t *testing.T) {
 			},
 		},
 	})
+}
+
+func TestAccResourceADGPLink_badguid(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccResourceADGPLinkConfigBadGUID(false, false, 1),
+				ExpectError: regexp.MustCompile("is not a valid uuid"),
+			},
+		},
+	})
+}
+
+func testAccResourceADGPLinkConfigBadGUID(enforced, enabled bool, order int) string {
+	return fmt.Sprintf(`
+
+	resource "ad_ou" "o" { 
+		name = "gplinktestOU"
+		path = "dc=yourdomain,dc=com"
+		description = "OU for gplink tests"
+		protected = false
+	}
+		
+	resource "ad_gplink" "og" { 
+		gpo_guid = "something-horribly-wrong"
+		target_dn = ad_ou.o.dn
+		enforced = %t
+		enabled = %t
+		order = %d
+	}
+	
+	`, enforced, enabled, order)
 }
 
 func testAccResourceADGPLinkConfigBasic(enforced, enabled bool, order int) string {
