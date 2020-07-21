@@ -58,7 +58,7 @@ func resourceADGPLinkRead(d *schema.ResourceData, meta interface{}) error {
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("error while reading resource with id %q: %s", d.Id(), err)
+		return fmt.Errorf("while reading resource with id %q: %s", d.Id(), err)
 	}
 
 	d.Set("gpo_guid", gplink.GPOGuid)
