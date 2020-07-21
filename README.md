@@ -1,88 +1,39 @@
-Terraform Provider Scaffolding
-==================
-
-This repository is a *template* for a [Terraform](https://www.terraform.io) provider. It is intended as a starting point for creating Terraform providers, containing:
-
- - A resource, and a data source (`scaffolding/`),
- - Documentation (`website/`),
- - Recommended build system (`GNUMakefile`, `.travis.yml`, `scripts/`),
- - Miscellanious meta files.
- 
-These files contain boilerplate code that you will need to edit to create your own Terraform provider. A full guide to creating Terraform providers can be found at [Writing Custom Providers](https://www.terraform.io/docs/extend/writing-custom-providers.html).
-
-Please see the [GitHub template repository documentation](https://help.github.com/en/github/creating-cloning-and-archiving-repositories/creating-a-repository-from-a-template) for how to create a new repository from this template on GitHub.
+# Terraform provider for Windows Active Directory (AD) 
+<a href="https://terraform.io">
+    <img src="https://cdn.rawgit.com/hashicorp/terraform-website/master/content/source/assets/images/logo-hashicorp.svg" alt="Terraform logo" align="right" height="50" />
+</a>
 
 
-Requirements
-------------
+![Status: Experimental](https://img.shields.io/badge/status-experimental-EAAA32) [![Releases](https://img.shields.io/github/release/hashicorp/terraform-provider-ad.svg)](https://github.com/hashicorp/terraform-provider-ad/releases)
+[![LICENSE](https://img.shields.io/github/license/hashicorp/terraform-provider-ad.svg)](https://github.com/hashicorp/terraform-provider-ad/blob/master/LICENSE)
+![unit tests](https://github.com/hashicorp/terraform-provider-ad/workflows/unit%20tests/badge.svg)
 
--	[Terraform](https://www.terraform.io/downloads.html) 0.10.x
--	[Go](https://golang.org/doc/install) 1.11
+This Terraform provider for Windows AD allows you to manage users, groups and group policies in your AD installation.
 
-Building The Provider
----------------------
+Please regard this project as experimental. It still requires extensive testing and polishing to mature into production-ready quality. Please [file issues](https://github.com/hashicorp/terraform-provider-ad/issues/new/choose) generously and detail your experience while using the provider. We welcome your feedback.
 
-Clone repository to: `$GOPATH/src/github.com/hashicorp/terraform-provider-scaffolding`
+## Requirements
 
-```sh
-$ mkdir -p $GOPATH/src/github.com/hashicorp; cd $GOPATH/src/github.com/hashicorp
-$ git clone git@github.com:hashicorp/terraform-provider-scaffolding
-```
+* [Terraform](https://www.terraform.io/downloads.html) version 0.12.x +
+* [Windows Server]() version x.x.x
+* [Go](https://golang.org/doc/install) version 1.14.x
 
-Enter the provider directory and build the provider
+## Getting Started
 
-```sh
-$ cd $GOPATH/src/github.com/hashicorp/terraform-provider-scaffolding
-$ make build
-```
+If this is your first time here, you can get an overview of the provider by reading our [introductory blog post]()
 
-Adding Dependencies
----------------------
+Otherwise, start by downloading a copy of our latest build from the [releases page](https://github.com/hashicorp/terraform-provider-ad/releases).
 
-This provider is a [Go module](https://github.com/golang/go/wiki/Modules). Please see the Go documentation for the most up to date information about using Go modules.
+You'll need to unzip the release download and copy the binary into your [Terraform plugins folder](https://www.terraform.io/docs/plugins/basics.html#installing-plugins) in order for Terraform to discover it.
 
-We recommend that Terraform providers use [vendoring](https://tip.golang.org/cmd/go/#hdr-Make_vendored_copy_of_dependencies) for their Go dependencies.
+Once you have the plugin installed, review the [usage document](docs/usage.md) in the [docs](docs/) folder to understand which configuration options are available. You can find examples and more in [our examples folder](examples/). Don't forget to run `terraform init` in your Terraform configuration directory to allow Terraform to detect the provider plugin.
 
-To add a new dependency `github.com/author/dependency` to your Terraform provider:
+## Contributing
 
-```
-go get github.com/author/dependency
-go mod tidy
-go mod vendor
-```
+We welcome your contribution. Please understand that the experimental nature of this repository means that contributing code may be a bit of a moving target. If you have an idea for an enhancement or bug fix, and want to take on the work yourself, please first [create an issue](https://github.com/hashicorp/terraform-provider-ad/issues/new/choose) so that we can discuss the implementation with you before you proceed with the work.
 
-Then commit the changes to `go.mod` and `vendor/`.
+You can review our [contribution guide](_about/CONTRIBUTING.md) to begin. You can also check out our [frequently asked questions](_about/FAQ.md).
 
+## Experimental Status
 
-Using the provider
-----------------------
-
-Fill this in for each provider
-
-Developing the Provider
----------------------------
-
-If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (version 1.8+ is *required*). You'll also need to correctly setup a [GOPATH](http://golang.org/doc/code.html#GOPATH), as well as adding `$GOPATH/bin` to your `$PATH`.
-
-To compile the provider, run `make build`. This will build the provider and put the provider binary in the `$GOPATH/bin` directory.
-
-```sh
-$ make bin
-...
-$ $GOPATH/bin/terraform-provider-scaffolding
-...
-```
-
-In order to test the provider, you can simply run `make test`.
-
-```sh
-$ make test
-```
-
-In order to run the full suite of Acceptance tests, run `make testacc`.
-
-*Note:* Acceptance tests create real resources, and often cost money to run.
-
-```sh
-$ make testacc
-```
+By using the software in this repository (the "Software"), you acknowledge that: (1) the Software is still in development, may change, and has not been released as a commercial product by HashiCorp and is not currently supported in any way by HashiCorp; (2) the Software is provided on an "as-is" basis, and may include bugs, errors, or other issues;  (3) the Software is NOT INTENDED FOR PRODUCTION USE, use of the Software may result in unexpected results, loss of data, or other unexpected results, and HashiCorp disclaims any and all liability resulting from use of the Software; and (4) HashiCorp reserves all rights to make all decisions about the features, functionality and commercial release (or non-release) of the Software, at any time and without any obligation or liability whatsoever.
