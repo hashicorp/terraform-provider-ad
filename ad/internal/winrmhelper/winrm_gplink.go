@@ -137,7 +137,7 @@ func GetGPLinkFromResource(d *schema.ResourceData) *GPLink {
 //GetGPLinkFromHost returns a GPLink struct populated with data retrieved from the
 //Domain Controller
 func GetGPLinkFromHost(client *winrm.Client, gpoGUID, containerGUID string) (*GPLink, error) {
-	cmds := []string{fmt.Sprintf("Get-ADObject -filter '{ObjectGUID -eq %q}' -properties gplink", containerGUID)}
+	cmds := []string{fmt.Sprintf("Get-ADObject -filter {ObjectGUID -eq %q} -properties gplink", containerGUID)}
 	result, err := RunWinRMCommand(client, cmds, true)
 	if err != nil {
 		return nil, fmt.Errorf("while running Get-ADObject: %s", err)
