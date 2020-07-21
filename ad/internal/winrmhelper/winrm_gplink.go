@@ -140,7 +140,7 @@ func GetGPLinkFromHost(client *winrm.Client, gpoGUID, containerGUID string) (*GP
 	cmds := []string{fmt.Sprintf("Get-ADObject -filter '{ObjectGUID -eq %q}' -properties gplink", containerGUID)}
 	result, err := RunWinRMCommand(client, cmds, true)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("while running Get-ADObject: %s", err)
 	}
 
 	if result.ExitCode != 0 {
