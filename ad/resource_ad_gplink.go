@@ -105,7 +105,7 @@ func resourceADGPLinkDelete(d *schema.ResourceData, meta interface{}) error {
 	gplink := winrmhelper.GetGPLinkFromResource(d)
 	err := gplink.RemoveGPLink(client)
 	if err != nil {
-		return fmt.Errorf("error while deleting resource with ID %q: %s", d.Id(), err)
+		return fmt.Errorf("while deleting resource with ID %q: %s", d.Id(), err)
 	}
 
 	return nil
