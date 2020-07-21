@@ -75,7 +75,7 @@ func resourceADGPLinkCreate(d *schema.ResourceData, meta interface{}) error {
 	gplink := winrmhelper.GetGPLinkFromResource(d)
 	gpLinkID, err := gplink.NewGPLink(client)
 	if err != nil {
-		return fmt.Errorf("error while creating GPLink resource: %s", err)
+		return fmt.Errorf("while creating GPLink resource: %s", err)
 	}
 	d.SetId(gpLinkID)
 
