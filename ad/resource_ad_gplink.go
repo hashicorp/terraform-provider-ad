@@ -94,7 +94,7 @@ func resourceADGPLinkUpdate(d *schema.ResourceData, meta interface{}) error {
 	gplink := winrmhelper.GetGPLinkFromResource(d)
 	err := gplink.ModifyGPLink(client, changes)
 	if err != nil {
-		return fmt.Errorf("error while modifying GPLink with id %q: %s", d.Id(), err)
+		return fmt.Errorf("while modifying GPLink with id %q: %s", d.Id(), err)
 	}
 
 	return resourceADGPLinkRead(d, meta)
