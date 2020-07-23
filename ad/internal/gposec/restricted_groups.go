@@ -31,6 +31,7 @@ func (r *RestrictedGroups) SetResourceData(section string, d *schema.ResourceDat
 		}
 		out = append(out, grp)
 	}
+	//lintignore:R001
 	return d.Set(section, out)
 }
 

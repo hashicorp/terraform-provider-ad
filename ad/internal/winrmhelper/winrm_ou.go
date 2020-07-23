@@ -25,9 +25,9 @@ func NewOrgUnitFromResource(d *schema.ResourceData) *OrgUnit {
 	ou := OrgUnit{
 		Description:       SanitiseTFInput(d, "description"),
 		Name:              SanitiseTFInput(d, "name"),
-		Path:              strings.ToLower(SanitiseTFInput(d, "path")),
-		DistinguishedName: strings.ToLower(SanitiseTFInput(d, "dn")),
-		GUID:              strings.ToLower(SanitiseTFInput(d, "guid")),
+		Path:              SanitiseTFInput(d, "path"),
+		DistinguishedName: SanitiseTFInput(d, "dn"),
+		GUID:              SanitiseTFInput(d, "guid"),
 	}
 	protected := d.Get("protected").(bool)
 	ou.Protected = protected

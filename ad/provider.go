@@ -1,6 +1,8 @@
 package ad
 
 import (
+	"strings"
+
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 	"github.com/masterzen/winrm"
@@ -96,4 +98,10 @@ func initProviderConfig(d *schema.ResourceData) (interface{}, error) {
 	}
 
 	return pcfg, nil
+}
+
+func suppressCaseDiff(k, old, new string, d *schema.ResourceData) bool {
+	// k is ignored here, but wee need to include it in the function's
+	// signature in order to match the one defined for DiffSuppressFunc
+	return strings.EqualFold(old, new)
 }

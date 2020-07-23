@@ -25,6 +25,7 @@ func (r *FileSystem) SetResourceData(section string, d *schema.ResourceData) err
 		}
 		out = append(out, value)
 	}
+	//lintignore:R001
 	return d.Set(section, out)
 }
 

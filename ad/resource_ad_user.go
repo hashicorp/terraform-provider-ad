@@ -1,6 +1,7 @@
 package ad
 
 import (
+	"fmt"
 	"log"
 	"strings"
 
@@ -40,9 +41,10 @@ func resourceADUser() *schema.Resource {
 				Description: "The user's initial password. This will be set on creation but will *not* be enforced in subsequent plans.",
 			},
 			"container": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "A DN of the container object that will be holding the user.",
+				Type:             schema.TypeString,
+				Optional:         true,
+				Description:      "A DN of the container object that will be holding the user.",
+				DiffSuppressFunc: suppressCaseDiff,
 			},
 			"cannot_change_password": {
 				Type:        schema.TypeBool,
@@ -120,8 +122,11 @@ func resourceADUserDelete(d *schema.ResourceData, meta interface{}) error {
 		if strings.Contains(err.Error(), "ADIdentityNotFoundException") {
 			return nil
 		}
-		return err
+		return fmt.Errorf("while retrieving user data from host: %s", err)
 	}
-	u.DeleteUser(client)
+	err = u.DeleteUser(client)
+	if err != nil {
+		return fmt.Errorf("while deleting user: %s", err)
+	}
 	return resourceADUserRead(d, meta)
 }

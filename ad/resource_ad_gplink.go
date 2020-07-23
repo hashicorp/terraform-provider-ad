@@ -31,13 +31,15 @@ func resourceADGPLink() *schema.Resource {
 					}
 					return
 				},
-				Description: "The GUID of the GPO that will be linked to the container object.",
+				Description:      "The GUID of the GPO that will be linked to the container object.",
+				DiffSuppressFunc: suppressCaseDiff,
 			},
 			"target_dn": {
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
-				Description: "The DN of the object the GPO will be linked to.",
+				Type:             schema.TypeString,
+				Required:         true,
+				ForceNew:         true,
+				Description:      "The DN of the object the GPO will be linked to.",
+				DiffSuppressFunc: suppressCaseDiff,
 			},
 			"enforced": {
 				Type:        schema.TypeBool,
@@ -76,7 +78,7 @@ func resourceADGPLinkRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	_ = d.Set("gpo_guid", gplink.GPOGuid)
-	_ = d.Set("target_dn", strings.ToLower(gplink.Target))
+	_ = d.Set("target_dn", gplink.Target)
 	_ = d.Set("enforced", gplink.Enforced)
 	_ = d.Set("enabled", gplink.Enabled)
 	_ = d.Set("order", gplink.Order)

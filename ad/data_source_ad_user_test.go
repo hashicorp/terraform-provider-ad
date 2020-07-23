@@ -40,7 +40,7 @@ func testAccDataSourceADUserBasic(domain, username, password string) string {
 	}
 	 
 	 data "ad_user" "d" {
-		 user_dn = ad_user.a.id
+		 guid = ad_user.a.id
 	 }
 `, principalName, password, username)
 }

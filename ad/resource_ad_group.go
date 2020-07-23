@@ -1,6 +1,7 @@
 package ad
 
 import (
+	"fmt"
 	"log"
 	"strings"
 
@@ -45,9 +46,10 @@ func resourceADGroup() *schema.Resource {
 				Description:  "The group's category. Can be one of `system` or `security` (case sensitive).",
 			},
 			"container": {
-				Type:        schema.TypeString,
-				Required:    true,
-				Description: "A DN of a container object holding the group.",
+				Type:             schema.TypeString,
+				Required:         true,
+				Description:      "A DN of a container object holding the group.",
+				DiffSuppressFunc: suppressCaseDiff,
 			},
 		},
 	}
@@ -83,6 +85,7 @@ func resourceADGroupRead(d *schema.ResourceData, meta interface{}) error {
 	_ = d.Set("name", g.Name)
 	_ = d.Set("scope", g.Scope)
 	_ = d.Set("category", g.Category)
+	_ = d.Set("container", g.Container)
 
 	return nil
 }
@@ -106,6 +109,9 @@ func resourceADGroupDelete(d *schema.ResourceData, meta interface{}) error {
 		}
 		return err
 	}
-	g.DeleteGroup(conn)
-	return resourceADGroupRead(d, meta)
+	err = g.DeleteGroup(conn)
+	if err != nil {
+		return fmt.Errorf("while deleting group: %s", err)
+	}
+	return nil
 }

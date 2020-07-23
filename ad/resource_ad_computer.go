@@ -8,12 +8,6 @@ import (
 	"github.com/hashicorp/terraform-provider-ad/ad/internal/winrmhelper"
 )
 
-func suppressCaseDiff(k, old, new string, d *schema.ResourceData) bool {
-	// k is ignored here, but wee need to include it in the function's
-	// signature in order to match the one defined for DiffSuppressFunc
-	return strings.EqualFold(old, new)
-}
-
 func resourceADComputer() *schema.Resource {
 	return &schema.Resource{
 		Description: "`ad_computer` manages computer objects in an AD tree.",
@@ -41,9 +35,9 @@ func resourceADComputer() *schema.Resource {
 			"container": {
 				Type:             schema.TypeString,
 				Optional:         true,
-				Default:          "CN=Computers,DC=yourdomain,DC=com",
 				DiffSuppressFunc: suppressCaseDiff,
 				Description:      "The DN of the container used to hold the computer account",
+				Computed:         true,
 			},
 			"dn": {
 				Type:     schema.TypeString,
