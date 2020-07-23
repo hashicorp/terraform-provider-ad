@@ -101,10 +101,10 @@ func GpoSecuritySchema() map[string]*schema.Schema {
 
 func passwordPoliciesSchema() map[string]*schema.Schema {
 	k := map[string]string{
-		"maximum_password_age":    "Number of days before password expires (-1-999). If set to -1 it means the password never expires.",
+		"maximum_password_age":    "Number of days before password expires (-1-999). If set to -1, it means the password never expires.",
 		"minimum_password_age":    "Number of days a password must be used before changing it (0-999).",
-		"minimum_password_length": "Minimum number of characters used in a password (0-2^16). If set to 0 it means no password is required.",
-		"password_complexity":     "Password must meet complexity requirements (0-2^16). If set to 0 then requirements do not apply, any other value means requirements are applied",
+		"minimum_password_length": "Minimum number of characters used in a password (0-2^16). If set to 0, it means no password is required.",
+		"password_complexity":     "Password must meet complexity requirements (0-2^16). If set to 0, then requirements do not apply, any other value means requirements are applied",
 		"clear_text_password":     "Store password with reversible encryption (0-2^16). The password will not be stored with reversible encryption if the value is set to 0. Reversible encryption will be used in any other case.",
 		"password_history_size":   "The number of unique new passwords that are required before an old password can be reused in association with a user account (0-2^16).  A value of 0 indicates that the password history is disabled.",
 	}
@@ -236,7 +236,7 @@ func registryKeysSchema() map[string]*schema.Schema {
 		"propagation_mode": {
 			Type:        schema.TypeString,
 			Required:    true,
-			Description: "Control permission propagation. 0: Propagate permissions to all subkeys, 1: Replace existing permissions on all subkeys, 2: Do not allow permissions to be replaced on the key",
+			Description: "Control permission propagation. 0: Propagate permissions to all subkeys, 1: Replace existing permissions on all subkeys, 2: Do not allow permissions to be replaced on the key.",
 		},
 		"acl": {
 			Type:        schema.TypeString,
@@ -278,7 +278,7 @@ func filesystemSchema() map[string]*schema.Schema {
 		"propagation_mode": {
 			Type:        schema.TypeString,
 			Required:    true,
-			Description: "Control permission propagation. 0: Propagate permissions to all subfolders and files, 1: Replace existing permissions on all subfolders and files, 2: Do not allow permissions to be replaced",
+			Description: "Control permission propagation. 0: Propagate permissions to all subfolders and files, 1: Replace existing permissions on all subfolders and files, 2: Do not allow permissions to be replaced.",
 		},
 		"acl": {
 			Type:        schema.TypeString,

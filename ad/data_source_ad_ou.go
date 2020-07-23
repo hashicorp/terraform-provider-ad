@@ -31,12 +31,12 @@ func dataSourceADOU() *schema.Resource {
 			"description": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "The OU's description",
+				Description: "The OU's description.",
 			},
 			"protected": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "The OU's protected status",
+				Description: "The OU's protected status.",
 			},
 		},
 	}

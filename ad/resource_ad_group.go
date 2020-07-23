@@ -11,7 +11,7 @@ import (
 
 func resourceADGroup() *schema.Resource {
 	return &schema.Resource{
-		Description: "`ad_group` manages Group objects in an Active directory tree.",
+		Description: "`ad_group` manages Group objects in an Active Directory tree.",
 		Create:      resourceADGroupCreate,
 		Read:        resourceADGroupRead,
 		Update:      resourceADGroupUpdate,

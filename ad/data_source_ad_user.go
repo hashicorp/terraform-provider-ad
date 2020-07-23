@@ -10,7 +10,7 @@ import (
 
 func dataSourceADUser() *schema.Resource {
 	return &schema.Resource{
-		Description: "Get the details of an Active Directory User object.",
+		Description: "Get the details of an Active Directory user object.",
 		Read:        dataSourceADUserRead,
 		Schema: map[string]*schema.Schema{
 			"guid": {

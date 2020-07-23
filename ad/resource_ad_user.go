@@ -10,7 +10,7 @@ import (
 
 func resourceADUser() *schema.Resource {
 	return &schema.Resource{
-		Description: "`ad_user` manages User objects in an Active directory tree.",
+		Description: "`ad_user` manages User objects in an Active Directory tree.",
 		Create:      resourceADUserCreate,
 		Read:        resourceADUserRead,
 		Update:      resourceADUserUpdate,
@@ -27,17 +27,17 @@ func resourceADUser() *schema.Resource {
 			"principal_name": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The Principal Name of an Active Directory user",
+				Description: "The Principal Name of an Active Directory user.",
 			},
 			"sam_account_name": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The pre-win2k user logon name",
+				Description: "The pre-win2k user logon name.",
 			},
 			"initial_password": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Description: "The user's initial password. This will be set on creation but will *not* be enforced in subsequent plans",
+				Description: "The user's initial password. This will be set on creation but will *not* be enforced in subsequent plans.",
 			},
 			"container": {
 				Type:        schema.TypeString,

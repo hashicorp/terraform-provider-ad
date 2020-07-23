@@ -2,12 +2,12 @@
 page_title: "ad_group Resource - terraform-provider-ad"
 subcategory: ""
 description: |-
-  ad_group manages Group objects in an Active directory tree.
+  ad_group manages Group objects in an Active Directory tree.
 ---
 
 # Resource `ad_group`
 
-`ad_group` manages Group objects in an Active directory tree.
+`ad_group` manages Group objects in an Active Directory tree.
 
 ## Example Usage
 

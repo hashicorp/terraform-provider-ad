@@ -2,12 +2,12 @@
 page_title: "ad_user Resource - terraform-provider-ad"
 subcategory: ""
 description: |-
-  ad_user manages User objects in an Active directory tree.
+  ad_user manages User objects in an Active Directory tree.
 ---
 
 # Resource `ad_user`
 
-`ad_user` manages User objects in an Active directory tree.
+`ad_user` manages User objects in an Active Directory tree.
 
 ## Example Usage
 
@@ -27,8 +27,8 @@ resource "ad_user" "u" {
 ### Required
 
 - **display_name** (String, Required) The Display Name of an Active Directory user.
-- **principal_name** (String, Required) The Principal Name of an Active Directory user
-- **sam_account_name** (String, Required) The pre-win2k user logon name
+- **principal_name** (String, Required) The Principal Name of an Active Directory user.
+- **sam_account_name** (String, Required) The pre-win2k user logon name.
 
 ### Optional
 
@@ -36,7 +36,7 @@ resource "ad_user" "u" {
 - **container** (String, Optional) A DN of the container object that will be holding the user.
 - **enabled** (Boolean, Optional) If set to false the user will be disabled.
 - **id** (String, Optional) The ID of this resource.
-- **initial_password** (String, Optional) The user's initial password. This will be set on creation but will *not* be enforced in subsequent plans
+- **initial_password** (String, Optional) The user's initial password. This will be set on creation but will *not* be enforced in subsequent plans.
 - **password_never_expires** (Boolean, Optional) If set to true the password for this user will not expire.
 
 ## Import

@@ -119,7 +119,7 @@ Required:
 
 - **acl** (String, Required) Security descriptor to apply. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-dtyp/f4296d69-1c0f-491f-9587-a960b292d070)
 - **path** (String, Required) Path of the file or directory.
-- **propagation_mode** (String, Required) Control permission propagation. 0: Propagate permissions to all subfolders and files, 1: Replace existing permissions on all subfolders and files, 2: Do not allow permissions to be replaced
+- **propagation_mode** (String, Required) Control permission propagation. 0: Propagate permissions to all subfolders and files, 1: Replace existing permissions on all subfolders and files, 2: Do not allow permissions to be replaced.
 
 
 <a id="nestedblock--kerberos_policy"></a>
@@ -140,10 +140,10 @@ Optional:
 Optional:
 
 - **clear_text_password** (String, Optional) Store password with reversible encryption (0-2^16). The password will not be stored with reversible encryption if the value is set to 0. Reversible encryption will be used in any other case.
-- **maximum_password_age** (String, Optional) Number of days before password expires (-1-999). If set to -1 it means the password never expires.
+- **maximum_password_age** (String, Optional) Number of days before password expires (-1-999). If set to -1, it means the password never expires.
 - **minimum_password_age** (String, Optional) Number of days a password must be used before changing it (0-999).
-- **minimum_password_length** (String, Optional) Minimum number of characters used in a password (0-2^16). If set to 0 it means no password is required.
-- **password_complexity** (String, Optional) Password must meet complexity requirements (0-2^16). If set to 0 then requirements do not apply, any other value means requirements are applied
+- **minimum_password_length** (String, Optional) Minimum number of characters used in a password (0-2^16). If set to 0, it means no password is required.
+- **password_complexity** (String, Optional) Password must meet complexity requirements (0-2^16). If set to 0, then requirements do not apply, any other value means requirements are applied
 - **password_history_size** (String, Optional) The number of unique new passwords that are required before an old password can be reused in association with a user account (0-2^16).  A value of 0 indicates that the password history is disabled.
 
 
@@ -154,7 +154,7 @@ Required:
 
 - **acl** (String, Required) Security descriptor to apply. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-dtyp/f4296d69-1c0f-491f-9587-a960b292d070)
 - **key_name** (String, Required) Fully qualified name of the key (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-rrp/97587de7-3524-4291-8527-3951711      0c0eb)
-- **propagation_mode** (String, Required) Control permission propagation. 0: Propagate permissions to all subkeys, 1: Replace existing permissions on all subkeys, 2: Do not allow permissions to be replaced on the key
+- **propagation_mode** (String, Required) Control permission propagation. 0: Propagate permissions to all subkeys, 1: Replace existing permissions on all subkeys, 2: Do not allow permissions to be replaced on the key.
 
 
 <a id="nestedblock--registry_values"></a>

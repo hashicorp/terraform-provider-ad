@@ -9,7 +9,7 @@ import (
 
 func dataSourceADGPO() *schema.Resource {
 	return &schema.Resource{
-		Description: "Get the details of an Active Directory Group Policy Object",
+		Description: "Get the details of an Active Directory Group Policy Object.",
 		Read:        dataSourceADGPORead,
 		Schema: map[string]*schema.Schema{
 			"name": {
