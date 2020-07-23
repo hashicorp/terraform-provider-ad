@@ -127,7 +127,7 @@ Required:
 
 Optional:
 
-- **max_clock_skew** (String, Optional) Maximum time difference,in minutes, between the client clock and the server clock. (0-99999).
+- **max_clock_skew** (String, Optional) Maximum time difference, in minutes, between the client clock and the server clock. (0-99999).
 - **max_renew_age** (String, Optional) Number of days during which a ticket-granting ticket can be renewed (0-99999).
 - **max_service_age** (String, Optional) Maximum amount of minutes a ticket must be valid to access a service or resource. Minimum should be 10 and maximum should be equal to `max_ticket_age`.
 - **max_ticket_age** (String, Optional) Maximum amount of hours a ticket-granting ticket is valid (0-99999).

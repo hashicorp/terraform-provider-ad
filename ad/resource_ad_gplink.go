@@ -45,7 +45,7 @@ func resourceADGPLink() *schema.Resource {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
-				Description: "If set to true the GPO will be enforced on the container object.",
+				Description: "If set to true, the GPO will be enforced on the container object.",
 			},
 			"enabled": {
 				Type:        schema.TypeBool,

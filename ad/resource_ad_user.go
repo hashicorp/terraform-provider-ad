@@ -50,19 +50,19 @@ func resourceADUser() *schema.Resource {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
-				Description: "If set to true the user will not be allowed to change their password.",
+				Description: "If set to true, the user will not be allowed to change their password.",
 			},
 			"password_never_expires": {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
-				Description: "If set to true the password for this user will not expire.",
+				Description: "If set to true, the password for this user will not expire.",
 			},
 			"enabled": {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     true,
-				Description: "If set to false the user will be disabled.",
+				Description: "If set to false, the user will be disabled.",
 			},
 		},
 	}

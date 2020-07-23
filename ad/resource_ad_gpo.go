@@ -22,7 +22,7 @@ func resourceADGPO() *schema.Resource {
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "Name of the Group Policy Object.",
+				Description: "Name of the GPO.",
 			},
 			"domain": {
 				Type:        schema.TypeString,

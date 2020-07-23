@@ -25,7 +25,7 @@ resource "ad_gpo" "gpo" {
 
 ### Required
 
-- **name** (String, Required) Name of the Group Policy Object.
+- **name** (String, Required) Name of the GPO.
 
 ### Optional
 

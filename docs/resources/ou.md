@@ -35,8 +35,8 @@ resource "ad_ou" "o" {
 
 ### Read-only
 
-- **dn** (String, Read-only)
-- **guid** (String, Read-only)
+- **dn** (String, Read-only) The OU's DN.
+- **guid** (String, Read-only) The OU's GUID.
 
 ## Import
 

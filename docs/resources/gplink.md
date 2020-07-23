@@ -44,7 +44,7 @@ resource "ad_gplink" "og" {
 ### Optional
 
 - **enabled** (Boolean, Optional) Controls the state of the GP link between a GPO and a container object.
-- **enforced** (Boolean, Optional) If set to true the GPO will be enforced on the container object.
+- **enforced** (Boolean, Optional) If set to true, the GPO will be enforced on the container object.
 - **id** (String, Optional) The ID of this resource.
 - **order** (Number, Optional) Sets the precedence between multiple GPOs linked to the same container object.
 

@@ -32,12 +32,12 @@ resource "ad_user" "u" {
 
 ### Optional
 
-- **cannot_change_password** (Boolean, Optional) If set to true the user will not be allowed to change their password.
+- **cannot_change_password** (Boolean, Optional) If set to true, the user will not be allowed to change their password.
 - **container** (String, Optional) A DN of the container object that will be holding the user.
-- **enabled** (Boolean, Optional) If set to false the user will be disabled.
+- **enabled** (Boolean, Optional) If set to false, the user will be disabled.
 - **id** (String, Optional) The ID of this resource.
 - **initial_password** (String, Optional) The user's initial password. This will be set on creation but will *not* be enforced in subsequent plans.
-- **password_never_expires** (Boolean, Optional) If set to true the password for this user will not expire.
+- **password_never_expires** (Boolean, Optional) If set to true, the password for this user will not expire.
 
 ## Import
 
