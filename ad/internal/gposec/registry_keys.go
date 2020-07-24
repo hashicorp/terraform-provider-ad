@@ -30,6 +30,7 @@ func (r *RegistryKeys) SetResourceData(section string, d *schema.ResourceData) e
 		}
 		out = append(out, value)
 	}
+	//lintignore:R001
 	return d.Set(section, out)
 }
 

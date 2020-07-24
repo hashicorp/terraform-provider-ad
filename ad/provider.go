@@ -1,6 +1,8 @@
 package ad
 
 import (
+	"strings"
+
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 	"github.com/masterzen/winrm"
@@ -15,37 +17,37 @@ func Provider() terraform.ResourceProvider {
 				Type:        schema.TypeString,
 				Required:    true,
 				DefaultFunc: schema.EnvDefaultFunc("AD_USER", nil),
-				Description: "The username used to authenticate to the the server's WinRM service.",
+				Description: "The username used to authenticate to the the server's WinRM service. (Environment variable: AD_USER)",
 			},
 			"winrm_password": {
 				Type:        schema.TypeString,
 				Required:    true,
 				DefaultFunc: schema.EnvDefaultFunc("AD_PASSWORD", nil),
-				Description: "The password used to authenticate to the the server's WinRM service.",
+				Description: "The password used to authenticate to the the server's WinRM service. (Environment variable: AD_PASSWORD)",
 			},
 			"winrm_hostname": {
 				Type:        schema.TypeString,
 				Required:    true,
 				DefaultFunc: schema.EnvDefaultFunc("AD_HOSTNAME", nil),
-				Description: "The hostname of the server we will use to run powershell scripts over WinRM.",
+				Description: "The hostname of the server we will use to run powershell scripts over WinRM. (Environment variable: AD_HOSTNAME)",
 			},
 			"winrm_port": {
 				Type:        schema.TypeInt,
 				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("AD_PORT", 5985),
-				Description: "The port WinRM is listening for connections. (default: 5985)",
+				Description: "The port WinRM is listening for connections. (default: 5985, environment variable: AD_PORT)",
 			},
 			"winrm_proto": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("AD_PROTO", "http"),
-				Description: "The WinRM protocol we will use. (default: http)",
+				Description: "The WinRM protocol we will use. (default: http, environment variable: AD_PROTO)",
 			},
 			"winrm_insecure": {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("AD_WINRM_INSECURE", false),
-				Description: "Trust unknown certificates. (default: false)",
+				Description: "Trust unknown certificates. (default: false, environment variable: AD_WINRM_INSECURE)",
 			},
 		},
 		DataSourcesMap: map[string]*schema.Resource{
@@ -96,4 +98,10 @@ func initProviderConfig(d *schema.ResourceData) (interface{}, error) {
 	}
 
 	return pcfg, nil
+}
+
+func suppressCaseDiff(k, old, new string, d *schema.ResourceData) bool {
+	// k is ignored here, but wee need to include it in the function's
+	// signature in order to match the one defined for DiffSuppressFunc
+	return strings.EqualFold(old, new)
 }

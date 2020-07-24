@@ -198,6 +198,7 @@ func genericSetResourceData(section string, data interface{}, d *schema.Resource
 		return fmt.Errorf("error in genericSetResourceData: %s", err)
 	}
 
+	//lintignore:R001
 	return d.Set(section, []map[string]interface{}{out})
 }
 

@@ -9,38 +9,46 @@ import (
 
 func resourceADOU() *schema.Resource {
 	return &schema.Resource{
-		Read:   resourceADOURead,
-		Create: resourceADOUCreate,
-		Update: resourceADOUUpdate,
-		Delete: resourceADOUDelete,
+		Description: "`ad_ou` manages OU objects in an AD tree.",
+		Read:        resourceADOURead,
+		Create:      resourceADOUCreate,
+		Update:      resourceADOUUpdate,
+		Delete:      resourceADOUDelete,
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
 		},
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "Name of the OU.",
 			},
 			"path": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:             schema.TypeString,
+				Optional:         true,
+				Description:      "DN of the object that contains the OU.",
+				DiffSuppressFunc: suppressCaseDiff,
 			},
 			"description": {
-				Type:     schema.TypeString,
-				Optional: true,
-			},
-			"dn": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Description of the OU.",
 			},
 			"protected": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  true,
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+				Description: "Protect this OU from being deleted accidentaly.",
+			},
+			"dn": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The OU's DN.",
 			},
 			"guid": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The OU's GUID.",
 			},
 		},
 	}
@@ -64,9 +72,9 @@ func resourceADOURead(d *schema.ResourceData, meta interface{}) error {
 
 	_ = d.Set("name", ou.Name)
 	_ = d.Set("description", ou.Description)
-	_ = d.Set("path", strings.ToLower(ou.Path))
+	_ = d.Set("path", ou.Path)
 	_ = d.Set("protected", ou.Protected)
-	_ = d.Set("dn", strings.ToLower(ou.DistinguishedName))
+	_ = d.Set("dn", ou.DistinguishedName)
 	_ = d.Set("guid", ou.GUID)
 
 	return nil

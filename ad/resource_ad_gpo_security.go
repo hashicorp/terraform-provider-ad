@@ -16,10 +16,11 @@ import (
 
 func resourceADGPOSecurity() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceADGPOSecurityCreate,
-		Read:   resourceADGPOSecurityRead,
-		Update: resourceADGPOSecurityUpdate,
-		Delete: resourceADGPOSecurityDelete,
+		Description: "`ad_gpo_security` manages the security settings portion of a Group Policy Object (GPO).",
+		Create:      resourceADGPOSecurityCreate,
+		Read:        resourceADGPOSecurityRead,
+		Update:      resourceADGPOSecurityUpdate,
+		Delete:      resourceADGPOSecurityDelete,
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
 		},

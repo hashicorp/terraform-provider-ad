@@ -29,6 +29,7 @@ func (r *SystemServices) SetResourceData(section string, d *schema.ResourceData)
 		}
 		out = append(out, svc)
 	}
+	//lintignore:R001
 	return d.Set(section, out)
 }
 

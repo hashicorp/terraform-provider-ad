@@ -1,6 +1,7 @@
 package ad
 
 import (
+	"fmt"
 	"log"
 	"strings"
 
@@ -10,48 +11,58 @@ import (
 
 func resourceADUser() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceADUserCreate,
-		Read:   resourceADUserRead,
-		Update: resourceADUserUpdate,
-		Delete: resourceADUserDelete,
+		Description: "`ad_user` manages User objects in an Active Directory tree.",
+		Create:      resourceADUserCreate,
+		Read:        resourceADUserRead,
+		Update:      resourceADUserUpdate,
+		Delete:      resourceADUserDelete,
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
 		},
 		Schema: map[string]*schema.Schema{
 			"display_name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The Display Name of an Active Directory user.",
 			},
 			"principal_name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The Principal Name of an Active Directory user.",
 			},
 			"sam_account_name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The pre-win2k user logon name.",
 			},
 			"initial_password": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "The user's initial password. This will be set on creation but will *not* be enforced in subsequent plans.",
 			},
 			"container": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:             schema.TypeString,
+				Optional:         true,
+				Description:      "A DN of the container object that will be holding the user.",
+				DiffSuppressFunc: suppressCaseDiff,
 			},
 			"cannot_change_password": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  false,
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+				Description: "If set to true, the user will not be allowed to change their password.",
 			},
 			"password_never_expires": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  false,
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+				Description: "If set to true, the password for this user will not expire.",
 			},
 			"enabled": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  true,
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+				Description: "If set to false, the user will be disabled.",
 			},
 		},
 	}
@@ -111,8 +122,11 @@ func resourceADUserDelete(d *schema.ResourceData, meta interface{}) error {
 		if strings.Contains(err.Error(), "ADIdentityNotFoundException") {
 			return nil
 		}
-		return err
+		return fmt.Errorf("while retrieving user data from host: %s", err)
 	}
-	u.DeleteUser(client)
+	err = u.DeleteUser(client)
+	if err != nil {
+		return fmt.Errorf("while deleting user: %s", err)
+	}
 	return resourceADUserRead(d, meta)
 }

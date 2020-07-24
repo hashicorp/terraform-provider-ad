@@ -42,7 +42,7 @@ func testAccDatasourceADGroupConfigBasic(domain, name, sam, scope, gtype string)
 	 }
 	 
 	 data "ad_group" "d" {
-		 group_dn = ad_group.g.id
+		 guid = ad_group.g.id
 	 }
 `, name, sam, scope, gtype)
 }

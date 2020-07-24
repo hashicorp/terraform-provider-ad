@@ -9,19 +9,23 @@ import (
 
 func dataSourceADComputer() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceADComputerRead,
+		Description: "Get the details of an Active Directory Computer object.",
+		Read:        dataSourceADComputerRead,
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Description: "The name of the computer object.",
+				Computed:    true,
 			},
 			"guid": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "The GUID of the computer object.",
 			},
 			"dn": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "The Distinguished Name of the computer object.",
 			},
 		},
 	}

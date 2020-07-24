@@ -68,6 +68,7 @@ func TestAccResourceADGPLink_basic(t *testing.T) {
 }
 
 func TestAccResourceADGPLink_badguid(t *testing.T) {
+	//lintignore:AT001
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,

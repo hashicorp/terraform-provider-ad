@@ -10,31 +10,35 @@ import (
 
 func dataSourceADUser() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceADUserRead,
-
+		Description: "Get the details of an Active Directory user object.",
+		Read:        dataSourceADUserRead,
 		Schema: map[string]*schema.Schema{
-			"user_dn": {
-				Type:     schema.TypeString,
-				Required: true,
+			"guid": {
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The GUID of the user object.",
 			},
 			"sam_account_name": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The SAM account name of the user object.",
 			},
 			"display_name": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The display name of the user object.",
 			},
 			"principal_name": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The principal name of the user object.",
 			},
 		},
 	}
 }
 
 func dataSourceADUserRead(d *schema.ResourceData, meta interface{}) error {
-	dn := d.Get("user_dn").(string)
+	dn := d.Get("guid").(string)
 	client := meta.(ProviderConf).WinRMClient
 	u, err := winrmhelper.GetUserFromHost(client, dn)
 	if err != nil {
@@ -47,6 +51,7 @@ func dataSourceADUserRead(d *schema.ResourceData, meta interface{}) error {
 	_ = d.Set("sam_account_name", u.SAMAccountName)
 	_ = d.Set("display_name", u.DisplayName)
 	_ = d.Set("principal_name", u.PrincipalName)
+	_ = d.Set("guid", u.GUID)
 	d.SetId(u.GUID)
 
 	return nil
