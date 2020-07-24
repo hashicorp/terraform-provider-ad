@@ -23,20 +23,20 @@ func resourceADComputer() *schema.Resource {
 				Type:             schema.TypeString,
 				Required:         true,
 				DiffSuppressFunc: suppressCaseDiff,
-				Description:      "The name for the computer account",
+				Description:      "The name for the computer account.",
 			},
 			"pre2kname": {
 				Type:             schema.TypeString,
 				Optional:         true,
 				Computed:         true,
 				DiffSuppressFunc: suppressCaseDiff,
-				Description:      "The pre-win2k name for the computer account",
+				Description:      "The pre-win2k name for the computer account.",
 			},
 			"container": {
 				Type:             schema.TypeString,
 				Optional:         true,
 				DiffSuppressFunc: suppressCaseDiff,
-				Description:      "The DN of the container used to hold the computer account",
+				Description:      "The DN of the container used to hold the computer account.",
 				Computed:         true,
 			},
 			"dn": {

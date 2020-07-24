@@ -25,13 +25,13 @@ resource "ad_computer" "c" {
 
 ### Required
 
-- **name** (String, Required) The name for the computer account
+- **name** (String, Required) The name for the computer account.
 
 ### Optional
 
-- **container** (String, Optional) The DN of the container used to hold the computer account
+- **container** (String, Optional) The DN of the container used to hold the computer account.
 - **id** (String, Optional) The ID of this resource.
-- **pre2kname** (String, Optional) The pre-win2k name for the computer account
+- **pre2kname** (String, Optional) The pre-win2k name for the computer account.
 
 ### Read-only
 
