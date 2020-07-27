@@ -3,10 +3,9 @@
     <img src="https://cdn.rawgit.com/hashicorp/terraform-website/master/content/source/assets/images/logo-hashicorp.svg" alt="Terraform logo" align="right" height="50" />
 </a>
 
-
 ![Status: Experimental](https://img.shields.io/badge/status-experimental-EAAA32) [![Releases](https://img.shields.io/github/release/hashicorp/terraform-provider-ad.svg)](https://github.com/hashicorp/terraform-provider-ad/releases)
 [![LICENSE](https://img.shields.io/github/license/hashicorp/terraform-provider-ad.svg)](https://github.com/hashicorp/terraform-provider-ad/blob/master/LICENSE)
-![unit tests](https://github.com/hashicorp/terraform-provider-ad/workflows/unit%20tests/badge.svg)
+![Unit tests](https://github.com/hashicorp/terraform-provider-ad/workflows/Unit%20tests/badge.svg)
 
 This Terraform provider for Windows AD allows you to manage users, groups and group policies in your AD installation.
 
@@ -14,19 +13,15 @@ Please regard this project as experimental. It still requires extensive testing 
 
 ## Requirements
 
-* [Terraform](https://www.terraform.io/downloads.html) version 0.12.x +
-* [Windows Server]() version x.x.x
-* [Go](https://golang.org/doc/install) version 1.14.x
+* [Terraform](https://www.terraform.io/downloads.html) version 0.12.x+
+* [Windows Server](https://www.microsoft.com/en-us/windows-server) 2012R2 or greater 
+* [Go](https://golang.org/doc/install) version 1.14.x+
 
 ## Getting Started
 
-If this is your first time here, you can get an overview of the provider by reading our [introductory blog post]()
+If this is your first time here, you can get an overview of the provider by reading our [introductory blog post](). Otherwise, start by downloading a copy of our latest build from the [registry](https://registry.terraform.io/providers/hashicorp/ad/latest).
 
-Otherwise, start by downloading a copy of our latest build from the [releases page](https://github.com/hashicorp/terraform-provider-ad/releases).
-
-You'll need to unzip the release download and copy the binary into your [Terraform plugins folder](https://www.terraform.io/docs/plugins/basics.html#installing-plugins) in order for Terraform to discover it.
-
-Once you have the plugin installed, review the [usage document](docs/usage.md) in the [docs](docs/) folder to understand which configuration options are available. You can find examples and more in [our examples folder](examples/). Don't forget to run `terraform init` in your Terraform configuration directory to allow Terraform to detect the provider plugin.
+Once you have the plugin installed, review the [docs](docs/) folder to understand which configuration options are available. You can find examples and more in [our examples folder](examples/). Don't forget to run `terraform init` in your Terraform configuration directory to allow Terraform to detect the provider plugin.
 
 ## Contributing
 
