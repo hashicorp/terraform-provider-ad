@@ -9,6 +9,11 @@ description: |-
 
 The AD (Active Directory) provider provides resources to interact with an AD domain controller.
 
+Requirements:
+ - Windows Server 2012R2 or greater.
+ - WinRM enabled. Currently only local accounts with `Basic` authentication are supported.
+
+
 ## Example Usage
 
 ```terraform
@@ -37,11 +42,14 @@ resource "ad_gplink" "og" {
 
 ## Schema
 
+### Required
+
+- **winrm_hostname** (String, Required) The hostname of the server we will use to run powershell scripts over WinRM. (Environment variable: AD_HOSTNAME)
+- **winrm_password** (String, Required) The password used to authenticate to the the server's WinRM service. (Environment variable: AD_PASSWORD)
+- **winrm_username** (String, Required) The username used to authenticate to the the server's WinRM service. (Environment variable: AD_USER)
+
 ### Optional
 
-- **winrm_hostname** (String, Optional) The hostname of the server we will use to run powershell scripts over WinRM. (Environment variable: AD_HOSTNAME)
 - **winrm_insecure** (Boolean, Optional) Trust unknown certificates. (default: false, environment variable: AD_WINRM_INSECURE)
-- **winrm_password** (String, Optional) The password used to authenticate to the the server's WinRM service. (Environment variable: AD_PASSWORD)
 - **winrm_port** (Number, Optional) The port WinRM is listening for connections. (default: 5985, environment variable: AD_PORT)
 - **winrm_proto** (String, Optional) The WinRM protocol we will use. (default: http, environment variable: AD_PROTO)
-- **winrm_username** (String, Optional) The username used to authenticate to the the server's WinRM service. (Environment variable: AD_USER)

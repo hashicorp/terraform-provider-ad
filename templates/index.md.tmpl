@@ -9,6 +9,11 @@ description: |-
 
 The AD (Active Directory) provider provides resources to interact with an AD domain controller.
 
+Requirements:
+ - Windows Server 2012R2 or greater.
+ - WinRM enabled. Currently only local accounts with `Basic` authentication are supported.
+
+
 ## Example Usage
 
 {{tffile "examples/provider/provider.tf"}}
