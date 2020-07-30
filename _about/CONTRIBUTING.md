@@ -1,18 +1,17 @@
 ## Building and installing
 
-As we do not yet publish releases for this provider to registry.terraform.io, you have to either [download a release from Github](https://github.com/hashicorp/terraform-provider-ad/releases) or build and install it manually as indicated below.
-
-Make sure you have a supported version of Go installed and working.
-
-Checkout or download this repository, then open a terminal and change to its directory.
+In order to contribute to the provider, you have to build and install it manually as indicated below. Make sure you have a supported version of Go installed and working. Check out or download this repository, then open a terminal and change to its directory.
 
 ### Installing the provider to `terraform.d/plugins`
 ```
-make install
+$ make build
+$ go install
 ```
-This will build the provider and place the provider binary in your [plugins directory](https://www.terraform.io/docs/extend/how-terraform-works.html#plugin-locations).
+This will build the provider and place the provider binary in your 
 
-You are now ready to use the provider. You can find example TF configurations in this repository under the `./examples`.
+You will then have to create a symlink in your[plugins directory](https://www.terraform.io/docs/extend/how-terraform-works.html#plugin-locations) in order for Terraform to detect your provider when you run `terraform init`. Note that the plugin path is different between Terraform versions 0.12 and 0.13.
+
+You are now ready to use the provider. You can find example configurations to test with in this repository under the `./examples` folder.
 
 ### Using `-plugin-dir` 
 
