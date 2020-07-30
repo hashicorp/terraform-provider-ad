@@ -1,4 +1,4 @@
-# Terraform provider for Windows Active Directory (AD) 
+# Windows Active Directory (AD) provider for Terraform
 <a href="https://terraform.io">
     <img src="https://cdn.rawgit.com/hashicorp/terraform-website/master/content/source/assets/images/logo-hashicorp.svg" alt="Terraform logo" align="right" height="50" />
 </a>
@@ -7,7 +7,7 @@
 [![LICENSE](https://img.shields.io/github/license/hashicorp/terraform-provider-ad.svg)](https://github.com/hashicorp/terraform-provider-ad/blob/master/LICENSE)
 ![Unit tests](https://github.com/hashicorp/terraform-provider-ad/workflows/Unit%20tests/badge.svg)
 
-This Terraform provider for Windows AD allows you to manage users, groups and group policies in your AD installation.
+This Windows AD provider for Terraform allows you to manage users, groups and group policies in your AD installation.
 
 Please regard this project as experimental. It still requires extensive testing and polishing to mature into production-ready quality. Please [file issues](https://github.com/hashicorp/terraform-provider-ad/issues/new/choose) generously and detail your experience while using the provider. We welcome your feedback.
 
