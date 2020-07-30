@@ -7,7 +7,7 @@ In order to contribute to the provider, you have to build and install it manuall
 $ make build
 $ go install
 ```
-This will build the provider and place the provider binary in your 
+This will build the provider and place the provider binary in the top level of your provider directory.
 
 You will then have to create a symlink in your[plugins directory](https://www.terraform.io/docs/extend/how-terraform-works.html#plugin-locations) in order for Terraform to detect your provider when you run `terraform init`. Note that the plugin path is different between Terraform versions 0.12 and 0.13.
 
