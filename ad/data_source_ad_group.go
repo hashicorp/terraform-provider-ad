@@ -5,7 +5,7 @@ import (
 
 	"github.com/hashicorp/terraform-provider-ad/ad/internal/winrmhelper"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceADGroup() *schema.Resource {
@@ -42,6 +42,11 @@ func dataSourceADGroup() *schema.Resource {
 				Type:        schema.TypeString,
 				Computed:    true,
 				Description: "The Group's scope.",
+			},
+			"container": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The Group's container object.",
 			},
 		},
 	}

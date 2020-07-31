@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-provider-ad/ad/internal/winrmhelper"
 )
 
@@ -12,7 +12,7 @@ func resourceADComputer() *schema.Resource {
 	return &schema.Resource{
 		Description: "`ad_computer` manages computer objects in an AD tree.",
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Read:   resourceADComputerRead,
 		Create: resourceADComputerCreate,

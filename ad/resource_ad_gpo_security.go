@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/go-uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-provider-ad/ad/internal/adschema"
 	"github.com/hashicorp/terraform-provider-ad/ad/internal/gposec"
 	"github.com/hashicorp/terraform-provider-ad/ad/internal/winrmhelper"
@@ -22,7 +22,7 @@ func resourceADGPOSecurity() *schema.Resource {
 		Update:      resourceADGPOSecurityUpdate,
 		Delete:      resourceADGPOSecurityDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema: adschema.GpoSecuritySchema(),
 	}

@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/go-uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-provider-ad/ad/internal/winrmhelper"
 )
 
@@ -17,7 +17,7 @@ func resourceADGPLink() *schema.Resource {
 		Update:      resourceADGPLinkUpdate,
 		Delete:      resourceADGPLinkDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema: map[string]*schema.Schema{
 			"gpo_guid": {

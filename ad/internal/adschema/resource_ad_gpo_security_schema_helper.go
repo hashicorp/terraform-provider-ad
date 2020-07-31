@@ -1,7 +1,7 @@
 package adschema
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // GPOSecuritySchemaKeys is a list of all keys defined in the resource's schema
