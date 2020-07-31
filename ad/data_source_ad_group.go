@@ -43,6 +43,11 @@ func dataSourceADGroup() *schema.Resource {
 				Computed:    true,
 				Description: "The Group's scope.",
 			},
+			"container": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The Group's container object.",
+			},
 		},
 	}
 }
