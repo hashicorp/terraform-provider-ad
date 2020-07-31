@@ -5,7 +5,7 @@ import (
 
 	"github.com/hashicorp/terraform-provider-ad/ad/internal/winrmhelper"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceADGroup() *schema.Resource {

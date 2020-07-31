@@ -1,6 +1,6 @@
 package gposec
 
-import "github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+import "github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 // SystemLog represents the system log section of the Security Settings GPO extension
 type SystemLog struct {

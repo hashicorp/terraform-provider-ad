@@ -7,7 +7,7 @@ import (
 	"log"
 	"reflect"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mitchellh/mapstructure"
 	"golang.org/x/text/encoding/unicode"
 	"gopkg.in/ini.v1"
