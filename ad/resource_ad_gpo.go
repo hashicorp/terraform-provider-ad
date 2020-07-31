@@ -16,7 +16,7 @@ func resourceADGPO() *schema.Resource {
 		Update:      resourceADGPOUpdate,
 		Delete:      resourceADGPODelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema: map[string]*schema.Schema{
 			"name": {

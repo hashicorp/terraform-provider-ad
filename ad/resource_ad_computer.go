@@ -12,7 +12,7 @@ func resourceADComputer() *schema.Resource {
 	return &schema.Resource{
 		Description: "`ad_computer` manages computer objects in an AD tree.",
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Read:   resourceADComputerRead,
 		Create: resourceADComputerCreate,

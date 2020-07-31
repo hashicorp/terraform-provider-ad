@@ -15,7 +15,7 @@ func resourceADOU() *schema.Resource {
 		Update:      resourceADOUUpdate,
 		Delete:      resourceADOUDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema: map[string]*schema.Schema{
 			"name": {

@@ -17,7 +17,7 @@ func resourceADGPLink() *schema.Resource {
 		Update:      resourceADGPLinkUpdate,
 		Delete:      resourceADGPLinkDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema: map[string]*schema.Schema{
 			"gpo_guid": {
