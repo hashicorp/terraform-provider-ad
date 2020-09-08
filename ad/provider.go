@@ -16,13 +16,13 @@ func Provider() *schema.Provider {
 				Type:        schema.TypeString,
 				Required:    true,
 				DefaultFunc: schema.EnvDefaultFunc("AD_USER", nil),
-				Description: "The username used to authenticate to the the server's WinRM service. (Environment variable: AD_USER)",
+				Description: "The username used to authenticate to the server's WinRM service. (Environment variable: AD_USER)",
 			},
 			"winrm_password": {
 				Type:        schema.TypeString,
 				Required:    true,
 				DefaultFunc: schema.EnvDefaultFunc("AD_PASSWORD", nil),
-				Description: "The password used to authenticate to the the server's WinRM service. (Environment variable: AD_PASSWORD)",
+				Description: "The password used to authenticate to the server's WinRM service. (Environment variable: AD_PASSWORD)",
 			},
 			"winrm_hostname": {
 				Type:        schema.TypeString,
