@@ -55,7 +55,15 @@ func resourceADGPOSecurityCreate(d *schema.ResourceData, meta interface{}) error
 		return err
 	}
 
+	// GUIDs for security settings are defined here:
+	// https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-gpsb/55bb803e-b35f-4ce8-b558-4c1e92ad77a4
+	err = winrmhelper.SetMachineExtensionNames(winrmClient, gpo.DN, "[{827D319E-6EAC-11D2-A4EA-00C04F79F83A}{803E14A0-B4FB-11D0-A0D0-00A0C90F574B}]")
+	if err != nil {
+		return err
+	}
+
 	d.SetId(fmt.Sprintf("%s_securitysettings", guid))
+
 	return resourceADGPOSecurityRead(d, meta)
 }
 

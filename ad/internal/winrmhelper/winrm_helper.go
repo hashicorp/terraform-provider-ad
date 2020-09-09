@@ -33,7 +33,7 @@ func RunWinRMCommand(conn *winrm.Client, cmds []string, json bool) (*WinRMResult
 	}
 	if err != nil {
 		log.Printf("[DEBUG] run error : %s", err)
-		return nil, fmt.Errorf("powershell command failed with exit code %d\nstdout: %s\nstderr: %s", res, stdout, stderr)
+		return nil, fmt.Errorf("powershell command failed with exit code %d\nstdout: %s\nstderr: %s\nerror: %s", res, stdout, stderr, err)
 	}
 
 	result := &WinRMResult{
@@ -63,8 +63,21 @@ func SanitiseTFInput(d *schema.ResourceData, key string) string {
 		"\v", "`v",
 	)
 
-	// placeholder for now.
 	out := cleanupReplacer.Replace(d.Get(key).(string))
 	log.Printf("[DEBUG] sanitising key %q to: %s", key, out)
 	return out
+}
+
+// SetMachineExtensionName will add the necessary GUIDs to the GPO's gPCMachineExtensionNames attribute.
+// These are required for the security settings part of a GPO to work.
+func SetMachineExtensionNames(client *winrm.Client, gpoDN, value string) error {
+	cmd := fmt.Sprintf(`Set-ADObject -Identity "%s" -Replace @{gPCMachineExtensionNames="%s"}`, gpoDN, value)
+	result, err := RunWinRMCommand(client, []string{cmd}, false)
+	if err != nil {
+		return fmt.Errorf("error while setting machine extension names for GPO %q: %s", gpoDN, err)
+	}
+	if result.ExitCode != 0 {
+		return fmt.Errorf("command to set machine extension names for GPO %q failed, stderr: %s, stdout: %s", gpoDN, result.StdErr, result.Stdout)
+	}
+	return nil
 }
