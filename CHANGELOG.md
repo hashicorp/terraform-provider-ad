@@ -1,3 +1,11 @@
+## 0.2.0 (Unreleased)
+
+IMPROVEMENTS:
+* Upgraded to the provider SDK v2.0.0 ([#37](https://github.com/hashicorp/terraform-provider-ad/pull/37))
+
+BUGFIXES:
+* **Resource:** `ad_gpo_security` now sets the correct Machine Extension Name in the GPO ([#43](https://github.com/hashicorp/terraform-provider-ad/pull/43/))
+
 ## 0.1.0 (July 29, 2020)
 
 FEATURES:
