@@ -1,4 +1,4 @@
-## 0.2.0 (Unreleased)
+## 0.2.0 (September 28, 2020)
 
 IMPROVEMENTS:
 * Upgraded to the provider SDK v2.0.0 ([#37](https://github.com/hashicorp/terraform-provider-ad/pull/37))
