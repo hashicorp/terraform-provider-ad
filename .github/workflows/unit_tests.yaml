@@ -6,7 +6,7 @@ on:
       - '**.go'
   pull_request:
     branches:
-      - master
+      - main
     paths:
       - '**.go'
 jobs:
