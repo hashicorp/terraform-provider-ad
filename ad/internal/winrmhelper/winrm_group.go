@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/masterzen/winrm"
+	"github.com/mainzen/winrm"
 )
 
 // Group represents an AD Group

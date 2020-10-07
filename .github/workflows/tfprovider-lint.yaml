@@ -5,7 +5,7 @@ on:
       - '**.go'
   pull_request:
     branches:
-      - master
+      - main
     paths:
       - '**.go'
 jobs:
@@ -13,6 +13,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - uses: bflad/tfproviderlint-github-action@master
+    - uses: bflad/tfproviderlint-github-action@main
       with:
         args: ./...

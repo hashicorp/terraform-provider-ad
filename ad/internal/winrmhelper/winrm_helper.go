@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/masterzen/winrm"
+	"github.com/mainzen/winrm"
 )
 
 //WinRMResult holds the stdout, stderr and exit code of a powershell command

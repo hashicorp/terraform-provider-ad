@@ -8,7 +8,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-provider-ad/ad/internal/gposec"
-	"github.com/masterzen/winrm"
+	"github.com/mainzen/winrm"
 	"github.com/packer-community/winrmcp/winrmcp"
 	"gopkg.in/ini.v1"
 )

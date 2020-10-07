@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/masterzen/winrm"
+	"github.com/mainzen/winrm"
 )
 
 //GPLink represents an AD Object that links a GPO and another AD object such as a group,
