@@ -112,11 +112,6 @@ func (u *User) ModifyUser(d *schema.ResourceData, client *winrm.Client) error {
 		}
 	}
 
-	if d.HasChange("container") {
-		cmds = append(cmds, fmt.Sprintf("-Path %q", u.Container))
-
-	}
-
 	if len(cmds) > 1 {
 		result, err := RunWinRMCommand(client, cmds, false)
 		if err != nil {
@@ -137,6 +132,18 @@ func (u *User) ModifyUser(d *schema.ResourceData, client *winrm.Client) error {
 		if result.ExitCode != 0 {
 			log.Printf("[DEBUG] stderr: %s\nstdout: %s", result.StdErr, result.Stdout)
 			return fmt.Errorf("command Set-AccountPassword exited with a non-zero exit code %d, stderr: %s", result.ExitCode, result.StdErr)
+		}
+	}
+
+	if d.HasChange("container") {
+		path := d.Get("container").(string)
+		cmd := fmt.Sprintf("Move-AdObject -Identity %q -TargetPath %q", u.GUID, path)
+		result, err := RunWinRMCommand(client, []string{cmd}, true)
+		if err != nil {
+			return fmt.Errorf("winrm execution failure while moving user object: %s", err)
+		}
+		if result.ExitCode != 0 {
+			return fmt.Errorf("Move-ADObject exited with a non zero exit code (%d), stderr: %s", result.ExitCode, result.StdErr)
 		}
 	}
 
