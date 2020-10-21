@@ -54,6 +54,12 @@ func TestAccUser_modify(t *testing.T) {
 					testAccUserExists("ad_user.a", "dc=yourdomain,dc=com", "testuser123", true),
 				),
 			},
+			{
+				Config: testAccUserConfigMoved("dc=yourdomain,dc=com", "testuser123", "thu2too'W?ieJ}a^g0zo"),
+				Check: resource.ComposeTestCheckFunc(
+					testAccUserContainer("ad_user.a", "dc=yourdomain,dc=com", "ou=newOU,DC=yourdomain,DC=com"),
+				),
+			},
 		},
 	})
 }
@@ -104,19 +110,39 @@ func defaultVariablesSection(domain, username, password string) string {
 	`, principalName, password, username)
 }
 
-func defaultUserSection() string {
-	return `
+func defaultUserSection(container string) string {
+	if container == "" {
+		container = `"CN=Users,DC=yourdomain,DC=com"`
+	}
+	return fmt.Sprintf(`
 	principal_name = var.principal_name
 	sam_account_name = var.samaccountname
 	initial_password = var.password
 	display_name = "Terraform Test User"
-	container = "CN=Users,DC=yourdomain,DC=com"	
-	`
+	container = %s
+
+	`, container)
 }
+
 func testAccUserConfigBasic(domain, username, password string) string {
 	return fmt.Sprintf(`%s
-	resource "ad_user" "a" {%s    		
- 	}`, defaultVariablesSection(domain, username, password), defaultUserSection())
+	resource "ad_user" "a" {%s
+ 	}`, defaultVariablesSection(domain, username, password), defaultUserSection(""))
+
+}
+
+func testAccUserConfigMoved(domain, username, password string) string {
+	return fmt.Sprintf(`%s
+
+	resource "ad_ou" "o" {
+		name = "newOU"
+		path = "DC=yourdomain,DC=com"
+		description = "ou for user move test"
+		protected = false
+	}
+
+	resource "ad_user" "a" {%s
+ 	}`, defaultVariablesSection(domain, username, password), defaultUserSection("ad_ou.o.dn"))
 
 }
 
@@ -129,7 +155,7 @@ func testAccUserConfigUAC(domain, username, password, enabled, expires string) s
 		enabled = var.enabled
 		password_never_expires = var.password_never_expires
  	}
-`, defaultVariablesSection(domain, username, password), enabled, expires, defaultUserSection())
+`, defaultVariablesSection(domain, username, password), enabled, expires, defaultUserSection(""))
 }
 
 func retrieveADUserFromRunningState(name, domain string, s *terraform.State) (*winrmhelper.User, error) {
@@ -143,6 +169,21 @@ func retrieveADUserFromRunningState(name, domain string, s *terraform.State) (*w
 
 	return u, err
 
+}
+
+func testAccUserContainer(name, domain, expectedContainer string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+
+		u, err := retrieveADUserFromRunningState(name, domain, s)
+		if err != nil {
+			return err
+		}
+
+		if strings.ToLower(u.Container) != strings.ToLower(expectedContainer) {
+			return fmt.Errorf("user container mismatch: expected %q found %q", u.Container, expectedContainer)
+		}
+		return nil
+	}
 }
 
 func testAccUserExists(name, domain, username string, expected bool) resource.TestCheckFunc {
