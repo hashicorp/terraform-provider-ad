@@ -18,10 +18,11 @@ type WinRMResult struct {
 
 // RunWinRMCommand will run a powershell command and return the stdout and stderr
 // The output is converted to JSON if the json patameter is set to true.
-func RunWinRMCommand(conn *winrm.Client, cmds []string, json bool) (*WinRMResult, error) {
+func RunWinRMCommand(conn *winrm.Client, cmds []string, json bool, forceArray bool) (*WinRMResult, error) {
 	if json {
 		cmds = append(cmds, "| convertto-json")
 	}
+
 	cmd := strings.Join(cmds, " ")
 	encodedCmd := winrm.Powershell(cmd)
 	log.Printf("[DEBUG] Running command %s via powershell", cmd)
@@ -40,6 +41,10 @@ func RunWinRMCommand(conn *winrm.Client, cmds []string, json bool) (*WinRMResult
 		Stdout:   strings.TrimSpace(stdout),
 		StdErr:   stderr,
 		ExitCode: res,
+	}
+
+	if json && forceArray && result.Stdout != "" && string(result.Stdout[0]) != "[" {
+		result.Stdout = fmt.Sprintf("[%s]", result.Stdout)
 	}
 
 	return result, nil
@@ -72,7 +77,7 @@ func SanitiseTFInput(d *schema.ResourceData, key string) string {
 // These are required for the security settings part of a GPO to work.
 func SetMachineExtensionNames(client *winrm.Client, gpoDN, value string) error {
 	cmd := fmt.Sprintf(`Set-ADObject -Identity "%s" -Replace @{gPCMachineExtensionNames="%s"}`, gpoDN, value)
-	result, err := RunWinRMCommand(client, []string{cmd}, false)
+	result, err := RunWinRMCommand(client, []string{cmd}, false, false)
 	if err != nil {
 		return fmt.Errorf("error while setting machine extension names for GPO %q: %s", gpoDN, err)
 	}

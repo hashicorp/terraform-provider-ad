@@ -60,7 +60,7 @@ func (u *User) NewUser(client *winrm.Client) (string, error) {
 		cmds = append(cmds, fmt.Sprintf("-Path %q", u.Container))
 	}
 
-	result, err := RunWinRMCommand(client, cmds, true)
+	result, err := RunWinRMCommand(client, cmds, true, false)
 	if err != nil {
 		return "", err
 	}
@@ -113,7 +113,7 @@ func (u *User) ModifyUser(d *schema.ResourceData, client *winrm.Client) error {
 	}
 
 	if len(cmds) > 1 {
-		result, err := RunWinRMCommand(client, cmds, false)
+		result, err := RunWinRMCommand(client, cmds, false, false)
 		if err != nil {
 			return err
 		}
@@ -125,7 +125,7 @@ func (u *User) ModifyUser(d *schema.ResourceData, client *winrm.Client) error {
 
 	if d.HasChange("initial_password") {
 		cmd := fmt.Sprintf("Set-ADAccountPassword -Identity %q -Reset -NewPassword (ConvertTo-SecureString -AsPlainText %q -Force)", u.GUID, u.Password)
-		result, err := RunWinRMCommand(client, []string{cmd}, false)
+		result, err := RunWinRMCommand(client, []string{cmd}, false, false)
 		if err != nil {
 			return err
 		}
@@ -138,7 +138,7 @@ func (u *User) ModifyUser(d *schema.ResourceData, client *winrm.Client) error {
 	if d.HasChange("container") {
 		path := d.Get("container").(string)
 		cmd := fmt.Sprintf("Move-AdObject -Identity %q -TargetPath %q", u.GUID, path)
-		result, err := RunWinRMCommand(client, []string{cmd}, true)
+		result, err := RunWinRMCommand(client, []string{cmd}, true, false)
 		if err != nil {
 			return fmt.Errorf("winrm execution failure while moving user object: %s", err)
 		}
@@ -153,7 +153,7 @@ func (u *User) ModifyUser(d *schema.ResourceData, client *winrm.Client) error {
 //DeleteUser deletes an AD user by calling Remove-ADUser
 func (u *User) DeleteUser(client *winrm.Client) error {
 	cmd := fmt.Sprintf("Remove-ADUser -Identity %s -Confirm:$false", u.GUID)
-	_, err := RunWinRMCommand(client, []string{cmd}, false)
+	_, err := RunWinRMCommand(client, []string{cmd}, false, false)
 	if err != nil {
 		// Check if the resource is already deleted
 		if strings.Contains(err.Error(), "ADIdentityNotFoundException") {
@@ -192,7 +192,7 @@ func GetUserFromResource(d *schema.ResourceData) *User {
 // retrieved from the AD Domain Controller.
 func GetUserFromHost(client *winrm.Client, guid string) (*User, error) {
 	cmd := fmt.Sprintf("Get-ADUser -identity %q -properties *", guid)
-	result, err := RunWinRMCommand(client, []string{cmd}, true)
+	result, err := RunWinRMCommand(client, []string{cmd}, true, false)
 	if err != nil {
 		return nil, err
 	}

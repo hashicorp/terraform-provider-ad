@@ -46,7 +46,7 @@ func NewOrgUnitFromHost(conn *winrm.Client, guid, name, path string) (*OrgUnit, 
 		return nil, fmt.Errorf("invalid inputs, dn or a combination of path and name are required")
 	}
 
-	result, err := RunWinRMCommand(conn, []string{cmd}, true)
+	result, err := RunWinRMCommand(conn, []string{cmd}, true, false)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func (o *OrgUnit) Create(conn *winrm.Client) (string, error) {
 
 	cmd = fmt.Sprintf("%s -ProtectedFromAccidentalDeletion:$%t", cmd, o.Protected)
 
-	result, err := RunWinRMCommand(conn, []string{cmd}, true)
+	result, err := RunWinRMCommand(conn, []string{cmd}, true, false)
 	if err != nil {
 		return "", err
 	}
@@ -116,7 +116,7 @@ func (o *OrgUnit) Update(conn *winrm.Client, changes map[string]interface{}) err
 	}
 
 	if cmd != "Set-ADOrganizationalUnit -Identity" {
-		result, err := RunWinRMCommand(conn, []string{cmd}, true)
+		result, err := RunWinRMCommand(conn, []string{cmd}, true, false)
 		if err != nil {
 			return err
 		}
@@ -127,7 +127,7 @@ func (o *OrgUnit) Update(conn *winrm.Client, changes map[string]interface{}) err
 
 	if protected, ok := changes["protected"]; ok {
 		cmd = fmt.Sprintf("Set-ADObject -Identity %s -ProtectedFromAccidentalDeletion:$%t", o.GUID, protected.(bool))
-		result, err := RunWinRMCommand(conn, []string{cmd}, true)
+		result, err := RunWinRMCommand(conn, []string{cmd}, true, false)
 		if err != nil {
 			return err
 		}
@@ -138,7 +138,7 @@ func (o *OrgUnit) Update(conn *winrm.Client, changes map[string]interface{}) err
 
 	if name, ok := changes["name"]; ok {
 		cmd = fmt.Sprintf("Rename-ADObject -Identity %q %q ", o.GUID, name.(string))
-		result, err := RunWinRMCommand(conn, []string{cmd}, true)
+		result, err := RunWinRMCommand(conn, []string{cmd}, true, false)
 		if err != nil {
 			return err
 		}
@@ -156,7 +156,7 @@ func (o *OrgUnit) Delete(conn *winrm.Client) error {
 		return fmt.Errorf("Cannot remove OU with name %q, distiguished name is empty", o.Name)
 	}
 	cmd := fmt.Sprintf("Get-ADObject -Properties * -Identity %q | Set-ADObject -ProtectedFromAccidentalDeletion:$false -Passthru | Remove-ADOrganizationalUnit -confirm:$false", o.DistinguishedName)
-	result, err := RunWinRMCommand(conn, []string{cmd}, true)
+	result, err := RunWinRMCommand(conn, []string{cmd}, true, false)
 	if err != nil {
 		return err
 	}

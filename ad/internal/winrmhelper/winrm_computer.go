@@ -34,7 +34,7 @@ func NewComputerFromResource(d *schema.ResourceData) *Computer {
 // from the domain controller
 func NewComputerFromHost(conn *winrm.Client, identity string) (*Computer, error) {
 	cmd := fmt.Sprintf("Get-ADComputer -Identity %q -Properties *", identity)
-	result, err := RunWinRMCommand(conn, []string{cmd}, true)
+	result, err := RunWinRMCommand(conn, []string{cmd}, true, false)
 	if err != nil {
 		return nil, fmt.Errorf("winrm execution failure in NewComputerFromHost: %s", err)
 	}
@@ -66,7 +66,7 @@ func (m *Computer) Create(conn *winrm.Client) (string, error) {
 		cmd = fmt.Sprintf("%s -Path %q", cmd, m.Path)
 	}
 
-	result, err := RunWinRMCommand(conn, []string{cmd}, true)
+	result, err := RunWinRMCommand(conn, []string{cmd}, true, false)
 	if err != nil {
 		return "", fmt.Errorf("winrm execution failure while creating computer object: %s", err)
 	}
@@ -90,7 +90,7 @@ func (m *Computer) Update(conn *winrm.Client, changes map[string]interface{}) er
 
 	if path, ok := changes["container"]; ok {
 		cmd := fmt.Sprintf("Move-AdObject -Identity %q -TargetPath %q", m.GUID, path.(string))
-		result, err := RunWinRMCommand(conn, []string{cmd}, true)
+		result, err := RunWinRMCommand(conn, []string{cmd}, true, false)
 		if err != nil {
 			return fmt.Errorf("winrm execution failure while moving computer object: %s", err)
 		}
@@ -105,7 +105,7 @@ func (m *Computer) Update(conn *winrm.Client, changes map[string]interface{}) er
 // Delete deletes an existing Computer objects from the AD tree
 func (m *Computer) Delete(conn *winrm.Client) error {
 	cmd := fmt.Sprintf("Remove-ADComputer -confirm:$false -Identity %q", m.GUID)
-	result, err := RunWinRMCommand(conn, []string{cmd}, false)
+	result, err := RunWinRMCommand(conn, []string{cmd}, false, false)
 	if err != nil {
 		return fmt.Errorf("winrm execution failure while removing computer object: %s", err)
 	}
