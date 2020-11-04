@@ -74,7 +74,7 @@ func GetGPOFromHost(conn *winrm.Client, name, guid string) (*GPO, error) {
 	} else if guid != "" {
 		cmd = getGPOCmdByGUID(guid)
 	}
-	result, err := RunWinRMCommand(conn, []string{cmd}, true)
+	result, err := RunWinRMCommand(conn, []string{cmd}, true, false)
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +131,7 @@ func (g *GPO) Rename(client *winrm.Client, target string) error {
 		cmds = append(cmds, fmt.Sprintf("-Domain %s", g.Domain))
 	}
 	cmd := strings.Join(cmds, " ")
-	_, err := RunWinRMCommand(client, []string{cmd}, false)
+	_, err := RunWinRMCommand(client, []string{cmd}, false, false)
 	if err != nil {
 		return err
 	}
@@ -141,7 +141,7 @@ func (g *GPO) Rename(client *winrm.Client, target string) error {
 //ChangeStatus Changes the status of a GPO
 func (g *GPO) ChangeStatus(client *winrm.Client, status string) error {
 	cmd := fmt.Sprintf(`(%s).GpoStatus = "%s"`, getGPOCmdByGUID(g.ID), status)
-	result, err := RunWinRMCommand(client, []string{cmd}, false)
+	result, err := RunWinRMCommand(client, []string{cmd}, false, false)
 	if err != nil {
 		return err
 	}
@@ -170,7 +170,7 @@ func (g *GPO) NewGPO(client *winrm.Client) (string, error) {
 		cmds = append(cmds, fmt.Sprintf("-Comment %q", g.Description))
 	}
 
-	result, err := RunWinRMCommand(client, cmds, true)
+	result, err := RunWinRMCommand(client, cmds, true, false)
 	if err != nil {
 		return "", err
 	}
@@ -191,7 +191,7 @@ func (g *GPO) NewGPO(client *winrm.Client) (string, error) {
 // DeleteGPO delete the GPO container
 func (g *GPO) DeleteGPO(client *winrm.Client) error {
 	cmd := fmt.Sprintf("Remove-GPO -Name %s -Domain %s", g.Name, g.Domain)
-	_, err := RunWinRMCommand(client, []string{cmd}, false)
+	_, err := RunWinRMCommand(client, []string{cmd}, false, false)
 	if err != nil {
 		// Check if the resource is already deleted
 		if strings.Contains(err.Error(), "GpoWithNameNotFound") {
@@ -225,7 +225,7 @@ func (g *GPO) UpdateGPO(client *winrm.Client, d *schema.ResourceData) (string, e
 // of this function as well as GetsysVolPath to construct the GPO path on the DC's filesystem.
 func (g *GPO) getGPOFilePath(client *winrm.Client) (string, error) {
 	cmd := fmt.Sprintf("(Get-ADObject  -LDAPFilter '(&(objectClass=groupPolicyContainer)(cn={%s}))' -Properties gPCFilesysPath).gPCFilesysPath", g.ID)
-	result, err := RunWinRMCommand(client, []string{cmd}, false)
+	result, err := RunWinRMCommand(client, []string{cmd}, false, false)
 	if err != nil {
 		return "", fmt.Errorf("error while retrieving GPO with %q path: %s", g.ID, err)
 	}
@@ -239,7 +239,7 @@ func (g *GPO) getGPOFilePath(client *winrm.Client) (string, error) {
 // and the value we get from getGPOFilePath is used to construct the GPO path on the DC's filesystem.
 func getSysVolPath(client *winrm.Client) (string, error) {
 	cmd := "(Get-SmbShare sysvol).path"
-	result, err := RunWinRMCommand(client, []string{cmd}, false)
+	result, err := RunWinRMCommand(client, []string{cmd}, false, false)
 	if err != nil {
 		return "", fmt.Errorf("error while retrieving SYSVOL path")
 	}
@@ -287,7 +287,7 @@ func (g *GPO) loadGPOVersions(client *winrm.Client, gpoPath string) error {
 // SetADGPOVersions updates AD with the given versions for a GPO
 func (g *GPO) SetADGPOVersions(client *winrm.Client, gpoVersion uint32) error {
 	cmd := fmt.Sprintf("$o=(Get-ADObject  -LDAPFilter '(&(objectClass=groupPolicyContainer)(cn={%s}))' -Properties *);$o.VersionNumber=%d;Set-AdObject -Instance $o", g.ID, gpoVersion)
-	result, err := RunWinRMCommand(client, []string{cmd}, false)
+	result, err := RunWinRMCommand(client, []string{cmd}, false, false)
 	if err != nil {
 		return fmt.Errorf("error while setting new version in AD for GPO %q: %s", g.ID, err)
 	}
@@ -343,7 +343,7 @@ func (g *GPO) loadGPTIni(client *winrm.Client) error {
 	gptPath := fmt.Sprintf("%s\\gpt.ini", g.basePath)
 	log.Printf("[DEBUG] Getting GPT ini from %s", gptPath)
 	cmd := fmt.Sprintf(`Get-Content "%s"`, gptPath)
-	result, err := RunWinRMCommand(client, []string{cmd}, false)
+	result, err := RunWinRMCommand(client, []string{cmd}, false, false)
 	if err != nil {
 		return fmt.Errorf("error while retrieving contents of %q: %s", gptPath, err)
 	}

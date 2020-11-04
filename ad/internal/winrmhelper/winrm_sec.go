@@ -46,7 +46,7 @@ func GetSecIniContents(client *winrm.Client, gpo *GPO) ([]byte, error) {
 	log.Printf("[DEBUG] Getting security settings inf from %s", gptPath)
 
 	cmd := fmt.Sprintf(`Get-Content "%s"`, gptPath)
-	result, err := RunWinRMCommand(client, []string{cmd}, false)
+	result, err := RunWinRMCommand(client, []string{cmd}, false, false)
 	if err != nil {
 		return nil, fmt.Errorf("error while retrieving contents of %q: %s", gptPath, err)
 	}
@@ -102,7 +102,7 @@ func RemoveSecIni(conn *winrm.Client, cpConn *winrmcp.Winrmcp, gpo *GPO) error {
 	log.Printf("[DEBUG] Getting security settings inf from %s", gptPath)
 
 	cmd := fmt.Sprintf(`Remove-Item "%s"`, gptPath)
-	result, err := RunWinRMCommand(conn, []string{cmd}, false)
+	result, err := RunWinRMCommand(conn, []string{cmd}, false, false)
 	if err != nil {
 		return fmt.Errorf("error while retrieving contents of %q: %s", gptPath, err)
 	}

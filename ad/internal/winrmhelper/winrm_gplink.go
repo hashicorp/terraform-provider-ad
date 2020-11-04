@@ -41,7 +41,7 @@ func (g *GPLink) NewGPLink(client *winrm.Client) (string, error) {
 		cmds = append(cmds, fmt.Sprintf("-Order %d", g.Order))
 	}
 
-	result, err := RunWinRMCommand(client, cmds, true)
+	result, err := RunWinRMCommand(client, cmds, true, false)
 	if err != nil {
 		return "", err
 	}
@@ -95,7 +95,7 @@ func (g *GPLink) ModifyGPLink(client *winrm.Client, changes map[string]interface
 	if len(cmds) == 1 {
 		return nil
 	}
-	result, err := RunWinRMCommand(client, cmds, false)
+	result, err := RunWinRMCommand(client, cmds, false, false)
 	if err != nil {
 		return fmt.Errorf("error while running Set-GPLink: %s", err)
 	}
@@ -110,7 +110,7 @@ func (g *GPLink) ModifyGPLink(client *winrm.Client, changes map[string]interface
 //RemoveGPLink deletes a link between a GPO and an AD object
 func (g *GPLink) RemoveGPLink(client *winrm.Client) error {
 	cmd := fmt.Sprintf("Remove-GPlink -Guid %q -Target %q", g.GPOGuid, g.Target)
-	_, err := RunWinRMCommand(client, []string{cmd}, false)
+	_, err := RunWinRMCommand(client, []string{cmd}, false, false)
 	if err != nil {
 		// Check if the resource is already deleted
 		if strings.Contains(err.Error(), "GpoLinkNotFound") || strings.Contains(err.Error(), "GpoWithIdNotFound") || strings.Contains(err.Error(), "There is no such object on the server") {
@@ -138,7 +138,7 @@ func GetGPLinkFromResource(d *schema.ResourceData) *GPLink {
 //Domain Controller
 func GetGPLinkFromHost(client *winrm.Client, gpoGUID, containerGUID string) (*GPLink, error) {
 	cmds := []string{fmt.Sprintf("Get-ADObject -filter {ObjectGUID -eq %q} -properties gplink", containerGUID)}
-	result, err := RunWinRMCommand(client, cmds, true)
+	result, err := RunWinRMCommand(client, cmds, true, false)
 	if err != nil {
 		return nil, fmt.Errorf("while running Get-ADObject: %s", err)
 	}
