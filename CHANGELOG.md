@@ -1,4 +1,4 @@
-## 0.3.0 (Unreleased)
+## 0.3.0 (November 06, 2020)
 
 FEATURES:
 * **New Resource:** `ad_group_membership`
