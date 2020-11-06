@@ -1,3 +1,11 @@
+## 0.3.0 (Unreleased)
+
+FEATURES:
+* **New Resource:** `ad_group_membership`
+
+BUGFIXES:
+* **Resource:** `ad_user` now supports moving users between containers ([#49](https://github.com/hashicorp/terraform-provider-ad/pull/49))
+
 ## 0.2.0 (September 28, 2020)
 
 IMPROVEMENTS:
