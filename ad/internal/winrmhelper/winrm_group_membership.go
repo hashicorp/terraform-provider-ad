@@ -89,6 +89,10 @@ func (g *GroupMembership) getGroupMembers(client *winrm.Client) ([]*GroupMember,
 }
 
 func (g *GroupMembership) bulkGroupMembersOp(client *winrm.Client, operation string, members []*GroupMember) error {
+	if len(members) == 0 {
+		return nil
+	}
+
 	memberList := getMembershipList(members)
 	cmd := fmt.Sprintf("%s -Identity %q %s -Confirm:$false", operation, g.GroupGUID, memberList)
 
@@ -107,9 +111,6 @@ func (g *GroupMembership) addGroupMembers(client *winrm.Client, members []*Group
 }
 
 func (g *GroupMembership) removeGroupMembers(client *winrm.Client, members []*GroupMember) error {
-	if len(members) == 0 {
-		return nil
-	}
 	return g.bulkGroupMembersOp(client, "Remove-ADGroupMember", members)
 }
 
