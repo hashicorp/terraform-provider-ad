@@ -17,6 +17,7 @@ type ProviderConfig struct {
 	WinRMPort     int
 	WinRMProto    string
 	WinRMInsecure bool
+	WinRMUseNTLM  bool
 }
 
 // NewConfig returns a new Config struct populated with Resource Data.
@@ -28,6 +29,7 @@ func NewConfig(d *schema.ResourceData) ProviderConfig {
 	winRMPort := d.Get("winrm_port").(int)
 	winRMProto := d.Get("winrm_proto").(string)
 	winRMInsecure := d.Get("winrm_insecure").(bool)
+	winRMUseNTLM := d.Get("winrm_use_ntlm").(bool)
 
 	cfg := ProviderConfig{
 		WinRMHost:     winRMHost,
@@ -36,6 +38,7 @@ func NewConfig(d *schema.ResourceData) ProviderConfig {
 		WinRMUsername: winRMUsername,
 		WinRMPassword: winRMPassword,
 		WinRMInsecure: winRMInsecure,
+		WinRMUseNTLM:  winRMUseNTLM,
 	}
 
 	return cfg
@@ -50,7 +53,14 @@ func GetWinRMConnection(config ProviderConfig) (*winrm.Client, error) {
 
 	endpoint := winrm.NewEndpoint(config.WinRMHost, config.WinRMPort, useHTTPS,
 		config.WinRMInsecure, nil, nil, nil, 0)
-	client, err := winrm.NewClient(endpoint, config.WinRMUsername, config.WinRMPassword)
+
+	params := winrm.DefaultParameters
+
+	if config.WinRMUseNTLM {
+		params.TransportDecorator = func() winrm.Transporter { return &winrm.ClientNTLM{} }
+	}
+
+	client, err := winrm.NewClientWithParameters(endpoint, config.WinRMUsername, config.WinRMPassword, params)
 	if err != nil {
 		return nil, err
 	}

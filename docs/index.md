@@ -51,5 +51,6 @@ resource "ad_gplink" "og" {
 ### Optional
 
 - **winrm_insecure** (Boolean, Optional) Trust unknown certificates. (default: false, environment variable: AD_WINRM_INSECURE)
+- **winrm_use_ntlm** (Boolean, Optional) Use NTLM security. (default: false, environment variable: AD_WINRM_USE_NTLM)
 - **winrm_port** (Number, Optional) The port WinRM is listening for connections. (default: 5985, environment variable: AD_PORT)
 - **winrm_proto** (String, Optional) The WinRM protocol we will use. (default: http, environment variable: AD_PROTO)

@@ -48,6 +48,12 @@ func Provider() *schema.Provider {
 				DefaultFunc: schema.EnvDefaultFunc("AD_WINRM_INSECURE", false),
 				Description: "Trust unknown certificates. (default: false, environment variable: AD_WINRM_INSECURE)",
 			},
+			"winrm_use_ntlm": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				DefaultFunc: schema.EnvDefaultFunc("AD_WINRM_USE_NTLM", false),
+				Description: "Use NTLM authentication. (default: false, environment variable: AD_WINRM_USE_NTLM)",
+			},
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"ad_user":     dataSourceADUser(),
