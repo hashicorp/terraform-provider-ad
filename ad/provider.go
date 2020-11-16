@@ -65,6 +65,11 @@ func Provider() *schema.Provider {
 				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("AD_KRB_SPN", ""),
 				Description: "Alternative Service Principal Name. (default: none, environment variable: AD_KRB_SPN)",
+			"winrm_use_ntlm": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				DefaultFunc: schema.EnvDefaultFunc("AD_WINRM_USE_NTLM", false),
+				Description: "Use NTLM authentication. (default: false, environment variable: AD_WINRM_USE_NTLM)",
 			},
 		},
 		DataSourcesMap: map[string]*schema.Resource{
