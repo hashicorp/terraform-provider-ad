@@ -179,7 +179,7 @@ func testAccUserContainer(name, domain, expectedContainer string) resource.TestC
 			return err
 		}
 
-		if strings.ToLower(u.Container) != strings.ToLower(expectedContainer) {
+		if strings.EqualFold(u.Container, expectedContainer) {
 			return fmt.Errorf("user container mismatch: expected %q found %q", u.Container, expectedContainer)
 		}
 		return nil

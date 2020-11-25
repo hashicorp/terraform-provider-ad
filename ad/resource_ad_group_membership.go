@@ -50,7 +50,7 @@ func resourceADGroupMembershipRead(d *schema.ResourceData, meta interface{}) err
 	for idx, m := range gm.GroupMembers {
 		memberList[idx] = m.GUID
 	}
-	d.Set("group_members", memberList)
+	_ = d.Set("group_members", memberList)
 
 	return nil
 }
