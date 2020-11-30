@@ -73,8 +73,8 @@ func GetWinRMConnection(config ProviderConfig) (*winrm.Client, error) {
 
 	var winrmClient *winrm.Client
 	var err error
-	params := winrm.DefaultParameters
 	if config.KrbRealm != "" {
+		params := winrm.DefaultParameters
 		params.TransportDecorator = NewKerberosTransporter(config)
 		winrmClient, err = winrm.NewClientWithParameters(endpoint, "", "", params)
 	} else {
@@ -159,7 +159,7 @@ func (c *KerberosTransporter) Transport(endpoint *winrm.Endpoint) error {
 	return nil
 }
 
-func (c *KerberosTransporter) Post(winrmClient *winrm.Client, request *soap.SoapMessage) (string, error) {
+func (c *KerberosTransporter) Post(_ *winrm.Client, request *soap.SoapMessage) (string, error) {
 	var cfg *config.Config
 	if c.KrbConf != "" {
 		loadedCfg, err := config.Load(c.KrbConf)
