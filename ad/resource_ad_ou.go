@@ -58,7 +58,12 @@ func resourceADOURead(d *schema.ResourceData, meta interface{}) error {
 	if d.Id() == "" {
 		return nil
 	}
-	client := meta.(ProviderConf).WinRMClient
+
+	client, err := meta.(ProviderConf).AcquireWinRMClient()
+	if err != nil {
+		return err
+	}
+	defer meta.(ProviderConf).ReleaseWinRMClient(client)
 
 	ou, err := winrmhelper.NewOrgUnitFromHost(client, d.Id(), "", "")
 	if err != nil {
@@ -81,7 +86,12 @@ func resourceADOURead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceADOUCreate(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(ProviderConf).WinRMClient
+	client, err := meta.(ProviderConf).AcquireWinRMClient()
+	if err != nil {
+		return err
+	}
+	defer meta.(ProviderConf).ReleaseWinRMClient(client)
+
 	ou := winrmhelper.NewOrgUnitFromResource(d)
 	guid, err := ou.Create(client)
 	if err != nil {
@@ -93,7 +103,12 @@ func resourceADOUCreate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceADOUUpdate(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(ProviderConf).WinRMClient
+	client, err := meta.(ProviderConf).AcquireWinRMClient()
+	if err != nil {
+		return err
+	}
+	defer meta.(ProviderConf).ReleaseWinRMClient(client)
+
 	ou := winrmhelper.NewOrgUnitFromResource(d)
 
 	keys := []string{"description", "name", "path", "protected"}
@@ -104,7 +119,7 @@ func resourceADOUUpdate(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	err := ou.Update(client, changes)
+	err = ou.Update(client, changes)
 	if err != nil {
 		return err
 	}
@@ -112,9 +127,14 @@ func resourceADOUUpdate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceADOUDelete(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(ProviderConf).WinRMClient
+	client, err := meta.(ProviderConf).AcquireWinRMClient()
+	if err != nil {
+		return err
+	}
+	defer meta.(ProviderConf).ReleaseWinRMClient(client)
+
 	ou := winrmhelper.NewOrgUnitFromResource(d)
-	err := ou.Delete(client)
+	err = ou.Delete(client)
 	if err != nil {
 		return err
 	}

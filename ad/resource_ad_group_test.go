@@ -58,7 +58,11 @@ func testAccGroupExists(name, domain, groupSAM string, expected bool) resource.T
 		if !ok {
 			return fmt.Errorf("%s key not found on the server", name)
 		}
-		client := testAccProvider.Meta().(ProviderConf).WinRMClient
+		client, err := testAccProvider.Meta().(ProviderConf).AcquireWinRMClient()
+		if err != nil {
+			return err
+		}
+		defer testAccProvider.Meta().(ProviderConf).ReleaseWinRMClient(client)
 		u, err := winrmhelper.GetGroupFromHost(client, rs.Primary.ID)
 		if err != nil {
 			if strings.Contains(err.Error(), "ADIdentityNotFoundException") && !expected {

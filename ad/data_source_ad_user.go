@@ -39,7 +39,12 @@ func dataSourceADUser() *schema.Resource {
 
 func dataSourceADUserRead(d *schema.ResourceData, meta interface{}) error {
 	dn := d.Get("guid").(string)
-	client := meta.(ProviderConf).WinRMClient
+	client, err := meta.(ProviderConf).AcquireWinRMClient()
+	if err != nil {
+		return err
+	}
+	defer meta.(ProviderConf).ReleaseWinRMClient(client)
+
 	u, err := winrmhelper.GetUserFromHost(client, dn)
 	if err != nil {
 		return err

@@ -70,7 +70,12 @@ func resourceADUser() *schema.Resource {
 
 func resourceADUserCreate(d *schema.ResourceData, meta interface{}) error {
 	u := winrmhelper.GetUserFromResource(d)
-	client := meta.(ProviderConf).WinRMClient
+	client, err := meta.(ProviderConf).AcquireWinRMClient()
+	if err != nil {
+		return err
+	}
+	defer meta.(ProviderConf).ReleaseWinRMClient(client)
+
 	guid, err := u.NewUser(client)
 	if err != nil {
 		return err
@@ -81,7 +86,12 @@ func resourceADUserCreate(d *schema.ResourceData, meta interface{}) error {
 
 func resourceADUserRead(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("Reading ad_user resource for user with guid: %q", d.Id())
-	client := meta.(ProviderConf).WinRMClient
+	client, err := meta.(ProviderConf).AcquireWinRMClient()
+	if err != nil {
+		return err
+	}
+	defer meta.(ProviderConf).ReleaseWinRMClient(client)
+
 	u, err := winrmhelper.GetUserFromHost(client, d.Id())
 	if err != nil {
 		if strings.Contains(err.Error(), "ADIdentityNotFoundException") {
@@ -107,8 +117,13 @@ func resourceADUserRead(d *schema.ResourceData, meta interface{}) error {
 
 func resourceADUserUpdate(d *schema.ResourceData, meta interface{}) error {
 	u := winrmhelper.GetUserFromResource(d)
-	client := meta.(ProviderConf).WinRMClient
-	err := u.ModifyUser(d, client)
+	client, err := meta.(ProviderConf).AcquireWinRMClient()
+	if err != nil {
+		return err
+	}
+	defer meta.(ProviderConf).ReleaseWinRMClient(client)
+
+	err = u.ModifyUser(d, client)
 	if err != nil {
 		return err
 	}
@@ -116,7 +131,12 @@ func resourceADUserUpdate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceADUserDelete(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(ProviderConf).WinRMClient
+	client, err := meta.(ProviderConf).AcquireWinRMClient()
+	if err != nil {
+		return err
+	}
+	defer meta.(ProviderConf).ReleaseWinRMClient(client)
+
 	u, err := winrmhelper.GetUserFromHost(client, d.Id())
 	if err != nil {
 		if strings.Contains(err.Error(), "ADIdentityNotFoundException") {

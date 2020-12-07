@@ -43,7 +43,11 @@ func dataSourceADOU() *schema.Resource {
 }
 
 func dataSourceADOURead(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(ProviderConf).WinRMClient
+	client, err := meta.(ProviderConf).AcquireWinRMClient()
+	if err != nil {
+		return err
+	}
+	defer meta.(ProviderConf).ReleaseWinRMClient(client)
 
 	name := winrmhelper.SanitiseTFInput(d, "name")
 	path := winrmhelper.SanitiseTFInput(d, "path")

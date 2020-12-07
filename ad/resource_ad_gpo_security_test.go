@@ -43,7 +43,11 @@ func testAccResourceADGPOSecurityExists(resourceName string, desired bool) resou
 			return fmt.Errorf("resource ID %q does not match <guid>_securitysettings", rs.Primary.ID)
 		}
 		guid := toks[0]
-		client := testAccProvider.Meta().(ProviderConf).WinRMClient
+		client, err := testAccProvider.Meta().(ProviderConf).AcquireWinRMClient()
+		if err != nil {
+			return err
+		}
+		defer testAccProvider.Meta().(ProviderConf).ReleaseWinRMClient(client)
 		gpo, err := winrmhelper.GetGPOFromHost(client, "", guid)
 		if err != nil {
 			// if the GPO got destroyed first then the rest of the entities depending on it

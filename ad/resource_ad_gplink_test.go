@@ -137,7 +137,11 @@ func testAccResourceADGPLinkExists(resourceName string, order int, enforced, ena
 			return fmt.Errorf("%s key not found in state", resourceName)
 		}
 		id := rs.Primary.ID
-		client := testAccProvider.Meta().(ProviderConf).WinRMClient
+		client, err := testAccProvider.Meta().(ProviderConf).AcquireWinRMClient()
+		if err != nil {
+			return err
+		}
+		defer testAccProvider.Meta().(ProviderConf).ReleaseWinRMClient(client)
 		idParts := strings.SplitN(id, "_", 2)
 		if len(idParts) != 2 {
 			return fmt.Errorf("malformed ID for GPLink resource with ID %q", id)

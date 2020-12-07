@@ -67,7 +67,11 @@ func testAccResourceADOUExists(resource, name string, expected bool) resource.Te
 		if !ok {
 			return fmt.Errorf("%s key not found in state", resource)
 		}
-		client := testAccProvider.Meta().(ProviderConf).WinRMClient
+		client, err := testAccProvider.Meta().(ProviderConf).AcquireWinRMClient()
+		if err != nil {
+			return err
+		}
+		defer testAccProvider.Meta().(ProviderConf).ReleaseWinRMClient(client)
 		guid := rs.Primary.ID
 		ou, err := winrmhelper.NewOrgUnitFromHost(client, guid, "", "")
 		if err != nil {
