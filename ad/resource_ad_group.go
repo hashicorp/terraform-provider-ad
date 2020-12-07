@@ -57,7 +57,12 @@ func resourceADGroup() *schema.Resource {
 
 func resourceADGroupCreate(d *schema.ResourceData, meta interface{}) error {
 	u := winrmhelper.GetGroupFromResource(d)
-	client := meta.(ProviderConf).WinRMClient
+	client, err := meta.(ProviderConf).AcquireWinRMClient()
+	if err != nil {
+		return err
+	}
+	defer meta.(ProviderConf).ReleaseWinRMClient(client)
+
 	guid, err := u.AddGroup(client)
 	if err != nil {
 		return err
@@ -68,7 +73,12 @@ func resourceADGroupCreate(d *schema.ResourceData, meta interface{}) error {
 
 func resourceADGroupRead(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("Reading ad_Group resource for group with GUID: %q", d.Id())
-	client := meta.(ProviderConf).WinRMClient
+	client, err := meta.(ProviderConf).AcquireWinRMClient()
+	if err != nil {
+		return err
+	}
+	defer meta.(ProviderConf).ReleaseWinRMClient(client)
+
 	g, err := winrmhelper.GetGroupFromHost(client, d.Id())
 	if err != nil {
 		if strings.Contains(err.Error(), "ADIdentityNotFoundException") {
@@ -92,8 +102,13 @@ func resourceADGroupRead(d *schema.ResourceData, meta interface{}) error {
 
 func resourceADGroupUpdate(d *schema.ResourceData, meta interface{}) error {
 	g := winrmhelper.GetGroupFromResource(d)
-	client := meta.(ProviderConf).WinRMClient
-	err := g.ModifyGroup(d, client)
+	client, err := meta.(ProviderConf).AcquireWinRMClient()
+	if err != nil {
+		return err
+	}
+	defer meta.(ProviderConf).ReleaseWinRMClient(client)
+
+	err = g.ModifyGroup(d, client)
 	if err != nil {
 		return err
 	}
@@ -101,7 +116,12 @@ func resourceADGroupUpdate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceADGroupDelete(d *schema.ResourceData, meta interface{}) error {
-	conn := meta.(ProviderConf).WinRMClient
+	conn, err := meta.(ProviderConf).AcquireWinRMClient()
+	if err != nil {
+		return err
+	}
+	defer meta.(ProviderConf).ReleaseWinRMClient(conn)
+
 	g, err := winrmhelper.GetGroupFromHost(conn, d.Id())
 	if err != nil {
 		if strings.Contains(err.Error(), "ADIdentityNotFoundException") {

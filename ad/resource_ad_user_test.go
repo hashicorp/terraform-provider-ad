@@ -164,7 +164,12 @@ func retrieveADUserFromRunningState(name, domain string, s *terraform.State) (*w
 	if !ok {
 		return nil, fmt.Errorf("%s key not found in state", name)
 	}
-	client := testAccProvider.Meta().(ProviderConf).WinRMClient
+	client, err := testAccProvider.Meta().(ProviderConf).AcquireWinRMClient()
+	if err != nil {
+		return nil, err
+	}
+	defer testAccProvider.Meta().(ProviderConf).ReleaseWinRMClient(client)
+
 	u, err := winrmhelper.GetUserFromHost(client, rs.Primary.ID)
 
 	return u, err

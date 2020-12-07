@@ -32,7 +32,12 @@ func dataSourceADComputer() *schema.Resource {
 }
 
 func dataSourceADComputerRead(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(ProviderConf).WinRMClient
+	client, err := meta.(ProviderConf).AcquireWinRMClient()
+	if err != nil {
+		return err
+	}
+	defer meta.(ProviderConf).ReleaseWinRMClient(client)
+
 	dn := winrmhelper.SanitiseTFInput(d, "dn")
 	guid := winrmhelper.SanitiseTFInput(d, "guid")
 

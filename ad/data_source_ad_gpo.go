@@ -35,7 +35,11 @@ func dataSourceADGPORead(d *schema.ResourceData, meta interface{}) error {
 	name := winrmhelper.SanitiseTFInput(d, "name")
 	guid := winrmhelper.SanitiseTFInput(d, "guid")
 
-	client := meta.(ProviderConf).WinRMClient
+	client, err := meta.(ProviderConf).AcquireWinRMClient()
+	if err != nil {
+		return err
+	}
+	defer meta.(ProviderConf).ReleaseWinRMClient(client)
 
 	gpo, err := winrmhelper.GetGPOFromHost(client, name, guid)
 	if err != nil {

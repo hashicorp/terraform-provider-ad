@@ -93,7 +93,12 @@ func testAccResourceADComputerExists(resource, name string, expected bool) resou
 			return fmt.Errorf("%s key not found in state", resource)
 		}
 
-		client := testAccProvider.Meta().(ProviderConf).WinRMClient
+		client, err := testAccProvider.Meta().(ProviderConf).AcquireWinRMClient()
+		if err != nil {
+			return err
+		}
+		defer testAccProvider.Meta().(ProviderConf).ReleaseWinRMClient(client)
+
 		guid := rs.Primary.ID
 		computer, err := winrmhelper.NewComputerFromHost(client, guid)
 		if err != nil {

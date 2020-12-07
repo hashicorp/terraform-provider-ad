@@ -29,14 +29,22 @@ func resourceADGPOSecurity() *schema.Resource {
 }
 
 func resourceADGPOSecurityCreate(d *schema.ResourceData, meta interface{}) error {
-	winrmClient := meta.(ProviderConf).WinRMClient
-	winrmCPClient := meta.(ProviderConf).WinRMCPClient
+	winrmClient, err := meta.(ProviderConf).AcquireWinRMClient()
+	if err != nil {
+		return err
+	}
+	defer meta.(ProviderConf).ReleaseWinRMClient(winrmClient)
+	winrmCPClient, err := meta.(ProviderConf).AcquireWinRMCPClient()
+	if err != nil {
+		return err
+	}
+	defer meta.(ProviderConf).ReleaseWinRMCPClient(winrmCPClient)
 
 	guid := d.Get("gpo_container").(string)
 	if guid == "" {
 		return fmt.Errorf("Cannot handle empty GPO GUID")
 	}
-	_, err := uuid.ParseUUID(guid)
+	_, err = uuid.ParseUUID(guid)
 	if err != nil {
 		return fmt.Errorf("Cannot parse GUID %q: %s", guid, err)
 	}
@@ -68,7 +76,12 @@ func resourceADGPOSecurityCreate(d *schema.ResourceData, meta interface{}) error
 }
 
 func resourceADGPOSecurityRead(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(ProviderConf).WinRMClient
+	client, err := meta.(ProviderConf).AcquireWinRMClient()
+	if err != nil {
+		return err
+	}
+	defer meta.(ProviderConf).ReleaseWinRMClient(client)
+
 	resourceID := d.Id()
 	toks := strings.Split(resourceID, "_")
 	if len(toks) != 2 {
@@ -102,14 +115,22 @@ func resourceADGPOSecurityRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceADGPOSecurityUpdate(d *schema.ResourceData, meta interface{}) error {
-	winrmClient := meta.(ProviderConf).WinRMClient
-	winrmCPClient := meta.(ProviderConf).WinRMCPClient
+	winrmClient, err := meta.(ProviderConf).AcquireWinRMClient()
+	if err != nil {
+		return err
+	}
+	defer meta.(ProviderConf).ReleaseWinRMClient(winrmClient)
+	winrmCPClient, err := meta.(ProviderConf).AcquireWinRMCPClient()
+	if err != nil {
+		return err
+	}
+	defer meta.(ProviderConf).ReleaseWinRMCPClient(winrmCPClient)
 
 	guid := d.Get("gpo_container").(string)
 	if guid == "" {
 		return fmt.Errorf("Cannot handle empty GPO GUID")
 	}
-	_, err := uuid.ParseUUID(guid)
+	_, err = uuid.ParseUUID(guid)
 	if err != nil {
 		return fmt.Errorf("Cannot parse GUID %q: %s", guid, err)
 	}
@@ -149,8 +170,16 @@ func resourceADGPOSecurityUpdate(d *schema.ResourceData, meta interface{}) error
 }
 
 func resourceADGPOSecurityDelete(d *schema.ResourceData, meta interface{}) error {
-	winrmClient := meta.(ProviderConf).WinRMClient
-	winrmCPClient := meta.(ProviderConf).WinRMCPClient
+	winrmClient, err := meta.(ProviderConf).AcquireWinRMClient()
+	if err != nil {
+		return err
+	}
+	defer meta.(ProviderConf).ReleaseWinRMClient(winrmClient)
+	winrmCPClient, err := meta.(ProviderConf).AcquireWinRMCPClient()
+	if err != nil {
+		return err
+	}
+	defer meta.(ProviderConf).ReleaseWinRMCPClient(winrmCPClient)
 	resourceID := d.Id()
 	toks := strings.Split(resourceID, "_")
 	if len(toks) != 2 {

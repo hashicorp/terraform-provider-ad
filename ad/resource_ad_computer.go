@@ -56,7 +56,11 @@ func resourceADComputerRead(d *schema.ResourceData, meta interface{}) error {
 		return nil
 	}
 
-	client := meta.(ProviderConf).WinRMClient
+	client, err := meta.(ProviderConf).AcquireWinRMClient()
+	if err != nil {
+		return err
+	}
+	defer meta.(ProviderConf).ReleaseWinRMClient(client)
 
 	computer, err := winrmhelper.NewComputerFromHost(client, d.Id())
 	if err != nil {
@@ -77,7 +81,12 @@ func resourceADComputerRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceADComputerCreate(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(ProviderConf).WinRMClient
+	client, err := meta.(ProviderConf).AcquireWinRMClient()
+	if err != nil {
+		return err
+	}
+	defer meta.(ProviderConf).ReleaseWinRMClient(client)
+
 	computer := winrmhelper.NewComputerFromResource(d)
 
 	guid, err := computer.Create(client)
@@ -89,7 +98,12 @@ func resourceADComputerCreate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceADComputerUpdate(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(ProviderConf).WinRMClient
+	client, err := meta.(ProviderConf).AcquireWinRMClient()
+	if err != nil {
+		return err
+	}
+	defer meta.(ProviderConf).ReleaseWinRMClient(client)
+
 	computer := winrmhelper.NewComputerFromResource(d)
 	keys := []string{"container"}
 	changes := make(map[string]interface{})
@@ -99,7 +113,7 @@ func resourceADComputerUpdate(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	err := computer.Update(client, changes)
+	err = computer.Update(client, changes)
 	if err != nil {
 		return fmt.Errorf("error while updating computer with id %q: %s", d.Id(), err)
 	}
@@ -110,9 +124,14 @@ func resourceADComputerDelete(d *schema.ResourceData, meta interface{}) error {
 	if d.Id() == "" {
 		return nil
 	}
-	client := meta.(ProviderConf).WinRMClient
+	client, err := meta.(ProviderConf).AcquireWinRMClient()
+	if err != nil {
+		return err
+	}
+	defer meta.(ProviderConf).ReleaseWinRMClient(client)
+
 	computer := winrmhelper.NewComputerFromResource(d)
-	err := computer.Delete(client)
+	err = computer.Delete(client)
 	if err != nil {
 		return fmt.Errorf("error while deleting a computer object with id %q: %s", d.Id(), err)
 	}

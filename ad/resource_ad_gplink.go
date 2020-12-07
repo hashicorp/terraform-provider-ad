@@ -63,7 +63,12 @@ func resourceADGPLink() *schema.Resource {
 }
 
 func resourceADGPLinkRead(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(ProviderConf).WinRMClient
+	client, err := meta.(ProviderConf).AcquireWinRMClient()
+	if err != nil {
+		return err
+	}
+	defer meta.(ProviderConf).ReleaseWinRMClient(client)
+
 	idParts := strings.SplitN(d.Id(), "_", 2)
 	if len(idParts) != 2 {
 		return fmt.Errorf("malformed ID for GPLink resource with ID %q", d.Id())
@@ -87,7 +92,12 @@ func resourceADGPLinkRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceADGPLinkCreate(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(ProviderConf).WinRMClient
+	client, err := meta.(ProviderConf).AcquireWinRMClient()
+	if err != nil {
+		return err
+	}
+	defer meta.(ProviderConf).ReleaseWinRMClient(client)
+
 	gplink := winrmhelper.GetGPLinkFromResource(d)
 	gpLinkID, err := gplink.NewGPLink(client)
 	if err != nil {
@@ -99,7 +109,12 @@ func resourceADGPLinkCreate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceADGPLinkUpdate(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(ProviderConf).WinRMClient
+	client, err := meta.(ProviderConf).AcquireWinRMClient()
+	if err != nil {
+		return err
+	}
+	defer meta.(ProviderConf).ReleaseWinRMClient(client)
+
 	keys := []string{"enforced", "enabled", "order"}
 	changes := make(map[string]interface{})
 	for _, key := range keys {
@@ -108,7 +123,7 @@ func resourceADGPLinkUpdate(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 	gplink := winrmhelper.GetGPLinkFromResource(d)
-	err := gplink.ModifyGPLink(client, changes)
+	err = gplink.ModifyGPLink(client, changes)
 	if err != nil {
 		return fmt.Errorf("while modifying GPLink with id %q: %s", d.Id(), err)
 	}
@@ -117,9 +132,14 @@ func resourceADGPLinkUpdate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceADGPLinkDelete(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(ProviderConf).WinRMClient
+	client, err := meta.(ProviderConf).AcquireWinRMClient()
+	if err != nil {
+		return err
+	}
+	defer meta.(ProviderConf).ReleaseWinRMClient(client)
+
 	gplink := winrmhelper.GetGPLinkFromResource(d)
-	err := gplink.RemoveGPLink(client)
+	err = gplink.RemoveGPLink(client)
 	if err != nil {
 		return fmt.Errorf("while deleting resource with ID %q: %s", d.Id(), err)
 	}
