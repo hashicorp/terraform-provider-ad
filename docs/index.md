@@ -11,7 +11,33 @@ The AD (Active Directory) provider provides resources to interact with an AD dom
 
 Requirements:
  - Windows Server 2012R2 or greater.
- - WinRM enabled. Currently only local accounts with `Basic` authentication are supported.
+ - WinRM enabled.
+
+## Note about Kerberos Authentication
+
+Starting with version 0.4.0, this provider supports Kerberos Authentication for WinRM connections.
+The underlying library used for Kerberos authentication supports setting its configuration by parsing
+a configuration file as specified in this [page](https://web.mit.edu/kerberos/krb5-1.12/doc/admin/conf_files/krb5_conf.html).
+If a configuration file is not supplied then we will use the equivalent of the following config:
+
+```
+[libdefaults]
+   default_realm = YOURDOMAIN.COM
+   dns_lookup_realm = false
+   dns_lookup_kdc = false
+
+[realms]
+	YOURDOMAIN.COM = {
+        kdc 	= 	192.168.1.122
+        admin_server = 192.168.1.122
+        default_domain = YOURDOMAIN.COM
+	}
+
+[domain_realm]
+	yourdomain.com = YOURDOMAIN.COM
+```
+
+where `YOURDOMAIN.COM` is the value of the `krb_realm` setting, and 192.168.1.122 is the value of `winrm_hostname`.
 
 
 ## Example Usage
@@ -50,6 +76,9 @@ resource "ad_gplink" "og" {
 
 ### Optional
 
+- **krb_conf** (String, Optional) Path to kerberos configuration file. (default: none, environment variable: AD_KRB_CONF)
+- **krb_realm** (String, Optional) The name of the kerberos realm (domain) we will use for authentication. (default: "", environment variable: AD_KRB_REALM)
+- **krb_spn** (String, Optional) Alternative Service Principal Name. (default: none, environment variable: AD_KRB_SPN)
 - **winrm_insecure** (Boolean, Optional) Trust unknown certificates. (default: false, environment variable: AD_WINRM_INSECURE)
 - **winrm_use_ntlm** (Boolean, Optional) Use NTLM authentication. (default: false, environment variable: AD_WINRM_USE_NTLM)
 - **winrm_port** (Number, Optional) The port WinRM is listening for connections. (default: 5985, environment variable: AD_PORT)

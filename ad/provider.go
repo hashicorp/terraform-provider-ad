@@ -55,6 +55,24 @@ func Provider() *schema.Provider {
 				DefaultFunc: schema.EnvDefaultFunc("AD_WINRM_USE_NTLM", false),
 				Description: "Use NTLM authentication. (default: false, environment variable: AD_WINRM_USE_NTLM)",
 			},
+			"krb_realm": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				DefaultFunc: schema.EnvDefaultFunc("AD_KRB_REALM", ""),
+				Description: "The name of the kerberos realm (domain) we will use for authentication. (default: \"\", environment variable: AD_KRB_REALM)",
+			},
+			"krb_conf": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				DefaultFunc: schema.EnvDefaultFunc("AD_KRB_CONF", ""),
+				Description: "Path to kerberos configuration file. (default: none, environment variable: AD_KRB_CONF)",
+			},
+			"krb_spn": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				DefaultFunc: schema.EnvDefaultFunc("AD_KRB_SPN", ""),
+				Description: "Alternative Service Principal Name. (default: none, environment variable: AD_KRB_SPN)",
+			},
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"ad_user":     dataSourceADUser(),
