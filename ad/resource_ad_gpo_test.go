@@ -69,7 +69,11 @@ func testAccResourceADGPOExists(resourceName, name string, expected bool) resour
 			return fmt.Errorf("%s key not found in state", resourceName)
 		}
 		guid := rs.Primary.ID
-		client := testAccProvider.Meta().(ProviderConf).WinRMClient
+		client, err := testAccProvider.Meta().(ProviderConf).AcquireWinRMClient()
+		if err != nil {
+			return err
+		}
+		defer testAccProvider.Meta().(ProviderConf).ReleaseWinRMClient(client)
 		gpo, err := winrmhelper.GetGPOFromHost(client, "", guid)
 		if err != nil {
 			// Check that the err is really because the GPO was not found

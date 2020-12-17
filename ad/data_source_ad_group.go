@@ -53,7 +53,12 @@ func dataSourceADGroup() *schema.Resource {
 }
 
 func dataSourceADGroupRead(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(ProviderConf).WinRMClient
+	client, err := meta.(ProviderConf).AcquireWinRMClient()
+	if err != nil {
+		return err
+	}
+	defer meta.(ProviderConf).ReleaseWinRMClient(client)
+
 	dn := d.Get("guid").(string)
 
 	g, err := winrmhelper.GetGroupFromHost(client, dn)
