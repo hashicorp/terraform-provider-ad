@@ -82,11 +82,9 @@ func GetWinRMConnection(config ProviderConfig) (*winrm.Client, error) {
 		winrmClient, err = winrm.NewClientWithParameters(endpoint, "", "", params)
 	} else {
 		params := winrm.DefaultParameters
-
 		if config.WinRMUseNTLM {
 			params.TransportDecorator = func() winrm.Transporter { return &winrm.ClientNTLM{} }
 		}
-
 		winrmClient, err = winrm.NewClientWithParameters(endpoint, config.WinRMUsername, config.WinRMPassword, params)
 	}
 
