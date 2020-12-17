@@ -1,3 +1,9 @@
+## 0.4.0 (Unreleased)
+
+FEATURES:
+* **New Auth method:** The provider now supports Kerberos authentication.
+* **New Auth method:** The provider now supports NTLM authentication.
+
 ## 0.3.0 (November 06, 2020)
 
 FEATURES:
