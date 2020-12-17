@@ -1,4 +1,4 @@
-## 0.4.0 (Unreleased)
+## 0.4.0 (December 17, 2020)
 
 FEATURES:
 * **New Auth method:** The provider now supports Kerberos authentication.
