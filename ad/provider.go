@@ -66,6 +66,7 @@ func Provider() *schema.Provider {
 				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("AD_KRB_SPN", ""),
 				Description: "Alternative Service Principal Name. (default: none, environment variable: AD_KRB_SPN)",
+			},
 			"winrm_use_ntlm": {
 				Type:        schema.TypeBool,
 				Optional:    true,
