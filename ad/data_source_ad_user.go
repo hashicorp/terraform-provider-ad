@@ -45,7 +45,7 @@ func dataSourceADUser() *schema.Resource {
 			},
 			"country": {
 				Type:        schema.TypeString,
-				Computed:    true,,
+				Computed:    true,
 				Description: "Country assigned to user object.",
 			},
 			"department": {
@@ -100,7 +100,7 @@ func dataSourceADUser() *schema.Resource {
 			},
 			"home_phone": {
 				Type:        schema.TypeString,
-				Computed:    true,,
+				Computed:    true,
 				Description: "Home phone of the user object.",
 			},
 			"home_page": {
