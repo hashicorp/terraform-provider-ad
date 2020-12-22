@@ -100,7 +100,8 @@ func (u *User) NewUser(client *winrm.Client) (string, error) {
 	}
 
 	if u.Country != "" {
-		cmds = append(cmds, fmt.Sprintf("-Country %q", u.Country))
+		country := strings.ToUpper(u.Country)
+		cmds = append(cmds, fmt.Sprintf("-Country %q", country))
 	}
 
 	if u.Department != "" {
