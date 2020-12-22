@@ -291,6 +291,8 @@ func resourceADUserRead(d *schema.ResourceData, meta interface{}) error {
 	_ = d.Set("street_address", u.StreetAddress)
 	_ = d.Set("surname", u.Surname)
 	_ = d.Set("title", u.Title)
+	_ = d.Set("smart_card_logon_required", u.SmartcardLogonRequired)
+	_ = d.Set("trusted_for_delegation", u.TrustedForDelegation)
 
 	return nil
 }
