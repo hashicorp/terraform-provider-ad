@@ -125,6 +125,7 @@ type KerberosTransporter struct {
 	Domain    string
 	Hostname  string
 	Port      int
+	Proto     string
 	SPN       string
 	KrbConf   string
 	transport *http.Transport
@@ -138,6 +139,7 @@ func NewKerberosTransporter(config ProviderConfig) func() winrm.Transporter {
 			Domain:   config.KrbRealm,
 			Hostname: config.WinRMHost,
 			Port:     config.WinRMPort,
+			Proto:    config.WinRMProto,
 			KrbConf:  config.KrbConfig,
 			SPN:      config.KrbSpn,
 		}
@@ -233,7 +235,7 @@ func (c *KerberosTransporter) Post(_ *winrm.Client, request *soap.SoapMessage) (
 	}
 
 	//create an http request
-	winrmURL := fmt.Sprintf("http://%s:%d/wsman", c.Hostname, c.Port)
+	winrmURL := fmt.Sprintf("%s://%s:%d/wsman", c.Proto, c.Hostname, c.Port)
 	winRMRequest, _ := http.NewRequest("POST", winrmURL, strings.NewReader(request.String()))
 	winRMRequest.Header.Add("Content-Type", "application/soap+xml;charset=UTF-8")
 
