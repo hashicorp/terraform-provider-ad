@@ -140,7 +140,7 @@ func (g *GroupMembership) Create(client *winrm.Client) error {
 	}
 
 	memberList := getMembershipList(g.GroupMembers)
-	cmd := []string{fmt.Sprintf("Add-ADGroupMember -Identity %q -Member %s", g.GroupGUID, memberList)}
+	cmd := []string{fmt.Sprintf("Add-ADGroupMember -Identity %q -Members %s", g.GroupGUID, memberList)}
 	result, err := RunWinRMCommand(client, cmd, false, false)
 	if err != nil {
 		return fmt.Errorf("while running Add-ADGroupMember: %s", err)
@@ -152,7 +152,7 @@ func (g *GroupMembership) Create(client *winrm.Client) error {
 }
 
 func (g *GroupMembership) Delete(client *winrm.Client) error {
-	cmd := fmt.Sprintf("Remove-ADGroupMember %q -Member (Get-ADGroupMember %q) -Confirm:$false", g.GroupGUID, g.GroupGUID)
+	cmd := fmt.Sprintf("Remove-ADGroupMember %q -Members (Get-ADGroupMember %q) -Confirm:$false", g.GroupGUID, g.GroupGUID)
 	result, err := RunWinRMCommand(client, []string{cmd}, false, false)
 	if err != nil {
 		return fmt.Errorf("while running Remove-ADGroupMember: %s", err)
