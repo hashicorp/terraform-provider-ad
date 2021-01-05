@@ -16,7 +16,7 @@ func dataSourceADUser() *schema.Resource {
 			"guid": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The GUID of the user object.",
+				Description: "The GUID of the user object. Alternatively it can be the SID, the Distinguished Name, or the SAM Account Name of the user.",
 			},
 			"sam_account_name": {
 				Type:        schema.TypeString,

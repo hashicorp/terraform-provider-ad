@@ -16,7 +16,7 @@ func dataSourceADGroup() *schema.Resource {
 			"guid": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The GUID of the Group object.",
+				Description: "The GUID of the Group object. Alternatively it can be the SID, the Distinguished Name, or the SAM Account Name of the group.",
 			},
 			"sam_account_name": {
 				Type:        schema.TypeString,
@@ -75,6 +75,6 @@ func dataSourceADGroupRead(d *schema.ResourceData, meta interface{}) error {
 	_ = d.Set("container", g.Container)
 	_ = d.Set("name", g.Name)
 
-	d.SetId(dn)
+	d.SetId(g.GUID)
 	return nil
 }

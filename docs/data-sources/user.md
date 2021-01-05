@@ -25,7 +25,7 @@ output "username" {
 
 ### Required
 
-- **guid** (String, Required) The GUID of the user object.
+- **guid** (String, Required) The GUID of the user object. Alternatively it can be the SID, the Distinguished Name, or the SAM Account Name of the user.
 
 ### Optional
 
