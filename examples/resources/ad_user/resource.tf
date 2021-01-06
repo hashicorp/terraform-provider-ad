@@ -1,3 +1,4 @@
+# basic example
 variable principal_name { default = "testuser" }
 variable samaccountname { default = "testuser" }
 
@@ -7,11 +8,17 @@ resource "ad_user" "u" {
   display_name     = "Terraform Test User"
 }
 
+
+# all user attributes
+variable principal_name2 { default = "testuser2" }
+variable samaccountname2 { default = "testuser2" }
+variable container      { default = "CN=Users,DC=contoso,DC=com" }
+
 resource "ad_user" "u2" {
-  principal_name            = "testuser2"
-  sam_account_name          = "testuser2"
+  principal_name            = var.principal_name2
+  sam_account_name          = var.samaccountname2
   display_name              = "Terraform Test User"
-  container                 = "CN=Users,DC=contoso,DC=com"
+  container                 = var.container
   initial_password          = "Password"
   city                      = "City"
   company                   = "Company"
@@ -40,6 +47,7 @@ resource "ad_user" "u2" {
   street_address            = "StreetAddress"
   surname                   = "Surname"
   title                     = "Title"
-  smart_card_logon_required = true
+  smart_card_logon_required = false
   trusted_for_delegation    = true
 }
+

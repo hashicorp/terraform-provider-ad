@@ -19,6 +19,14 @@ data "ad_user" "u" {
 output "username" {
     value = data.ad_user.u.sam_account_name
 }
+
+output "country" {
+    value = data.ad_user.u.country
+}
+
+output "trusted_for_delegation" {
+    value = data.ad_user.u.trusted_for_delegation
+}
 ```
 
 ## Schema
@@ -33,36 +41,37 @@ output "username" {
 
 ### Read-only
 
+- **city** (String, Read-only) City assigned to user object.
+- **company** (String, Read-only) Company assigned to user object.
+- **country** (String, Read-only) Country assigned to user object.
+- **department** (String, Read-only) Department assigned to user object.
+- **description** (String, Read-only) Description of the user object.
 - **display_name** (String, Read-only) The display name of the user object.
+- **division** (String, Read-only) Division assigned to user object.
+- **email_address** (String, Read-only) Email address assigned to user object.
+- **employee_id** (String, Read-only) Employee ID assigned to user object.
+- **employee_number** (String, Read-only) Employee Number assigned to user object.
+- **fax** (String, Read-only) Fax number assigned to user object.
+- **given_name** (String, Read-only) Given name of the user object.
+- **home_directory** (String, Read-only) Home directory of the user object.
+- **home_drive** (String, Read-only) Home drive of the user object.
+- **home_page** (String, Read-only) Home page of the user object.
+- **home_phone** (String, Read-only) Home phone of the user object.
+- **initials** (String, Read-only) Initials of the user object.
+- **mobile_phone** (String, Read-only) Mobile phone of the user object.
+- **office** (String, Read-only) Office assigned to user object.
+- **office_phone** (String, Read-only) Office phone of the user object.
+- **organization** (String, Read-only) Organization assigned to user object.
+- **other_name** (String, Read-only) Extra name of the user object.
+- **po_box** (String, Read-only) Post office assigned to user object.
+- **postal_code** (String, Read-only) Postal code of the user object.
 - **principal_name** (String, Read-only) The principal name of the user object.
 - **sam_account_name** (String, Read-only) The SAM account name of the user object.
-- **city** (String, Read-only) The city assigned to user object.
-- **company** (String, Read-only) The company assigned to user object.
-- **country** (String, Read-only) The country assigned to user object.
-- **department** (String, Read-only) The department assigned to user object.
-- **description** (String, Read-only) The description assigned to user object.
-- **division** (String, Read-only) The division assigned to user object.
-- **email_address** (String, Read-only) The email address assigned to user object.
-- **employee_id** (String, Read-only) The employee id assigned to user object.
-- **employee_number** (String, Read-only) The employee number assigned to user object.
-- **fax** (String, Read-only) The fax assigned to user object.
-- **given_name** (String, Read-only) The given name assigned to user object.
-- **home_directory** (String, Read-only) The home directory assigned to user object.
-- **home_drive** (String, Read-only) The home drive assigned to user object.
-- **home_phone** (String, Read-only) The home phone assigned to user object.
-- **home_page** (String, Read-only) The home page assigned to user object.
-- **initials** (String, Read-only) Initials assigned to user object.
-- **mobile_phone** (String, Read-only) The mobile phone assigned to user object.
-- **office** (String, Read-only) The office assigned to user object.
-- **office_phone** (String, Read-only) The office phone assigned to user object.
-- **organization** (String, Read-only) The organization assigned to user object.
-- **other_name** (String, Read-only) Extra name of the user object.
-- **po_box** (String, Read-only) The post office assigned to user object.
-- **postal_code** (String, Read-only) The postal code assigned to user object.
-- **smart_card_logon_required** (Boolean, Read-only) Smart card required to logon or not.
-- **state** (String, Read-only) The state of the user object.
-- **street_address** (String, Read-only) The address of the user object. assigned to user object.
-- **surname** (String, Read-only) The surname assigned to user object.
-- **title** (String, Read-only) The title assigned to user object.
-- **trusted_for_delegation** (Boolean, Read-only) Check if user is trusted for delegation.
+- **smart_card_logon_required** (Boolean, Read-only) Smart card required to logon or not
+- **state** (String, Read-only) State of the user object.
+- **street_address** (String, Read-only) Address of the user object.
+- **surname** (String, Read-only) Surname of the user object.
+- **title** (String, Read-only) Title of the user object
+- **trusted_for_delegation** (Boolean, Read-only) Check if user is trusted for delegation
+
 
