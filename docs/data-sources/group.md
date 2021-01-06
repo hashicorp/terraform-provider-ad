@@ -25,7 +25,7 @@ output "groupname" {
 
 ### Required
 
-- **guid** (String, Required) The GUID of the Group object. Alternatively it can be the SID, the Distinguished Name, or the SAM Account Name of the group.
+- **group_id** (String, Required) The group's identifier. It can be the group's GUID, SID, Distinguished Name, or SAM Account Name.
 
 ### Optional
 
