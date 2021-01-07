@@ -5,3 +5,11 @@ data "ad_user" "u" {
 output "username" {
     value = data.ad_user.u.sam_account_name
 }
+
+output "country" {
+    value = data.ad_user.u.country
+}
+
+output "trusted_for_delegation" {
+    value = data.ad_user.u.trusted_for_delegation
+}
