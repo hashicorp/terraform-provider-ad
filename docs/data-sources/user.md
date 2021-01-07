@@ -33,7 +33,7 @@ output "trusted_for_delegation" {
 
 ### Required
 
-- **guid** (String, Required) The GUID of the user object.
+- **user_id** (String, Required) The user's identifier. It can be the group's GUID, SID, Distinguished Name, or SAM Account Name.
 
 ### Optional
 

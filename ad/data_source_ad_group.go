@@ -13,10 +13,10 @@ func dataSourceADGroup() *schema.Resource {
 		Description: "Get the details of an Active Directory Group object.",
 		Read:        dataSourceADGroupRead,
 		Schema: map[string]*schema.Schema{
-			"guid": {
+			"group_id": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The GUID of the Group object.",
+				Description: "The group's identifier. It can be the group's GUID, SID, Distinguished Name, or SAM Account Name.",
 			},
 			"sam_account_name": {
 				Type:        schema.TypeString,
@@ -59,14 +59,14 @@ func dataSourceADGroupRead(d *schema.ResourceData, meta interface{}) error {
 	}
 	defer meta.(ProviderConf).ReleaseWinRMClient(client)
 
-	dn := d.Get("guid").(string)
+	groupID := d.Get("group_id").(string)
 
-	g, err := winrmhelper.GetGroupFromHost(client, dn)
+	g, err := winrmhelper.GetGroupFromHost(client, groupID)
 	if err != nil {
 		return err
 	}
 	if g == nil {
-		return fmt.Errorf("No group found with dn %q", dn)
+		return fmt.Errorf("No group found with group_id %q", groupID)
 	}
 	_ = d.Set("sam_account_name", g.SAMAccountName)
 	_ = d.Set("display_name", g.Name)
@@ -74,7 +74,8 @@ func dataSourceADGroupRead(d *schema.ResourceData, meta interface{}) error {
 	_ = d.Set("category", g.Category)
 	_ = d.Set("container", g.Container)
 	_ = d.Set("name", g.Name)
+	_ = d.Set("group_id", groupID)
 
-	d.SetId(dn)
+	d.SetId(g.GUID)
 	return nil
 }
