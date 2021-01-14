@@ -190,7 +190,7 @@ func dataSourceADUserRead(d *schema.ResourceData, meta interface{}) error {
 	}
 	defer meta.(ProviderConf).ReleaseWinRMClient(client)
 
-	u, err := winrmhelper.GetUserFromHost(client, userID)
+	u, err := winrmhelper.GetUserFromHost(client, userID, nil)
 	if err != nil {
 		return err
 	}

@@ -2,8 +2,11 @@ package ad
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/structure"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -29,6 +32,85 @@ func TestAccUser_basic(t *testing.T) {
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"initial_password"},
+			},
+		},
+	})
+}
+
+func TestAccUser_custom_attributes_basic(t *testing.T) {
+	caConfig := `{"carLicense": ["a value", "another value", "a value with \"\" double quotes"]}`
+	username := "testuser"
+	password := "thu2too'W?ieJ}a^g0zo"
+	domainDN := "dc=yourdomain,dc=com"
+	resourceName := "ad_user.a"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		CheckDestroy: resource.ComposeTestCheckFunc(
+			testAccUserExists(resourceName, domainDN, username, false),
+		),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccUserConfigCustomAttributes(domainDN, username, password, caConfig),
+				Check: resource.ComposeTestCheckFunc(
+					testCheckADUserCustomAttribute(resourceName, domainDN, caConfig),
+				),
+			},
+			{
+				ResourceName:            resourceName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"initial_password", "custom_attributes"},
+			},
+		},
+	})
+}
+
+func TestAccUser_custom_attributes_extended(t *testing.T) {
+	caConfig := `{"carLicense": ["a value", "another value", "a value with \"\" double quotes"]}`
+	caConfig2 := `{"carLicense": ["a value", "another value", "a value with \"\" double quotes"], "comment": "another string"}`
+	username := "testuser"
+	password := "thu2too'W?ieJ}a^g0zo"
+	domainDN := "dc=yourdomain,dc=com"
+	resourceName := "ad_user.a"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		CheckDestroy: resource.ComposeTestCheckFunc(
+			testAccUserExists(resourceName, domainDN, username, false),
+		),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccUserConfigBasic("dc=yourdomain,dc=com", "testuser", "thu2too'W?ieJ}a^g0zo"),
+				Check: resource.ComposeTestCheckFunc(
+					testAccUserExists("ad_user.a", "dc=yourdomain,dc=com", "testuser", true),
+				),
+			},
+			{
+				Config: testAccUserConfigCustomAttributes(domainDN, username, password, caConfig),
+				Check: resource.ComposeTestCheckFunc(
+					testCheckADUserCustomAttribute(resourceName, domainDN, caConfig),
+				),
+			},
+			{
+				ResourceName:            resourceName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"initial_password", "custom_attributes"},
+			},
+			{
+				Config: testAccUserConfigCustomAttributes(domainDN, username, password, caConfig2),
+				Check: resource.ComposeTestCheckFunc(
+					testCheckADUserCustomAttribute(resourceName, domainDN, caConfig2),
+				),
+			},
+			{
+				Config: testAccUserConfigCustomAttributes(domainDN, username, password, caConfig),
+				Check: resource.ComposeTestCheckFunc(
+					testCheckADUserCustomAttribute(resourceName, domainDN, caConfig),
+				),
 			},
 		},
 	})
@@ -120,7 +202,6 @@ func defaultUserSection(container string) string {
 	initial_password = var.password
 	display_name = "Terraform Test User"
 	container = %s
-
 	`, container)
 }
 
@@ -129,6 +210,16 @@ func testAccUserConfigBasic(domain, username, password string) string {
 	resource "ad_user" "a" {%s
  	}`, defaultVariablesSection(domain, username, password), defaultUserSection(""))
 
+}
+
+func testAccUserConfigCustomAttributes(domain, username, password, customAttributes string) string {
+	return fmt.Sprintf(`%s
+	resource "ad_user" "a" {%s
+		custom_attributes = jsonencode(%s)
+ 	}`,
+		defaultVariablesSection(domain, username, password),
+		defaultUserSection(""),
+		customAttributes)
 }
 
 func testAccUserConfigMoved(domain, username, password string) string {
@@ -158,7 +249,7 @@ func testAccUserConfigUAC(domain, username, password, enabled, expires string) s
 `, defaultVariablesSection(domain, username, password), enabled, expires, defaultUserSection(""))
 }
 
-func retrieveADUserFromRunningState(name, domain string, s *terraform.State) (*winrmhelper.User, error) {
+func retrieveADUserFromRunningState(name, domain string, s *terraform.State, attributeList []string) (*winrmhelper.User, error) {
 	rs, ok := s.RootModule().Resources[name]
 
 	if !ok {
@@ -170,7 +261,7 @@ func retrieveADUserFromRunningState(name, domain string, s *terraform.State) (*w
 	}
 	defer testAccProvider.Meta().(ProviderConf).ReleaseWinRMClient(client)
 
-	u, err := winrmhelper.GetUserFromHost(client, rs.Primary.ID)
+	u, err := winrmhelper.GetUserFromHost(client, rs.Primary.ID, attributeList)
 
 	return u, err
 
@@ -179,7 +270,7 @@ func retrieveADUserFromRunningState(name, domain string, s *terraform.State) (*w
 func testAccUserContainer(name, domain, expectedContainer string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
-		u, err := retrieveADUserFromRunningState(name, domain, s)
+		u, err := retrieveADUserFromRunningState(name, domain, s, nil)
 		if err != nil {
 			return err
 		}
@@ -193,7 +284,7 @@ func testAccUserContainer(name, domain, expectedContainer string) resource.TestC
 
 func testAccUserExists(name, domain, username string, expected bool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		u, err := retrieveADUserFromRunningState(name, domain, s)
+		u, err := retrieveADUserFromRunningState(name, domain, s, nil)
 		if err != nil {
 			if strings.Contains(err.Error(), "ADIdentityNotFoundException") && !expected {
 				return nil
@@ -210,7 +301,7 @@ func testAccUserExists(name, domain, username string, expected bool) resource.Te
 
 func testCheckADUserUAC(name, domain string, enabledState, passwordNeverExpires bool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		u, err := retrieveADUserFromRunningState(name, domain, s)
+		u, err := retrieveADUserFromRunningState(name, domain, s, nil)
 
 		if err != nil {
 			return err
@@ -222,6 +313,33 @@ func testCheckADUserUAC(name, domain string, enabledState, passwordNeverExpires 
 
 		if u.PasswordNeverExpires != passwordNeverExpires {
 			return fmt.Errorf("password_never_expires state in AD did not match expected value. AD: %t, expected: %t", u.PasswordNeverExpires, enabledState)
+		}
+		return nil
+	}
+}
+
+func testCheckADUserCustomAttribute(name, domain, customAttributes string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		ca, err := structure.ExpandJsonFromString(customAttributes)
+		if err != nil {
+			return err
+		}
+
+		attributeList := []string{}
+		for k := range ca {
+			attributeList = append(attributeList, k)
+		}
+
+		u, err := retrieveADUserFromRunningState(name, domain, s, attributeList)
+		if err != nil {
+			return err
+		}
+
+		sortedCA := winrmhelper.SortInnerSlice(ca)
+		sortedStateCA := winrmhelper.SortInnerSlice(u.CustomAttributes)
+
+		if !reflect.DeepEqual(sortedCA, sortedStateCA) {
+			return fmt.Errorf("attributes %#v returned from host do not match the attributes defined in the configuration: %#v vs %#v", attributeList, ca, u.CustomAttributes)
 		}
 		return nil
 	}

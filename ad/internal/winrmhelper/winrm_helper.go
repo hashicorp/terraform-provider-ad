@@ -3,6 +3,9 @@ package winrmhelper
 import (
 	"fmt"
 	"log"
+	"reflect"
+	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -50,9 +53,15 @@ func RunWinRMCommand(conn *winrm.Client, cmds []string, json bool, forceArray bo
 	return result, nil
 }
 
-// SanitiseTFInput returns the value of a resource field after some basic sanitisation checks
-// to protect ourselves from command injection
+// SanitiseTFInput returns the value of a resource field after passing it through SanitiseString
 func SanitiseTFInput(d *schema.ResourceData, key string) string {
+	return SanitiseString(d.Get(key).(string))
+
+}
+
+// SanitiseString returns the value of a string after some basic sanitisation checks
+// to protect ourselves from command injection
+func SanitiseString(key string) string {
 	cleanupReplacer := strings.NewReplacer(
 		"`", "``",
 		`"`, "`\"",
@@ -67,8 +76,7 @@ func SanitiseTFInput(d *schema.ResourceData, key string) string {
 		"\t", "`t",
 		"\v", "`v",
 	)
-
-	out := cleanupReplacer.Replace(d.Get(key).(string))
+	out := cleanupReplacer.Replace(key)
 	log.Printf("[DEBUG] sanitising key %q to: %s", key, out)
 	return out
 }
@@ -85,4 +93,40 @@ func SetMachineExtensionNames(client *winrm.Client, gpoDN, value string) error {
 		return fmt.Errorf("command to set machine extension names for GPO %q failed, stderr: %s, stdout: %s", gpoDN, result.StdErr, result.Stdout)
 	}
 	return nil
+}
+
+func GetString(v interface{}) string {
+	var out string
+	kind := reflect.ValueOf(v).Kind()
+	switch kind {
+	case reflect.String:
+		out = SanitiseString(v.(string))
+	case reflect.Float64:
+		out = strconv.FormatFloat(v.(float64), 'E', -1, 64)
+	case reflect.Int64:
+		out = strconv.FormatInt(v.(int64), 10)
+	case reflect.Bool:
+		out = strconv.FormatBool(v.(bool))
+	}
+	return fmt.Sprintf(`"%s"`, out)
+}
+
+// custom attributes can be single valued or multi valued. Multi-value attribute values are represented by a json
+// array that gets converted to a list. It's not guaranteed that the order of the values returned by windows
+// will match the order set by the user in the config, so we just check the members of the custom attributes map
+// and if a slice is found then it's sorted before we compare it.
+func SortInnerSlice(m map[string]interface{}) map[string]interface{} {
+	for k, v := range m {
+		if reflect.ValueOf(v).Kind() == reflect.Slice {
+			newVal := make([]string, len(v.([]interface{})))
+			for idx, attr := range v.([]interface{}) {
+				newVal[idx] = GetString(attr)
+			}
+			sort.Strings(newVal)
+			m[k] = newVal
+		} else {
+			m[k] = GetString(v)
+		}
+	}
+	return m
 }

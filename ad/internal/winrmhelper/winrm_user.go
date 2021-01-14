@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"reflect"
 	"strings"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/structure"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/masterzen/winrm"
@@ -54,6 +57,7 @@ type User struct {
 	Username               string
 	PasswordNeverExpires   bool
 	CannotChangePassword   bool
+	CustomAttributes       map[string]interface{}
 }
 
 // NewUser creates the user by running the New-ADUser powershell command
@@ -200,11 +204,18 @@ func (u *User) NewUser(client *winrm.Client) (string, error) {
 		cmds = append(cmds, fmt.Sprintf("-Title %q", u.Title))
 	}
 
+	if u.CustomAttributes != nil {
+		attrs, err := u.getOtherAttributes()
+		if err != nil {
+			return "", err
+		}
+		cmds = append(cmds, fmt.Sprintf("-OtherAttributes %s", attrs))
+
+	}
 	result, err := RunWinRMCommand(client, cmds, true, false)
 	if err != nil {
 		return "", err
 	}
-
 	if result.ExitCode != 0 {
 		log.Printf("[DEBUG] stderr: %s\nstdout: %s", result.StdErr, result.Stdout)
 		if strings.Contains(result.StdErr, "AlreadyExists") {
@@ -213,7 +224,7 @@ func (u *User) NewUser(client *winrm.Client) (string, error) {
 		return "", fmt.Errorf("command New-ADUser exited with a non-zero exit code %d, stderr: %s", result.ExitCode, result.StdErr)
 	}
 
-	user, err := unmarshallUser([]byte(result.Stdout))
+	user, err := unmarshallUser([]byte(result.Stdout), nil)
 	if err != nil {
 		return "", fmt.Errorf("error while unmarshalling user json document: %s", err)
 	}
@@ -281,6 +292,81 @@ func (u *User) ModifyUser(d *schema.ResourceData, client *winrm.Client) error {
 		}
 	}
 
+	if d.HasChange("custom_attributes") {
+		oldValue, newValue := d.GetChange("custom_attributes")
+		newMap, err := structure.ExpandJsonFromString(newValue.(string))
+		if err != nil {
+			return err
+		}
+
+		newSortedMap := SortInnerSlice(newMap)
+		toClear := []string{}
+		toReplace := []string{}
+		toAdd := []string{}
+
+		var oldSortedMap map[string]interface{}
+		if oldValue.(string) != "" {
+			oldMap, err := structure.ExpandJsonFromString(oldValue.(string))
+			if err != nil {
+				return fmt.Errorf("while expanding CA json string %s: %s", oldValue.(string), err)
+			}
+			oldSortedMap = SortInnerSlice(oldMap)
+		}
+
+		for k, v := range oldSortedMap {
+			if newVal, ok := newSortedMap[k]; ok {
+				if !reflect.DeepEqual(v, newVal) {
+					var out string
+					if reflect.ValueOf(newVal).Kind() == reflect.Slice {
+						quotedStrings := make([]string, len(newVal.([]string)))
+						for idx, s := range newVal.([]string) {
+							// Using %q here will cause double quotes inside the string to be escaped with \"
+							// which is not desirable in Powershell
+							quotedStrings[idx] = fmt.Sprintf(`"%s"`, s)
+						}
+						out = strings.Join(quotedStrings, ",")
+					} else {
+						out = fmt.Sprintf(`"%s"`, newVal.(string))
+					}
+					toReplace = append(toReplace, fmt.Sprintf("%s=%s", SanitiseString(k), out))
+				}
+			} else {
+				toClear = append(toClear, SanitiseString(k))
+			}
+		}
+
+		for k, newVal := range newSortedMap {
+			if _, ok := oldSortedMap[k]; !ok {
+				var out string
+				if reflect.ValueOf(newVal).Kind() == reflect.Slice {
+					quotedStrings := make([]string, len(newVal.([]string)))
+					for idx, s := range newVal.([]string) {
+						// Using %q here will cause double quotes inside the string to be escaped with \"
+						// which is not desirable in Powershell
+						quotedStrings[idx] = s
+					}
+					out = strings.Join(quotedStrings, ",")
+				} else {
+					out = newVal.(string)
+				}
+				toAdd = append(toAdd, fmt.Sprintf("%s=%s", SanitiseString(k), out))
+			}
+		}
+
+		if len(toClear) > 0 {
+			cmds = append(cmds, fmt.Sprintf(`-Clear %s`, strings.Join(toClear, ";")))
+		}
+
+		if len(toReplace) > 0 {
+			cmds = append(cmds, fmt.Sprintf(`-Replace @{%s}`, strings.Join(toReplace, ";")))
+		}
+
+		if len(toAdd) > 0 {
+			cmds = append(cmds, fmt.Sprintf(`-Add @{%s}`, strings.Join(toAdd, ";")))
+		}
+
+	}
+
 	if len(cmds) > 1 {
 		result, err := RunWinRMCommand(client, cmds, false, false)
 		if err != nil {
@@ -333,8 +419,30 @@ func (u *User) DeleteUser(client *winrm.Client) error {
 	return nil
 }
 
+func (u *User) getOtherAttributes() (string, error) {
+	out := []string{}
+	for k, v := range u.CustomAttributes {
+		cleanKey := SanitiseString(k)
+		var cleanValue string
+		if reflect.ValueOf(v).Kind() == reflect.Slice {
+			quotedStrings := make([]string, len(v.([]interface{})))
+			for idx, s := range v.([]interface{}) {
+				// Using %q here will cause double quotes inside the string to be escaped with \"
+				// which is not desirable in Powershell
+				quotedStrings[idx] = GetString(s.(string))
+			}
+			cleanValue = strings.Join(quotedStrings, ",")
+		} else {
+			cleanValue = GetString(v.(string))
+		}
+		out = append(out, fmt.Sprintf(`'%s'=%s`, cleanKey, cleanValue))
+	}
+	finalAttrString := strings.Join(out, ";")
+	return fmt.Sprintf("@{%s}", finalAttrString), nil
+}
+
 // GetUserFromResource returns a user struct built from Resource data
-func GetUserFromResource(d *schema.ResourceData) *User {
+func GetUserFromResource(d *schema.ResourceData) (*User, error) {
 	user := User{
 		GUID:                   d.Id(),
 		SAMAccountName:         SanitiseTFInput(d, "sam_account_name"),
@@ -383,12 +491,22 @@ func GetUserFromResource(d *schema.ResourceData) *User {
 		}
 	}
 
-	return &user
+	ca, ok := d.Get("custom_attributes").(string)
+	if ok && len(ca) > 0 {
+		user.CustomAttributes = make(map[string]interface{})
+		customAttributes, err := structure.ExpandJsonFromString(ca)
+		if err != nil {
+			return nil, fmt.Errorf("while unmarshalling custom attributes JSON doc: %s", err)
+		}
+		user.CustomAttributes = customAttributes
+	}
+
+	return &user, nil
 }
 
 // GetUserFromHost returns a User struct based on data
 // retrieved from the AD Domain Controller.
-func GetUserFromHost(client *winrm.Client, guid string) (*User, error) {
+func GetUserFromHost(client *winrm.Client, guid string, customAttributes []string) (*User, error) {
 	cmd := fmt.Sprintf("Get-ADUser -identity %q -properties *", guid)
 	result, err := RunWinRMCommand(client, []string{cmd}, true, false)
 	if err != nil {
@@ -400,18 +518,17 @@ func GetUserFromHost(client *winrm.Client, guid string) (*User, error) {
 		return nil, fmt.Errorf("command Get-ADUser exited with a non-zero exit code %d, stderr: %s", result.ExitCode, result.StdErr)
 	}
 
-	u, err := unmarshallUser([]byte(result.Stdout))
+	u, err := unmarshallUser([]byte(result.Stdout), customAttributes)
 	if err != nil {
 		return nil, fmt.Errorf("error while unmarshalling user json document: %s", err)
 	}
-
 	return u, nil
 }
 
 // unmarshallUser unmarshalls the incoming byte array containing JSON
 // into a User structure and populates all fields based on the data
 // extracted.
-func unmarshallUser(input []byte) (*User, error) {
+func unmarshallUser(input []byte, customAttributes []string) (*User, error) {
 	var user User
 	err := json.Unmarshal(input, &user)
 	if err != nil {
@@ -439,6 +556,25 @@ func unmarshallUser(input []byte) (*User, error) {
 	user.Enabled = !(user.UserAccountControl&accountControlMap["disabled"] != 0)
 	user.PasswordNeverExpires = user.UserAccountControl&accountControlMap["password_never_expires"] != 0
 	user.CannotChangePassword = user.UserAccountControl&accountControlMap["cannot_change_password"] != 0
+
+	if customAttributes == nil {
+		return &user, nil
+	}
+
+	var userMapIntf interface{}
+	err = json.Unmarshal(input, &userMapIntf)
+	if err != nil {
+		log.Printf("[DEBUG] Failed to unmarshall json document with error %q, document was: %s", err, string(input))
+		return nil, fmt.Errorf("failed while unmarshalling json response: %s", err)
+	}
+
+	userMap := userMapIntf.(map[string]interface{})
+	user.CustomAttributes = make(map[string]interface{})
+	for _, property := range customAttributes {
+		if val, ok := userMap[property]; ok {
+			user.CustomAttributes[property] = val
+		}
+	}
 
 	return &user, nil
 }

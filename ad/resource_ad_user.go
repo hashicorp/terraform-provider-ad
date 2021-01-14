@@ -3,7 +3,10 @@ package ad
 import (
 	"fmt"
 	"log"
+	"reflect"
 	"strings"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/structure"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -214,12 +217,39 @@ func resourceADUser() *schema.Resource {
 				Default:     false,
 				Description: "If set to true, the user account is trusted for Kerberos delegation. A service that runs under an account that is trusted for Kerberos delegation can assume the identity of a client requesting the service. This parameter sets the TrustedForDelegation property of an account object.",
 			},
+			"custom_attributes": {
+				Type:             schema.TypeString,
+				Optional:         true,
+				Description:      "JSON encoded map that represents key/value pairs for custom attributes. Please note that `terraform import` will not import these attributes.",
+				ValidateFunc:     validation.StringIsJSON,
+				DiffSuppressFunc: suppressJsonDiff,
+			},
 		},
 	}
 }
 
+func suppressJsonDiff(k, old, new string, d *schema.ResourceData) bool {
+
+	oldMap, err := structure.ExpandJsonFromString(old)
+	if err != nil {
+		return false
+	}
+	oldSortedMap := winrmhelper.SortInnerSlice(oldMap)
+
+	newMap, err := structure.ExpandJsonFromString(new)
+	if err != nil {
+		return false
+	}
+	newSortedMap := winrmhelper.SortInnerSlice(newMap)
+
+	return reflect.DeepEqual(oldSortedMap, newSortedMap)
+}
+
 func resourceADUserCreate(d *schema.ResourceData, meta interface{}) error {
-	u := winrmhelper.GetUserFromResource(d)
+	u, err := winrmhelper.GetUserFromResource(d)
+	if err != nil {
+		return fmt.Errorf("while building a User struct from resource data: %s", err)
+	}
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
 		return err
@@ -231,6 +261,19 @@ func resourceADUserCreate(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 	d.SetId(guid)
+	// We need to set this so we can then retrieve the list of attributes to look for while "reading"
+	if u.CustomAttributes != nil {
+		caMap := make(map[string]interface{})
+		for k, v := range u.CustomAttributes {
+			caMap[k] = v
+		}
+		ca, err := structure.FlattenJsonToString(caMap)
+		if err != nil {
+			return err
+		}
+		_ = d.Set("custom_attributes", ca)
+	}
+
 	return resourceADUserRead(d, meta)
 }
 
@@ -242,7 +285,13 @@ func resourceADUserRead(d *schema.ResourceData, meta interface{}) error {
 	}
 	defer meta.(ProviderConf).ReleaseWinRMClient(client)
 
-	u, err := winrmhelper.GetUserFromHost(client, d.Id())
+	// get attribute keys from json blob
+	caKeys, err := extractCustAttrKeys(d)
+	if err != nil {
+		return err
+	}
+
+	u, err := winrmhelper.GetUserFromHost(client, d.Id(), caKeys)
 	if err != nil {
 		if strings.Contains(err.Error(), "ADIdentityNotFoundException") {
 			d.SetId("")
@@ -291,11 +340,23 @@ func resourceADUserRead(d *schema.ResourceData, meta interface{}) error {
 	_ = d.Set("smart_card_logon_required", u.SmartcardLogonRequired)
 	_ = d.Set("trusted_for_delegation", u.TrustedForDelegation)
 
+	if u.CustomAttributes != nil {
+		ca, err := structure.FlattenJsonToString(u.CustomAttributes)
+		if err != nil {
+			return err
+		}
+		_ = d.Set("custom_attributes", ca)
+	}
+
 	return nil
 }
 
 func resourceADUserUpdate(d *schema.ResourceData, meta interface{}) error {
-	u := winrmhelper.GetUserFromResource(d)
+	u, err := winrmhelper.GetUserFromResource(d)
+	if err != nil {
+		return err
+	}
+
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
 		return err
@@ -316,7 +377,7 @@ func resourceADUserDelete(d *schema.ResourceData, meta interface{}) error {
 	}
 	defer meta.(ProviderConf).ReleaseWinRMClient(client)
 
-	u, err := winrmhelper.GetUserFromHost(client, d.Id())
+	u, err := winrmhelper.GetUserFromHost(client, d.Id(), nil)
 	if err != nil {
 		if strings.Contains(err.Error(), "ADIdentityNotFoundException") {
 			return nil
@@ -328,4 +389,19 @@ func resourceADUserDelete(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("while deleting user: %s", err)
 	}
 	return resourceADUserRead(d, meta)
+}
+
+func extractCustAttrKeys(d *schema.ResourceData) ([]string, error) {
+	result := []string{}
+	caString, ok := d.Get("custom_attributes").(string)
+	if ok && len(caString) > 0 {
+		ca, err := structure.ExpandJsonFromString(caString)
+		if err != nil {
+			return nil, err
+		}
+		for k := range ca {
+			result = append(result, k)
+		}
+	}
+	return result, nil
 }
