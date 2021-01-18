@@ -17,9 +17,13 @@ variable principal_name { default = "testuser" }
 variable samaccountname { default = "testuser" }
 
 resource "ad_user" "u" {
-  principal_name   = var.principal_name
-  sam_account_name = var.samaccountname
-  display_name     = "Terraform Test User"
+  principal_name    = var.principal_name
+  sam_account_name  = var.samaccountname
+  display_name      = "Terraform Test User"
+  custom_attributes = jsonencode({
+    "carLicense": ["This is", "a multi-value", "attribute"],
+    "comment": "and this is a single value attribute"
+  })
 }
 
 
@@ -81,6 +85,7 @@ resource "ad_user" "u2" {
 - **company** (String, Optional) Specifies the user's company. This parameter sets the Company property of a user object.
 - **container** (String, Optional) A DN of the container object that will be holding the user.
 - **country** (String, Optional) Specifies the country by setting the country code (refer to ISO 3166)
+- **custom_attributes** (String, Optional) JSON encoded map that represents key/value pairs for custom attributes. Please note that `terraform import` will not import these attributes.
 - **department** (String, Optional) Specifies the user's department. This parameter sets the Department property of a user object.
 - **description** (String, Optional) Specifies a description of the object. This parameter sets the value of the Description property for the user object.
 - **division** (String, Optional) Specifies the user's division. This parameter sets the Division property of a user object.
