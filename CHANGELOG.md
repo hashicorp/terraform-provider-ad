@@ -1,4 +1,4 @@
-## 0.4.1 (Unreleased)
+## 0.4.1 (January 18, 2021)
 
 **BREAKING CHANGES:**
 
