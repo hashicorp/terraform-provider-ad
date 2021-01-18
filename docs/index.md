@@ -38,7 +38,8 @@ If a configuration file is not supplied then we will use the equivalent of the f
 ```
 
 where `YOURDOMAIN.COM` is the value of the `krb_realm` setting, and 192.168.1.122 is the value of `winrm_hostname`.
-
+`Basic` remains the default authentication method, although this may change in the future. The provider will use
+Kerberos as its authentication when `krb_realm` is set.
 
 ## Example Usage
 

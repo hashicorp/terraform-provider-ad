@@ -1,8 +1,25 @@
+## 0.4.1 (Unreleased)
+
+**BREAKING CHANGES:**
+
+If you are using the `ad_group` or `ad_user` datasources you will have to update some fields in your terraform configuration.
+
+* **Resource:** `ad_group` datasource now use the attribute `group_id` instead of `guid`. ([#69](https://github.com/hashicorp/terraform-provider-ad/pull/69))
+* **Resource:** `ad_user` datasource now use the attribute `user_id` instead of `guid`. ([#69](https://github.com/hashicorp/terraform-provider-ad/pull/69))
+
+BUGFIXES:
+* **Resource:** `ad_group_membership` uses parameter `Members` instead of `Member`. ([#68](https://github.com/hashicorp/terraform-provider-ad/pull/68))
+* **Kerberos Authentication:** Kerberos now respects the protocol setting and correctly uses https when instructed, instead of always using `http`. ([#66](https://github.com/hashicorp/terraform-provider-ad/pull/66))
+
+FEATURES:
+* **Resource:** `ad_user`: Added many standard attributes. ([#63](https://github.com/hashicorp/terraform-provider-ad/pull/63))
+* **Resource:** `ad_user`: Added support for custom attributes. ([#73](https://github.com/hashicorp/terraform-provider-ad/pull/73))
+
 ## 0.4.0 (December 17, 2020)
 
 FEATURES:
 * **New Auth method:** The provider now supports Kerberos authentication.
-* **New Auth method:** The provider now supports NTLM authentication.
+* **New Auth method:** The provider now supports NTLM authentication. ([#56](https://github.com/hashicorp/terraform-provider-ad/pull/56))
 
 ## 0.3.0 (November 06, 2020)
 

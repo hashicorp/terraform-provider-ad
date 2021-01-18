@@ -13,7 +13,7 @@ Get the details of an Active Directory user object.
 
 ```terraform
 data "ad_user" "u" {
-    guid = "DC3E5929-71C0-4232-9C32-9C7AFAABF0BB"
+    user_id = "DC3E5929-71C0-4232-9C32-9C7AFAABF0BB"
 }
 
 output "username" {
@@ -26,6 +26,14 @@ output "country" {
 
 output "trusted_for_delegation" {
     value = data.ad_user.u.trusted_for_delegation
+}
+
+data "ad_user" "u2" {
+    user_id = "CN=Test User,OU=Users,DC=contoso,DC=com"
+}
+
+output "testuser_guid" {
+    value = data.ad_user.u2.id
 }
 ```
 
