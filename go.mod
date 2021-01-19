@@ -5,7 +5,7 @@ go 1.15
 require (
 	github.com/dylanmei/iso8601 v0.1.0 // indirect
 	github.com/hashicorp/go-uuid v1.0.2
-	github.com/hashicorp/terraform-plugin-sdk/v2 v2.0.0
+	github.com/hashicorp/terraform-plugin-sdk/v2 v2.4.0
 	github.com/jcmturner/gokrb5/v8 v8.4.2
 	github.com/masterzen/winrm v0.0.0-20190308153735-1d17eaf15943
 	github.com/mitchellh/mapstructure v1.1.2
