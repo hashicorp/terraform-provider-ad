@@ -1,6 +1,7 @@
 package winrmhelper
 
 import (
+	"encoding/xml"
 	"fmt"
 	"log"
 	"reflect"
@@ -19,6 +20,57 @@ type WinRMResult struct {
 	ExitCode int
 }
 
+type psString string
+
+func (s *psString) UnmarshalText(text []byte) error {
+	str := string(text[:])
+	str = strings.TrimSpace(str)
+	if str[0] == '+' && len(str) > 2 {
+		*s = psString(fmt.Sprintf("\n%s", str[2:]))
+	} else {
+		*s = psString(str)
+	}
+
+	return nil
+}
+
+// PSOutput is used to unmarshall CLIXML output
+// Right now we are only using this to extract error messages, but it can be extended
+// to unpack more elements if required.
+type PSOutput struct {
+	PSStrings []psString `xml:"S"`
+}
+
+func (s *PSOutput) stringSlice() []string {
+	out := make([]string, len(s.PSStrings))
+	for idx, v := range s.PSStrings {
+		out[idx] = string(v)
+	}
+	return out
+}
+
+// String() return a string containing the error message that was serialised in a CLIXML message
+func (p *PSOutput) String() string {
+	str := strings.Join(p.stringSlice(), "")
+	replacer := strings.NewReplacer("_x000D_", "", "_x000A_", "")
+	str = replacer.Replace(str)
+	return str
+}
+
+func decodeXMLCli(xmlDoc string) (string, error) {
+	// If stderr is formatted in CLIXML try to extract the error message
+	if strings.Contains(xmlDoc, "#< CLIXML") {
+		xmlDoc = strings.Replace(xmlDoc, "#< CLIXML", "", -1)
+		var v PSOutput
+		err := xml.Unmarshal([]byte(xmlDoc), &v)
+		if err != nil {
+			return "", fmt.Errorf("while unmarshalling CLIXML document: %s", err)
+		}
+		xmlDoc = strings.TrimSpace(v.String())
+	}
+	return xmlDoc, nil
+}
+
 // RunWinRMCommand will run a powershell command and return the stdout and stderr
 // The output is converted to JSON if the json patameter is set to true.
 func RunWinRMCommand(conn *winrm.Client, cmds []string, json bool, forceArray bool) (*WinRMResult, error) {
@@ -34,6 +86,12 @@ func RunWinRMCommand(conn *winrm.Client, cmds []string, json bool, forceArray bo
 	log.Printf("[DEBUG] Powershell command exited with code %d", res)
 	if res != 0 {
 		log.Printf("[DEBUG] Stdout: %s, Stderr: %s", stdout, stderr)
+	}
+
+	// Decode stderr here for the error to be human readable if we need to return early
+	stderr, xmlErr := decodeXMLCli(stderr)
+	if xmlErr != nil {
+		log.Printf("[DEBUG] stderr was not serialised as CLIXML, passing back as is")
 	}
 	if err != nil {
 		log.Printf("[DEBUG] run error : %s", err)
