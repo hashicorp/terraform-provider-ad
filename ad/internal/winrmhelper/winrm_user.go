@@ -44,6 +44,7 @@ type User struct {
 	OtherName              string
 	POBox                  string
 	PostalCode             string
+	SID                    SID `json:"SID"`
 	SmartcardLogonRequired bool
 	State                  string
 	StreetAddress          string

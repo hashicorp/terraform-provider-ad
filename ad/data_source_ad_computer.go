@@ -27,6 +27,11 @@ func dataSourceADComputer() *schema.Resource {
 				Optional:    true,
 				Description: "The Distinguished Name of the computer object.",
 			},
+			"sid": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The SID of the computer object.",
+			},
 		},
 	}
 }
@@ -59,6 +64,7 @@ func dataSourceADComputerRead(d *schema.ResourceData, meta interface{}) error {
 	_ = d.Set("name", computer.Name)
 	_ = d.Set("dn", computer.DN)
 	_ = d.Set("guid", computer.GUID)
+	_ = d.Set("sid", computer.SID.Value)
 
 	return nil
 }

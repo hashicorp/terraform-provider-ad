@@ -17,6 +17,7 @@ type Computer struct {
 	DN             string `json:"DistinguishedName"`
 	SAMAccountName string `json:"SamAccountName"`
 	Path           string
+	SID            SID `json:"SID"`
 }
 
 // NewComputerFromResource returns a new Machine struct populated from resource data

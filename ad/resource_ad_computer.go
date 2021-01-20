@@ -47,6 +47,11 @@ func resourceADComputer() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+			"sid": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The SID of the computer object.",
+			},
 		},
 	}
 }
@@ -76,6 +81,7 @@ func resourceADComputerRead(d *schema.ResourceData, meta interface{}) error {
 	_ = d.Set("guid", computer.GUID)
 	_ = d.Set("pre2kname", computer.SAMAccountName)
 	_ = d.Set("container", computer.Path)
+	_ = d.Set("sid", computer.SID.Value)
 
 	return nil
 }

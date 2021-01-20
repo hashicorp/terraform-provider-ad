@@ -148,6 +148,11 @@ func dataSourceADUser() *schema.Resource {
 				Computed:    true,
 				Description: "Postal code of the user object.",
 			},
+			"sid": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The SID of the computer object.",
+			},
 			"smart_card_logon_required": {
 				Type:        schema.TypeBool,
 				Computed:    true,
@@ -225,6 +230,7 @@ func dataSourceADUserRead(d *schema.ResourceData, meta interface{}) error {
 	_ = d.Set("other_name", u.OtherName)
 	_ = d.Set("po_box", u.POBox)
 	_ = d.Set("postal_code", u.PostalCode)
+	_ = d.Set("sid", u.SID.Value)
 	_ = d.Set("state", u.State)
 	_ = d.Set("street_address", u.StreetAddress)
 	_ = d.Set("surname", u.Surname)
