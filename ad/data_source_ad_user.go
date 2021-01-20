@@ -206,7 +206,7 @@ func dataSourceADUserRead(d *schema.ResourceData, meta interface{}) error {
 	_ = d.Set("sam_account_name", u.SAMAccountName)
 	_ = d.Set("display_name", u.DisplayName)
 	_ = d.Set("principal_name", u.PrincipalName)
-	_ = d.Set("guid", u.GUID)
+	_ = d.Set("user_id", u.GUID)
 	_ = d.Set("city", u.City)
 	_ = d.Set("company", u.Company)
 	_ = d.Set("country", u.Country)
