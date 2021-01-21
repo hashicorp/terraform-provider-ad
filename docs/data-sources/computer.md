@@ -32,5 +32,6 @@ output "computer_guid" {
 ### Read-only
 
 - **name** (String, Read-only) The name of the computer object.
+- **sid** (String, Read-only) The SID of the computer object.
 
 

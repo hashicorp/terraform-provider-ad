@@ -51,7 +51,7 @@ func dataSourceADGroup() *schema.Resource {
 			"sid": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "The SID of the computer object.",
+				Description: "The SID of the group object.",
 			},
 		},
 	}

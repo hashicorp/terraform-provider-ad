@@ -75,6 +75,7 @@ output "testuser_guid" {
 - **postal_code** (String, Read-only) Postal code of the user object.
 - **principal_name** (String, Read-only) The principal name of the user object.
 - **sam_account_name** (String, Read-only) The SAM account name of the user object.
+- **sid** (String, Read-only) The SID of the user object.
 - **smart_card_logon_required** (Boolean, Read-only) Smart card required to logon or not
 - **state** (String, Read-only) State of the user object.
 - **street_address** (String, Read-only) Address of the user object.

@@ -37,6 +37,7 @@ resource "ad_computer" "c" {
 
 - **dn** (String, Read-only)
 - **guid** (String, Read-only)
+- **sid** (String, Read-only) The SID of the computer object.
 
 ## Import
 

@@ -151,7 +151,7 @@ func dataSourceADUser() *schema.Resource {
 			"sid": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "The SID of the computer object.",
+				Description: "The SID of the user object.",
 			},
 			"smart_card_logon_required": {
 				Type:        schema.TypeBool,
