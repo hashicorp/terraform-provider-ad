@@ -33,6 +33,18 @@ func TestAccUser_basic(t *testing.T) {
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"initial_password"},
 			},
+			{
+				Config: testAccUserConfigAttributes("dc=yourdomain,dc=com", "testuser", "thu2too'W?ieJ}a^g0zo"),
+				Check: resource.ComposeTestCheckFunc(
+					testAccUserExists("ad_user.a", "dc=yourdomain,dc=com", "testuser", true),
+				),
+			},
+			{
+				Config: testAccUserConfigBasic("dc=yourdomain,dc=com", "testuser", "thu2too'W?ieJ}a^g0zo"),
+				Check: resource.ComposeTestCheckFunc(
+					testAccUserExists("ad_user.a", "dc=yourdomain,dc=com", "testuser", true),
+				),
+			},
 		},
 	})
 }
@@ -209,6 +221,42 @@ func testAccUserConfigBasic(domain, username, password string) string {
 	return fmt.Sprintf(`%s
 	resource "ad_user" "a" {%s
  	}`, defaultVariablesSection(domain, username, password), defaultUserSection(""))
+
+}
+
+func testAccUserConfigAttributes(domain, username, password string) string {
+	return fmt.Sprintf(`%s
+	resource "ad_user" "a" {%s
+	  city                      = "City"
+	  company                   = "Company"
+	  country                   = "us"
+	  department                = "Department"
+	  description               = "Description"
+	  division                  = "Division"
+	  email_address             = "some@email.com"
+	  employee_id               = "id"
+	  employee_number           = "number"
+	  fax                       = "Fax"
+	  given_name                = "GivenName"
+	  home_directory            = "HomeDirectory"
+	  home_drive                = "HomeDrive"
+	  home_phone                = "HomePhone"
+	  home_page                 = "HomePage"
+	  initials                  = "Initia"
+	  mobile_phone              = "MobilePhone"
+	  office                    = "Office"
+	  office_phone              = "OfficePhone"
+	  organization              = "Organization"
+	  other_name                = "OtherName"
+	  po_box                    = "POBox"
+	  postal_code               = "PostalCode"
+	  state                     = "State"
+	  street_address            = "StreetAddress"
+	  surname                   = "Surname"
+	  title                     = "Title"
+	  smart_card_logon_required = false
+	  trusted_for_delegation    = true
+	}`, defaultVariablesSection(domain, username, password), defaultUserSection(""))
 
 }
 
