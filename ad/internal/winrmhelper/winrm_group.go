@@ -21,6 +21,7 @@ type Group struct {
 	Scope             string
 	Category          string
 	Container         string
+	SID               SID `json:"SID"`
 }
 
 // AddGroup creates a new group

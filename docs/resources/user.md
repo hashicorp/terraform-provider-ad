@@ -117,6 +117,10 @@ resource "ad_user" "u2" {
 - **title** (String, Optional) Specifies the user's title. This parameter sets the Title property of a user object
 - **trusted_for_delegation** (Boolean, Optional) If set to true, the user account is trusted for Kerberos delegation. A service that runs under an account that is trusted for Kerberos delegation can assume the identity of a client requesting the service. This parameter sets the TrustedForDelegation property of an account object.
 
+### Read-only
+
+- **sid** (String, Read-only) The SID of the user object.
+
 ## Import
 
 Import is supported using the following syntax:

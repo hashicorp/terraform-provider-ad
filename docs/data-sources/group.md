@@ -47,5 +47,6 @@ output "g2_guid" {
 - **name** (String, Read-only) The name of the Group object.
 - **sam_account_name** (String, Read-only) The SAM account name of the Group object.
 - **scope** (String, Read-only) The Group's scope.
+- **sid** (String, Read-only) The SID of the group object.
 
 

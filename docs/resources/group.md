@@ -53,6 +53,10 @@ resource "ad_group" "g" {
 - **id** (String, Optional) The ID of this resource.
 - **scope** (String, Optional) The group's scope. Can be one of `global`, `local`, or `universal` (case sensitive).
 
+### Read-only
+
+- **sid** (String, Read-only) The SID of the group object.
+
 ## Import
 
 Import is supported using the following syntax:

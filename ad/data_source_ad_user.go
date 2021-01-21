@@ -148,6 +148,11 @@ func dataSourceADUser() *schema.Resource {
 				Computed:    true,
 				Description: "Postal code of the user object.",
 			},
+			"sid": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The SID of the user object.",
+			},
 			"smart_card_logon_required": {
 				Type:        schema.TypeBool,
 				Computed:    true,
@@ -201,7 +206,7 @@ func dataSourceADUserRead(d *schema.ResourceData, meta interface{}) error {
 	_ = d.Set("sam_account_name", u.SAMAccountName)
 	_ = d.Set("display_name", u.DisplayName)
 	_ = d.Set("principal_name", u.PrincipalName)
-	_ = d.Set("guid", u.GUID)
+	_ = d.Set("user_id", u.GUID)
 	_ = d.Set("city", u.City)
 	_ = d.Set("company", u.Company)
 	_ = d.Set("country", u.Country)
@@ -225,6 +230,7 @@ func dataSourceADUserRead(d *schema.ResourceData, meta interface{}) error {
 	_ = d.Set("other_name", u.OtherName)
 	_ = d.Set("po_box", u.POBox)
 	_ = d.Set("postal_code", u.PostalCode)
+	_ = d.Set("sid", u.SID.Value)
 	_ = d.Set("state", u.State)
 	_ = d.Set("street_address", u.StreetAddress)
 	_ = d.Set("surname", u.Surname)

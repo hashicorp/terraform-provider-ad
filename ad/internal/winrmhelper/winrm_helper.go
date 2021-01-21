@@ -13,6 +13,12 @@ import (
 	"github.com/masterzen/winrm"
 )
 
+// SID is a common structure by all "security principals". This means domains, users, computers, and groups.
+// The structure we get from powershell contains more fields, but we're only interested in the Value.
+type SID struct {
+	Value string `json:"Value"`
+}
+
 //WinRMResult holds the stdout, stderr and exit code of a powershell command
 type WinRMResult struct {
 	Stdout   string

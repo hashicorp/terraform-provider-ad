@@ -224,6 +224,11 @@ func resourceADUser() *schema.Resource {
 				ValidateFunc:     validation.StringIsJSON,
 				DiffSuppressFunc: suppressJsonDiff,
 			},
+			"sid": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The SID of the user object.",
+			},
 		},
 	}
 }
@@ -333,6 +338,7 @@ func resourceADUserRead(d *schema.ResourceData, meta interface{}) error {
 	_ = d.Set("other_name", u.OtherName)
 	_ = d.Set("po_box", u.POBox)
 	_ = d.Set("postal_code", u.PostalCode)
+	_ = d.Set("sid", u.SID.Value)
 	_ = d.Set("state", u.State)
 	_ = d.Set("street_address", u.StreetAddress)
 	_ = d.Set("surname", u.Surname)
