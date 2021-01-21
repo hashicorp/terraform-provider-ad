@@ -273,8 +273,13 @@ func (u *User) ModifyUser(d *schema.ResourceData, client *winrm.Client) error {
 
 	for k, param := range strKeyMap {
 		if d.HasChange(k) {
-			value := d.Get(k).(string)
-			cmds = append(cmds, fmt.Sprintf("-%s %q", param, value))
+			value := SanitiseTFInput(d, k)
+			if value == "" {
+				value = "$null"
+			} else {
+				value = fmt.Sprintf(`"%s"`, value)
+			}
+			cmds = append(cmds, fmt.Sprintf(`-%s %s`, param, value))
 		}
 	}
 
