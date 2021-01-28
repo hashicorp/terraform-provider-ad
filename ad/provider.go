@@ -1,6 +1,8 @@
 package ad
 
 import (
+	"log"
+	"runtime"
 	"strings"
 	"sync"
 
@@ -147,6 +149,23 @@ func (pcfg ProviderConf) ReleaseWinRMCPClient(winRMCPClient *winrmcp.Winrmcp) {
 	pcfg.mx.Lock()
 	defer pcfg.mx.Unlock()
 	pcfg.winRMCPClients = append(pcfg.winRMCPClients, winRMCPClient)
+}
+
+// isConnectionTypeLocal check if connection is local
+func (pcfg ProviderConf) isConnectionTypeLocal() bool {
+	pcfg.mx.Lock()
+	defer pcfg.mx.Unlock()
+
+	log.Printf("[DEBUG] Getting connection type")
+	connType := false
+	if runtime.GOOS == "windows" {
+		if pcfg.Configuration.WinRMHost == "" && pcfg.Configuration.WinRMUsername == "" && pcfg.Configuration.WinRMPassword == "" {
+			log.Printf("[DEBUG] Matching criteria for local execution")
+			connType = true
+		}
+	}
+	log.Printf("[DEBUG] Is connection type local ? %t", connType)
+	return connType
 }
 
 func initProviderConfig(d *schema.ResourceData) (interface{}, error) {
