@@ -1,16 +1,21 @@
 package winrmhelper
 
 import (
+	"bytes"
+	"encoding/base64"
 	"encoding/xml"
 	"fmt"
 	"log"
+	"os/exec"
 	"reflect"
 	"sort"
 	"strconv"
 	"strings"
+	"syscall"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/masterzen/winrm"
+	"golang.org/x/text/encoding/unicode"
 )
 
 // SID is a common structure by all "security principals". This means domains, users, computers, and groups.
@@ -77,18 +82,101 @@ func decodeXMLCli(xmlDoc string) (string, error) {
 	return xmlDoc, nil
 }
 
+// PowerShell struct
+type PowerShell struct {
+	powerShell string
+}
+
+// NewPS create new session
+func NewPS() *PowerShell {
+	ps, _ := exec.LookPath("powershell.exe")
+	return &PowerShell{
+		powerShell: ps,
+	}
+}
+
+func EncodeCmd(psCmd string) string {
+	// Disable unnecessary progress bars which considered as stderr.
+	psCmd = "$ProgressPreference = 'SilentlyContinue';" + psCmd
+
+	// Encode string to UTF16-LE
+	encoder := unicode.UTF16(unicode.LittleEndian, unicode.IgnoreBOM).NewEncoder()
+	encoded, err := encoder.String(psCmd)
+	if err != nil {
+		return ""
+	}
+
+	// Finally make it base64 encoded which is required for powershell.
+	psCmd = base64.StdEncoding.EncodeToString([]byte(encoded))
+
+	return "powershell.exe -EncodedCommand " + psCmd
+}
+
+const defaultFailedCode = 1
+
+// execute ...
+func (p *PowerShell) execute(args ...string) (stdout string, stderr string, exitCode int) {
+	var outbuf, errbuf bytes.Buffer
+	//args = append([]string{"-NoProfile", "-NonInteractive -EncodedCommand"}, args...)
+	cmd := exec.Command(p.powerShell, args...)
+	cmd.Stdout = &outbuf
+	cmd.Stderr = &errbuf
+
+	err := cmd.Run()
+	stdout = outbuf.String()
+	stderr = errbuf.String()
+
+	if err != nil {
+		if exitError, ok := err.(*exec.ExitError); ok {
+			ws := exitError.Sys().(syscall.WaitStatus)
+			exitCode = ws.ExitStatus()
+		} else {
+			exitCode = defaultFailedCode
+			if stderr == "" {
+				stderr = err.Error()
+			}
+		}
+	} else {
+		// success, exitCode should be 0 if go is ok
+		ws := cmd.ProcessState.Sys().(syscall.WaitStatus)
+		exitCode = ws.ExitStatus()
+	}
+	return
+}
+
 // RunWinRMCommand will run a powershell command and return the stdout and stderr
 // The output is converted to JSON if the json patameter is set to true.
-func RunWinRMCommand(conn *winrm.Client, cmds []string, json bool, forceArray bool) (*WinRMResult, error) {
+func RunWinRMCommand(conn *winrm.Client, cmds []string, json bool, forceArray bool, execLocally bool) (*WinRMResult, error) {
 	if json {
-		cmds = append(cmds, "| convertto-json")
+		cmds = append(cmds, "| ConvertTo-Json")
 	}
 
 	cmd := strings.Join(cmds, " ")
 	encodedCmd := winrm.Powershell(cmd)
 	log.Printf("[DEBUG] Running command %s via powershell", cmd)
 	log.Printf("[DEBUG] Encoded command: %s", encodedCmd)
-	stdout, stderr, res, err := conn.RunWithString(encodedCmd, "")
+
+	var (
+		stdout string
+		stderr string
+		res    int
+		err    error
+	)
+
+	if execLocally == false && conn != nil {
+		stdout, stderr, res, err = conn.RunWithString(encodedCmd, "")
+		log.Printf("[DEBUG] Powershell command exited with code %d", res)
+
+		if err != nil {
+			log.Printf("[DEBUG] run error : %s", err)
+			return nil, fmt.Errorf("powershell command failed with exit code %d\nstdout: %s\nstderr: %s\nerror: %s", res, stdout, stderr, err)
+		}
+
+	} else {
+		shell := NewPS()
+		stdout, stderr, res = shell.execute(encodedCmd)
+	}
+
 	log.Printf("[DEBUG] Powershell command exited with code %d", res)
 	if res != 0 {
 		log.Printf("[DEBUG] Stdout: %s, Stderr: %s", stdout, stderr)
@@ -98,10 +186,6 @@ func RunWinRMCommand(conn *winrm.Client, cmds []string, json bool, forceArray bo
 	stderr, xmlErr := decodeXMLCli(stderr)
 	if xmlErr != nil {
 		log.Printf("[DEBUG] stderr was not serialised as CLIXML, passing back as is")
-	}
-	if err != nil {
-		log.Printf("[DEBUG] run error : %s", err)
-		return nil, fmt.Errorf("powershell command failed with exit code %d\nstdout: %s\nstderr: %s\nerror: %s", res, stdout, stderr, err)
 	}
 
 	result := &WinRMResult{
