@@ -164,6 +164,7 @@ func RunWinRMCommand(conn *winrm.Client, cmds []string, json bool, forceArray bo
 	)
 
 	if execLocally == false && conn != nil {
+		log.Printf("[DEBUG] Running command remotely")
 		stdout, stderr, res, err = conn.RunWithString(encodedCmd, "")
 		log.Printf("[DEBUG] Powershell command exited with code %d", res)
 
@@ -173,6 +174,7 @@ func RunWinRMCommand(conn *winrm.Client, cmds []string, json bool, forceArray bo
 		}
 
 	} else {
+		log.Printf("[DEBUG] Running command locally")
 		shell := NewPS()
 		stdout, stderr, res = shell.execute(encodedCmd)
 	}
@@ -231,9 +233,9 @@ func SanitiseString(key string) string {
 
 // SetMachineExtensionName will add the necessary GUIDs to the GPO's gPCMachineExtensionNames attribute.
 // These are required for the security settings part of a GPO to work.
-func SetMachineExtensionNames(client *winrm.Client, gpoDN, value string) error {
+func SetMachineExtensionNames(client *winrm.Client, gpoDN, value string, execLocally bool) error {
 	cmd := fmt.Sprintf(`Set-ADObject -Identity "%s" -Replace @{gPCMachineExtensionNames="%s"}`, gpoDN, value)
-	result, err := RunWinRMCommand(client, []string{cmd}, false, false)
+	result, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally)
 	if err != nil {
 		return fmt.Errorf("error while setting machine extension names for GPO %q: %s", gpoDN, err)
 	}

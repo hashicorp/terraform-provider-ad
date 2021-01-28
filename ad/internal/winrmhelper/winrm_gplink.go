@@ -23,7 +23,7 @@ type GPLink struct {
 }
 
 //NewGPLink creates a link between a GPO and an AD object
-func (g *GPLink) NewGPLink(client *winrm.Client) (string, error) {
+func (g *GPLink) NewGPLink(client *winrm.Client, execLocally bool) (string, error) {
 	log.Printf("[DEBUG] Creating new user")
 	enforced := "No"
 	if g.Enforced {
@@ -41,7 +41,7 @@ func (g *GPLink) NewGPLink(client *winrm.Client) (string, error) {
 		cmds = append(cmds, fmt.Sprintf("-Order %d", g.Order))
 	}
 
-	result, err := RunWinRMCommand(client, cmds, true, false)
+	result, err := RunWinRMCommand(client, cmds, true, false, execLocally)
 	if err != nil {
 		return "", err
 	}
@@ -59,7 +59,7 @@ func (g *GPLink) NewGPLink(client *winrm.Client) (string, error) {
 		return "", fmt.Errorf("error while unmarshalling gplink json document: %s", err)
 	}
 
-	ou, err := NewOrgUnitFromHost(client, gplink.Target, "", "")
+	ou, err := NewOrgUnitFromHost(client, gplink.Target, "", "", execLocally)
 	if err != nil {
 		return "", fmt.Errorf("failed to retrieve details for OU %q: %s", gplink.Target, err)
 	}
@@ -71,7 +71,7 @@ func (g *GPLink) NewGPLink(client *winrm.Client) (string, error) {
 }
 
 //ModifyGPLink changes a GPO link
-func (g *GPLink) ModifyGPLink(client *winrm.Client, changes map[string]interface{}) error {
+func (g *GPLink) ModifyGPLink(client *winrm.Client, changes map[string]interface{}, execLocally bool) error {
 	cmds := []string{fmt.Sprintf("Set-GPLink -guid %q -target %q", g.GPOGuid, g.Target)}
 	keyMap := map[string]string{
 		"enforced": "Enforced",
@@ -95,7 +95,7 @@ func (g *GPLink) ModifyGPLink(client *winrm.Client, changes map[string]interface
 	if len(cmds) == 1 {
 		return nil
 	}
-	result, err := RunWinRMCommand(client, cmds, false, false)
+	result, err := RunWinRMCommand(client, cmds, false, false, execLocally)
 	if err != nil {
 		return fmt.Errorf("error while running Set-GPLink: %s", err)
 	}
@@ -108,9 +108,9 @@ func (g *GPLink) ModifyGPLink(client *winrm.Client, changes map[string]interface
 }
 
 //RemoveGPLink deletes a link between a GPO and an AD object
-func (g *GPLink) RemoveGPLink(client *winrm.Client) error {
+func (g *GPLink) RemoveGPLink(client *winrm.Client, execLocally bool) error {
 	cmd := fmt.Sprintf("Remove-GPlink -Guid %q -Target %q", g.GPOGuid, g.Target)
-	_, err := RunWinRMCommand(client, []string{cmd}, false, false)
+	_, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally)
 	if err != nil {
 		// Check if the resource is already deleted
 		if strings.Contains(err.Error(), "GpoLinkNotFound") || strings.Contains(err.Error(), "GpoWithIdNotFound") || strings.Contains(err.Error(), "There is no such object on the server") {
@@ -136,9 +136,9 @@ func GetGPLinkFromResource(d *schema.ResourceData) *GPLink {
 
 //GetGPLinkFromHost returns a GPLink struct populated with data retrieved from the
 //Domain Controller
-func GetGPLinkFromHost(client *winrm.Client, gpoGUID, containerGUID string) (*GPLink, error) {
+func GetGPLinkFromHost(client *winrm.Client, gpoGUID, containerGUID string, execLocally bool) (*GPLink, error) {
 	cmds := []string{fmt.Sprintf("Get-ADObject -filter {ObjectGUID -eq %q} -properties gplink", containerGUID)}
-	result, err := RunWinRMCommand(client, cmds, true, false)
+	result, err := RunWinRMCommand(client, cmds, true, false, execLocally)
 	if err != nil {
 		return nil, fmt.Errorf("while running Get-ADObject: %s", err)
 	}

@@ -17,19 +17,19 @@ func Provider() *schema.Provider {
 		Schema: map[string]*schema.Schema{
 			"winrm_username": {
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("AD_USER", nil),
 				Description: "The username used to authenticate to the server's WinRM service. (Environment variable: AD_USER)",
 			},
 			"winrm_password": {
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("AD_PASSWORD", nil),
 				Description: "The password used to authenticate to the server's WinRM service. (Environment variable: AD_PASSWORD)",
 			},
 			"winrm_hostname": {
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("AD_HOSTNAME", nil),
 				Description: "The hostname of the server we will use to run powershell scripts over WinRM. (Environment variable: AD_HOSTNAME)",
 			},

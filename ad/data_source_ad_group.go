@@ -58,6 +58,7 @@ func dataSourceADGroup() *schema.Resource {
 }
 
 func dataSourceADGroupRead(d *schema.ResourceData, meta interface{}) error {
+	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
 		return err
@@ -66,7 +67,7 @@ func dataSourceADGroupRead(d *schema.ResourceData, meta interface{}) error {
 
 	groupID := d.Get("group_id").(string)
 
-	g, err := winrmhelper.GetGroupFromHost(client, groupID)
+	g, err := winrmhelper.GetGroupFromHost(client, groupID, isLocal)
 	if err != nil {
 		return err
 	}

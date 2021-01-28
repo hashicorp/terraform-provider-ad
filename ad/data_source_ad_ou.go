@@ -43,6 +43,7 @@ func dataSourceADOU() *schema.Resource {
 }
 
 func dataSourceADOURead(d *schema.ResourceData, meta interface{}) error {
+	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
 		return err
@@ -57,7 +58,7 @@ func dataSourceADOURead(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("invalid inputs, dn or a combination of path and name are required")
 	}
 
-	ou, err := winrmhelper.NewOrgUnitFromHost(client, dn, name, path)
+	ou, err := winrmhelper.NewOrgUnitFromHost(client, dn, name, path, isLocal)
 	if err != nil {
 		return err
 	}

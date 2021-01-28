@@ -58,6 +58,7 @@ func resourceADOURead(d *schema.ResourceData, meta interface{}) error {
 	if d.Id() == "" {
 		return nil
 	}
+	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
 
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
@@ -65,7 +66,7 @@ func resourceADOURead(d *schema.ResourceData, meta interface{}) error {
 	}
 	defer meta.(ProviderConf).ReleaseWinRMClient(client)
 
-	ou, err := winrmhelper.NewOrgUnitFromHost(client, d.Id(), "", "")
+	ou, err := winrmhelper.NewOrgUnitFromHost(client, d.Id(), "", "", isLocal)
 	if err != nil {
 		if strings.Contains(err.Error(), "ObjectNotFound") {
 			// Resource no longer exists
@@ -86,6 +87,7 @@ func resourceADOURead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceADOUCreate(d *schema.ResourceData, meta interface{}) error {
+	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
 		return err
@@ -93,7 +95,7 @@ func resourceADOUCreate(d *schema.ResourceData, meta interface{}) error {
 	defer meta.(ProviderConf).ReleaseWinRMClient(client)
 
 	ou := winrmhelper.NewOrgUnitFromResource(d)
-	guid, err := ou.Create(client)
+	guid, err := ou.Create(client, isLocal)
 	if err != nil {
 		return err
 	}
@@ -103,6 +105,7 @@ func resourceADOUCreate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceADOUUpdate(d *schema.ResourceData, meta interface{}) error {
+	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
 		return err
@@ -119,7 +122,7 @@ func resourceADOUUpdate(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	err = ou.Update(client, changes)
+	err = ou.Update(client, changes, isLocal)
 	if err != nil {
 		return err
 	}
@@ -127,6 +130,7 @@ func resourceADOUUpdate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceADOUDelete(d *schema.ResourceData, meta interface{}) error {
+	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
 		return err
@@ -134,7 +138,7 @@ func resourceADOUDelete(d *schema.ResourceData, meta interface{}) error {
 	defer meta.(ProviderConf).ReleaseWinRMClient(client)
 
 	ou := winrmhelper.NewOrgUnitFromResource(d)
-	err = ou.Delete(client)
+	err = ou.Delete(client, isLocal)
 	if err != nil {
 		return err
 	}
