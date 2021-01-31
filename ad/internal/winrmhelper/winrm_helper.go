@@ -2,7 +2,6 @@ package winrmhelper
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/xml"
 	"fmt"
 	"log"
@@ -15,7 +14,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/masterzen/winrm"
-	"golang.org/x/text/encoding/unicode"
 )
 
 // SID is a common structure by all "security principals". This means domains, users, computers, and groups.
@@ -87,7 +85,7 @@ type PowerShell struct {
 	powerShell string
 }
 
-// NewPS create new session
+// NewPS create new local session
 func NewPS() *PowerShell {
 	ps, _ := exec.LookPath("powershell.exe")
 	return &PowerShell{
@@ -95,34 +93,16 @@ func NewPS() *PowerShell {
 	}
 }
 
-func EncodeCmd(psCmd string) string {
-	// Disable unnecessary progress bars which considered as stderr.
-	psCmd = "$ProgressPreference = 'SilentlyContinue';" + psCmd
-
-	// Encode string to UTF16-LE
-	encoder := unicode.UTF16(unicode.LittleEndian, unicode.IgnoreBOM).NewEncoder()
-	encoded, err := encoder.String(psCmd)
-	if err != nil {
-		return ""
-	}
-
-	// Finally make it base64 encoded which is required for powershell.
-	psCmd = base64.StdEncoding.EncodeToString([]byte(encoded))
-
-	return "powershell.exe -EncodedCommand " + psCmd
-}
-
 const defaultFailedCode = 1
 
-// execute ...
-func (p *PowerShell) execute(args ...string) (stdout string, stderr string, exitCode int) {
+// ExecutePScmd will execute the powershell command using exec
+func (p *PowerShell) ExecutePScmd(args ...string) (stdout string, stderr string, exitCode int, err error) {
 	var outbuf, errbuf bytes.Buffer
-	//args = append([]string{"-NoProfile", "-NonInteractive -EncodedCommand"}, args...)
 	cmd := exec.Command(p.powerShell, args...)
 	cmd.Stdout = &outbuf
 	cmd.Stderr = &errbuf
 
-	err := cmd.Run()
+	err = cmd.Run()
 	stdout = outbuf.String()
 	stderr = errbuf.String()
 
@@ -164,19 +144,14 @@ func RunWinRMCommand(conn *winrm.Client, cmds []string, json bool, forceArray bo
 	)
 
 	if execLocally == false && conn != nil {
-		log.Printf("[DEBUG] Running command remotely")
+		log.Printf("[DEBUG] Executing command on remote host")
 		stdout, stderr, res, err = conn.RunWithString(encodedCmd, "")
 		log.Printf("[DEBUG] Powershell command exited with code %d", res)
-
-		if err != nil {
-			log.Printf("[DEBUG] run error : %s", err)
-			return nil, fmt.Errorf("powershell command failed with exit code %d\nstdout: %s\nstderr: %s\nerror: %s", res, stdout, stderr, err)
-		}
-
 	} else {
-		log.Printf("[DEBUG] Running command locally")
-		shell := NewPS()
-		stdout, stderr, res = shell.execute(encodedCmd)
+		log.Printf("[DEBUG] Creating local shell")
+		localShell := NewPS()
+		log.Printf("[DEBUG] Executing command on local host")
+		stdout, stderr, res, err = localShell.ExecutePScmd(encodedCmd)
 	}
 
 	log.Printf("[DEBUG] Powershell command exited with code %d", res)
@@ -188,6 +163,11 @@ func RunWinRMCommand(conn *winrm.Client, cmds []string, json bool, forceArray bo
 	stderr, xmlErr := decodeXMLCli(stderr)
 	if xmlErr != nil {
 		log.Printf("[DEBUG] stderr was not serialised as CLIXML, passing back as is")
+	}
+
+	if err != nil {
+		log.Printf("[DEBUG] run error : %s", err)
+		return nil, fmt.Errorf("powershell command failed with exit code %d\nstdout: %s\nstderr: %s\nerror: %s", res, stdout, stderr, err)
 	}
 
 	result := &WinRMResult{
