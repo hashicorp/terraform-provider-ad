@@ -74,7 +74,7 @@ func testAccResourceADGPOExists(resourceName, name string, expected bool) resour
 			return err
 		}
 		defer testAccProvider.Meta().(ProviderConf).ReleaseWinRMClient(client)
-		gpo, err := winrmhelper.GetGPOFromHost(client, "", guid)
+		gpo, err := winrmhelper.GetGPOFromHost(client, "", guid, false)
 		if err != nil {
 			// Check that the err is really because the GPO was not found
 			// and not because of other issues

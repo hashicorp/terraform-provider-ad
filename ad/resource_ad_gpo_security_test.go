@@ -48,7 +48,7 @@ func testAccResourceADGPOSecurityExists(resourceName string, desired bool) resou
 			return err
 		}
 		defer testAccProvider.Meta().(ProviderConf).ReleaseWinRMClient(client)
-		gpo, err := winrmhelper.GetGPOFromHost(client, "", guid)
+		gpo, err := winrmhelper.GetGPOFromHost(client, "", guid, false)
 		if err != nil {
 			// if the GPO got destroyed first then the rest of the entities depending on it
 			// are also destroyed.
@@ -58,7 +58,7 @@ func testAccResourceADGPOSecurityExists(resourceName string, desired bool) resou
 			return err
 		}
 
-		_, err = winrmhelper.GetSecIniFromHost(client, gpo)
+		_, err = winrmhelper.GetSecIniFromHost(client, gpo, false)
 		if err != nil {
 			if !desired && strings.Contains(err.Error(), "NotFound") {
 				return nil

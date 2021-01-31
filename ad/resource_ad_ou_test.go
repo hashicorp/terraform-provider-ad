@@ -73,7 +73,7 @@ func testAccResourceADOUExists(resource, name string, expected bool) resource.Te
 		}
 		defer testAccProvider.Meta().(ProviderConf).ReleaseWinRMClient(client)
 		guid := rs.Primary.ID
-		ou, err := winrmhelper.NewOrgUnitFromHost(client, guid, "", "")
+		ou, err := winrmhelper.NewOrgUnitFromHost(client, guid, "", "", false)
 		if err != nil {
 			if strings.Contains(err.Error(), "ObjectNotFound") && !expected {
 				return nil

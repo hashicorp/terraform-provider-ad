@@ -100,7 +100,7 @@ func testAccResourceADComputerExists(resource, name string, expected bool) resou
 		defer testAccProvider.Meta().(ProviderConf).ReleaseWinRMClient(client)
 
 		guid := rs.Primary.ID
-		computer, err := winrmhelper.NewComputerFromHost(client, guid)
+		computer, err := winrmhelper.NewComputerFromHost(client, guid, false)
 		if err != nil {
 			if strings.Contains(err.Error(), "ObjectNotFound") && !expected {
 				return nil
