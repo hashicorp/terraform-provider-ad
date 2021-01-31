@@ -41,6 +41,26 @@ where `YOURDOMAIN.COM` is the value of the `krb_realm` setting, and 192.168.1.12
 `Basic` remains the default authentication method, although this may change in the future. The provider will use
 Kerberos as its authentication when `krb_realm` is set.
 
+## Note about Local execution (Windows only)
+
+It is possible to execute commands locally if the OS on which terraform is running is Windows.
+In such case, your need to put the following settings in the provider configuration :
+
+- Set winrm_username to null
+- Set winrm_password to null
+- Set winrm_hostname to null
+
+Note: it will set to local only if all 3 parameters are set to null 
+
+### Example
+```terraform
+provider "ad" {
+  winrm_hostname = ""
+  winrm_username = ""
+  winrm_password = ""
+}
+```
+
 ## Example Usage
 
 ```terraform
