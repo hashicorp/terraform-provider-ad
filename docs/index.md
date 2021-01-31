@@ -50,7 +50,7 @@ In such case, your need to put the following settings in the provider configurat
 - Set winrm_password to null
 - Set winrm_hostname to null
 
-Note: it will set to local only if all 3 parameters are set to null 
+Note: it will set to local only `if all 3 parameters are set to null`
 
 ### Example
 ```terraform
