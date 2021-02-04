@@ -35,8 +35,8 @@ func resourceADGroup() *schema.Resource {
 				Type:         schema.TypeString,
 				Optional:     true,
 				Default:      "global",
-				ValidateFunc: validation.StringInSlice([]string{"global", "local", "universal"}, false),
-				Description:  "The group's scope. Can be one of `global`, `local`, or `universal` (case sensitive).",
+				ValidateFunc: validation.StringInSlice([]string{"global", "domainlocal", "universal"}, false),
+				Description:  "The group's scope. Can be one of `global`, `domainlocal`, or `universal` (case sensitive).",
 			},
 			"category": {
 				Type:         schema.TypeString,
