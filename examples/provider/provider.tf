@@ -17,7 +17,7 @@ provider "ad" {
   winrm_use_ntlm = true
 }
 
-// remote using NTLM authentication and HTTPS 
+// remote using NTLM authentication and HTTPS
 provider "ad" {
   winrm_hostname = var.hostname
   winrm_username = var.username
@@ -28,7 +28,7 @@ provider "ad" {
   winrm_insecure = true
 }
 
-// remote using Kerberos authentication  
+// remote using Kerberos authentication
 provider "ad" {
   winrm_hostname = var.hostname
   winrm_username = var.username

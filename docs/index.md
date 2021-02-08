@@ -61,29 +61,64 @@ provider "ad" {
 }
 ```
 
+ ## Example Usage
+ 
+ ```terraform
+
 ## Example Usage
 
 ```terraform
-resource "ad_ou" "o" { 
-    name = "gplinktestOU"
-    path = "dc=yourdomain,dc=com"
-    description = "OU for gplink tests"
-    protected = false
-}
-    
-resource "ad_gpo" "g" {
-    name        = "gplinktestGPO"
-    domain      = "yourdomain.com"
-    description = "gpo for gplink tests"
-    status      = "AllSettingsEnabled"
+variable "hostname" { default = "ad.yourdomain.com" }
+variable "username" { default = "user" }
+variable "password" { default = "password" }
+
+// remote using Basic authentication
+provider "ad" {
+  winrm_hostname = var.hostname
+  winrm_username = var.username
+  winrm_password = var.password
 }
 
-resource "ad_gplink" "og" { 
-    gpo_guid = ad_gpo.g.id
-    target_dn = ad_ou.o.dn
-    enforced = true
-    enabled = true
-    order = 0
+// remote using NTLM authentication
+provider "ad" {
+  winrm_hostname = var.hostname
+  winrm_username = var.username
+  winrm_password = var.password
+  winrm_use_ntlm = true
+}
+
+// remote using NTLM authentication and HTTPS
+provider "ad" {
+  winrm_hostname = var.hostname
+  winrm_username = var.username
+  winrm_password = var.password
+  winrm_use_ntlm = true
+  winrm_port     = 5986
+  winrm_proto    = "https"
+  winrm_insecure = true
+}
+
+// remote using Kerberos authentication
+provider "ad" {
+  winrm_hostname = var.hostname
+  winrm_username = var.username
+  winrm_password = var.password
+  krb_realm      = "YOURDOMAIN.COM"
+}
+
+// remote using Kerberos authentication with krb5.conf file
+provider "ad" {
+  winrm_hostname = var.hostname
+  winrm_username = var.username
+  winrm_password = var.password
+  krb_conf       = "/etc/krb5.conf"
+}
+
+// local (windows only)
+provider "ad" {
+  winrm_hostname = ""
+  winrm_username = ""
+  winrm_password = ""
 }
 ```
 
@@ -101,6 +136,6 @@ resource "ad_gplink" "og" {
 - **krb_realm** (String, Optional) The name of the kerberos realm (domain) we will use for authentication. (default: "", environment variable: AD_KRB_REALM)
 - **krb_spn** (String, Optional) Alternative Service Principal Name. (default: none, environment variable: AD_KRB_SPN)
 - **winrm_insecure** (Boolean, Optional) Trust unknown certificates. (default: false, environment variable: AD_WINRM_INSECURE)
-- **winrm_use_ntlm** (Boolean, Optional) Use NTLM authentication. (default: false, environment variable: AD_WINRM_USE_NTLM)
 - **winrm_port** (Number, Optional) The port WinRM is listening for connections. (default: 5985, environment variable: AD_PORT)
 - **winrm_proto** (String, Optional) The WinRM protocol we will use. (default: http, environment variable: AD_PROTO)
+- **winrm_use_ntlm** (Boolean, Optional) Use NTLM authentication. (default: false, environment variable: AD_WINRM_USE_NTLM)
