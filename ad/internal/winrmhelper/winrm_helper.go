@@ -1,13 +1,16 @@
 package winrmhelper
 
 import (
+	"bytes"
 	"encoding/xml"
 	"fmt"
 	"log"
+	"os/exec"
 	"reflect"
 	"sort"
 	"strconv"
 	"strings"
+	"syscall"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/masterzen/winrm"
@@ -77,18 +80,80 @@ func decodeXMLCli(xmlDoc string) (string, error) {
 	return xmlDoc, nil
 }
 
+// PowerShell struct
+type PowerShell struct {
+	powerShell string
+}
+
+// NewPS create new local session
+func NewPS() *PowerShell {
+	ps, _ := exec.LookPath("powershell.exe")
+	return &PowerShell{
+		powerShell: ps,
+	}
+}
+
+const defaultFailedCode = 1
+
+// ExecutePScmd will execute the powershell command using exec
+func (p *PowerShell) ExecutePScmd(args ...string) (stdout string, stderr string, exitCode int, err error) {
+	var outbuf, errbuf bytes.Buffer
+	cmd := exec.Command(p.powerShell, args...)
+	cmd.Stdout = &outbuf
+	cmd.Stderr = &errbuf
+
+	err = cmd.Run()
+	stdout = outbuf.String()
+	stderr = errbuf.String()
+
+	if err != nil {
+		if exitError, ok := err.(*exec.ExitError); ok {
+			ws := exitError.Sys().(syscall.WaitStatus)
+			exitCode = ws.ExitStatus()
+		} else {
+			exitCode = defaultFailedCode
+			if stderr == "" {
+				stderr = err.Error()
+			}
+		}
+	} else {
+		// success, exitCode should be 0 if go is ok
+		ws := cmd.ProcessState.Sys().(syscall.WaitStatus)
+		exitCode = ws.ExitStatus()
+	}
+	return
+}
+
 // RunWinRMCommand will run a powershell command and return the stdout and stderr
 // The output is converted to JSON if the json patameter is set to true.
-func RunWinRMCommand(conn *winrm.Client, cmds []string, json bool, forceArray bool) (*WinRMResult, error) {
+func RunWinRMCommand(conn *winrm.Client, cmds []string, json bool, forceArray bool, execLocally bool) (*WinRMResult, error) {
 	if json {
-		cmds = append(cmds, "| convertto-json")
+		cmds = append(cmds, "| ConvertTo-Json")
 	}
 
 	cmd := strings.Join(cmds, " ")
 	encodedCmd := winrm.Powershell(cmd)
 	log.Printf("[DEBUG] Running command %s via powershell", cmd)
 	log.Printf("[DEBUG] Encoded command: %s", encodedCmd)
-	stdout, stderr, res, err := conn.RunWithString(encodedCmd, "")
+
+	var (
+		stdout string
+		stderr string
+		res    int
+		err    error
+	)
+
+	if execLocally == false && conn != nil {
+		log.Printf("[DEBUG] Executing command on remote host")
+		stdout, stderr, res, err = conn.RunWithString(encodedCmd, "")
+		log.Printf("[DEBUG] Powershell command exited with code %d", res)
+	} else {
+		log.Printf("[DEBUG] Creating local shell")
+		localShell := NewPS()
+		log.Printf("[DEBUG] Executing command on local host")
+		stdout, stderr, res, err = localShell.ExecutePScmd(encodedCmd)
+	}
+
 	log.Printf("[DEBUG] Powershell command exited with code %d", res)
 	if res != 0 {
 		log.Printf("[DEBUG] Stdout: %s, Stderr: %s", stdout, stderr)
@@ -99,6 +164,7 @@ func RunWinRMCommand(conn *winrm.Client, cmds []string, json bool, forceArray bo
 	if xmlErr != nil {
 		log.Printf("[DEBUG] stderr was not serialised as CLIXML, passing back as is")
 	}
+
 	if err != nil {
 		log.Printf("[DEBUG] run error : %s", err)
 		return nil, fmt.Errorf("powershell command failed with exit code %d\nstdout: %s\nstderr: %s\nerror: %s", res, stdout, stderr, err)
@@ -147,9 +213,9 @@ func SanitiseString(key string) string {
 
 // SetMachineExtensionName will add the necessary GUIDs to the GPO's gPCMachineExtensionNames attribute.
 // These are required for the security settings part of a GPO to work.
-func SetMachineExtensionNames(client *winrm.Client, gpoDN, value string) error {
+func SetMachineExtensionNames(client *winrm.Client, gpoDN, value string, execLocally bool) error {
 	cmd := fmt.Sprintf(`Set-ADObject -Identity "%s" -Replace @{gPCMachineExtensionNames="%s"}`, gpoDN, value)
-	result, err := RunWinRMCommand(client, []string{cmd}, false, false)
+	result, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally)
 	if err != nil {
 		return fmt.Errorf("error while setting machine extension names for GPO %q: %s", gpoDN, err)
 	}

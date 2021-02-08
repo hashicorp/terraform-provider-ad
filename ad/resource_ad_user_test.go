@@ -309,7 +309,7 @@ func retrieveADUserFromRunningState(name, domain string, s *terraform.State, att
 	}
 	defer testAccProvider.Meta().(ProviderConf).ReleaseWinRMClient(client)
 
-	u, err := winrmhelper.GetUserFromHost(client, rs.Primary.ID, attributeList)
+	u, err := winrmhelper.GetUserFromHost(client, rs.Primary.ID, attributeList, false)
 
 	return u, err
 

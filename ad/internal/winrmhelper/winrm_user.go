@@ -62,7 +62,7 @@ type User struct {
 }
 
 // NewUser creates the user by running the New-ADUser powershell command
-func (u *User) NewUser(client *winrm.Client) (string, error) {
+func (u *User) NewUser(client *winrm.Client, execLocally bool) (string, error) {
 	if u.Username == "" {
 		return "", fmt.Errorf("user principal name required")
 	}
@@ -213,7 +213,7 @@ func (u *User) NewUser(client *winrm.Client) (string, error) {
 		cmds = append(cmds, fmt.Sprintf("-OtherAttributes %s", attrs))
 
 	}
-	result, err := RunWinRMCommand(client, cmds, true, false)
+	result, err := RunWinRMCommand(client, cmds, true, false, execLocally)
 	if err != nil {
 		return "", err
 	}
@@ -234,7 +234,7 @@ func (u *User) NewUser(client *winrm.Client) (string, error) {
 }
 
 // ModifyUser updates the AD user's details based on what's changed in the resource.
-func (u *User) ModifyUser(d *schema.ResourceData, client *winrm.Client) error {
+func (u *User) ModifyUser(d *schema.ResourceData, client *winrm.Client, execLocally bool) error {
 	log.Printf("Modifying user: %q", u.PrincipalName)
 	strKeyMap := map[string]string{
 		"sam_account_name": "SamAccountName",
@@ -374,7 +374,7 @@ func (u *User) ModifyUser(d *schema.ResourceData, client *winrm.Client) error {
 	}
 
 	if len(cmds) > 1 {
-		result, err := RunWinRMCommand(client, cmds, false, false)
+		result, err := RunWinRMCommand(client, cmds, false, false, execLocally)
 		if err != nil {
 			return err
 		}
@@ -386,7 +386,7 @@ func (u *User) ModifyUser(d *schema.ResourceData, client *winrm.Client) error {
 
 	if d.HasChange("initial_password") {
 		cmd := fmt.Sprintf("Set-ADAccountPassword -Identity %q -Reset -NewPassword (ConvertTo-SecureString -AsPlainText %q -Force)", u.GUID, u.Password)
-		result, err := RunWinRMCommand(client, []string{cmd}, false, false)
+		result, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally)
 		if err != nil {
 			return err
 		}
@@ -399,7 +399,7 @@ func (u *User) ModifyUser(d *schema.ResourceData, client *winrm.Client) error {
 	if d.HasChange("container") {
 		path := d.Get("container").(string)
 		cmd := fmt.Sprintf("Move-AdObject -Identity %q -TargetPath %q", u.GUID, path)
-		result, err := RunWinRMCommand(client, []string{cmd}, true, false)
+		result, err := RunWinRMCommand(client, []string{cmd}, true, false, execLocally)
 		if err != nil {
 			return fmt.Errorf("winrm execution failure while moving user object: %s", err)
 		}
@@ -412,9 +412,9 @@ func (u *User) ModifyUser(d *schema.ResourceData, client *winrm.Client) error {
 }
 
 //DeleteUser deletes an AD user by calling Remove-ADUser
-func (u *User) DeleteUser(client *winrm.Client) error {
+func (u *User) DeleteUser(client *winrm.Client, execLocally bool) error {
 	cmd := fmt.Sprintf("Remove-ADUser -Identity %s -Confirm:$false", u.GUID)
-	_, err := RunWinRMCommand(client, []string{cmd}, false, false)
+	_, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally)
 	if err != nil {
 		// Check if the resource is already deleted
 		if strings.Contains(err.Error(), "ADIdentityNotFoundException") {
@@ -512,9 +512,9 @@ func GetUserFromResource(d *schema.ResourceData) (*User, error) {
 
 // GetUserFromHost returns a User struct based on data
 // retrieved from the AD Domain Controller.
-func GetUserFromHost(client *winrm.Client, guid string, customAttributes []string) (*User, error) {
+func GetUserFromHost(client *winrm.Client, guid string, customAttributes []string, execLocally bool) (*User, error) {
 	cmd := fmt.Sprintf("Get-ADUser -identity %q -properties *", guid)
-	result, err := RunWinRMCommand(client, []string{cmd}, true, false)
+	result, err := RunWinRMCommand(client, []string{cmd}, true, false, execLocally)
 	if err != nil {
 		return nil, err
 	}

@@ -66,7 +66,7 @@ func unmarshallGPO(input []byte) (*GPO, error) {
 }
 
 // GetGPOFromHost returns a GPO structure populated by data from the DC server
-func GetGPOFromHost(conn *winrm.Client, name, guid string) (*GPO, error) {
+func GetGPOFromHost(conn *winrm.Client, name, guid string, execLocally bool) (*GPO, error) {
 	start := time.Now().Unix()
 	var cmd string
 	if name != "" {
@@ -74,7 +74,7 @@ func GetGPOFromHost(conn *winrm.Client, name, guid string) (*GPO, error) {
 	} else if guid != "" {
 		cmd = getGPOCmdByGUID(guid)
 	}
-	result, err := RunWinRMCommand(conn, []string{cmd}, true, false)
+	result, err := RunWinRMCommand(conn, []string{cmd}, true, false, execLocally)
 	if err != nil {
 		return nil, err
 	}
@@ -86,13 +86,13 @@ func GetGPOFromHost(conn *winrm.Client, name, guid string) (*GPO, error) {
 		return nil, err
 	}
 
-	basePath, err := gpo.loadGPOBasePath(conn)
+	basePath, err := gpo.loadGPOBasePath(conn, execLocally)
 	if err != nil {
 		return nil, err
 	}
 	gpo.basePath = basePath
 
-	err = gpo.loadGPTIni(conn)
+	err = gpo.loadGPTIni(conn, execLocally)
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +120,7 @@ func GetGPOFromResource(d *schema.ResourceData) *GPO {
 }
 
 // Rename renames a GPO to the given name
-func (g *GPO) Rename(client *winrm.Client, target string) error {
+func (g *GPO) Rename(client *winrm.Client, target string, execLocally bool) error {
 	if g.ID == "" {
 		return fmt.Errorf("gpo guid required")
 	}
@@ -131,7 +131,7 @@ func (g *GPO) Rename(client *winrm.Client, target string) error {
 		cmds = append(cmds, fmt.Sprintf("-Domain %s", g.Domain))
 	}
 	cmd := strings.Join(cmds, " ")
-	_, err := RunWinRMCommand(client, []string{cmd}, false, false)
+	_, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally)
 	if err != nil {
 		return err
 	}
@@ -139,9 +139,9 @@ func (g *GPO) Rename(client *winrm.Client, target string) error {
 }
 
 //ChangeStatus Changes the status of a GPO
-func (g *GPO) ChangeStatus(client *winrm.Client, status string) error {
+func (g *GPO) ChangeStatus(client *winrm.Client, status string, execLocally bool) error {
 	cmd := fmt.Sprintf(`(%s).GpoStatus = "%s"`, getGPOCmdByGUID(g.ID), status)
-	result, err := RunWinRMCommand(client, []string{cmd}, false, false)
+	result, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally)
 	if err != nil {
 		return err
 	}
@@ -154,7 +154,7 @@ func (g *GPO) ChangeStatus(client *winrm.Client, status string) error {
 }
 
 // NewGPO uses Powershell over WinRM to create a script
-func (g *GPO) NewGPO(client *winrm.Client) (string, error) {
+func (g *GPO) NewGPO(client *winrm.Client, execLocally bool) (string, error) {
 
 	if g.Name == "" {
 		return "", fmt.Errorf("gpo name required")
@@ -170,7 +170,7 @@ func (g *GPO) NewGPO(client *winrm.Client) (string, error) {
 		cmds = append(cmds, fmt.Sprintf("-Comment %q", g.Description))
 	}
 
-	result, err := RunWinRMCommand(client, cmds, true, false)
+	result, err := RunWinRMCommand(client, cmds, true, false, execLocally)
 	if err != nil {
 		return "", err
 	}
@@ -189,9 +189,9 @@ func (g *GPO) NewGPO(client *winrm.Client) (string, error) {
 }
 
 // DeleteGPO delete the GPO container
-func (g *GPO) DeleteGPO(client *winrm.Client) error {
+func (g *GPO) DeleteGPO(client *winrm.Client, execLocally bool) error {
 	cmd := fmt.Sprintf("Remove-GPO -Name %s -Domain %s", g.Name, g.Domain)
-	_, err := RunWinRMCommand(client, []string{cmd}, false, false)
+	_, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally)
 	if err != nil {
 		// Check if the resource is already deleted
 		if strings.Contains(err.Error(), "GpoWithNameNotFound") {
@@ -203,16 +203,16 @@ func (g *GPO) DeleteGPO(client *winrm.Client) error {
 }
 
 // UpdateGPO updates the GPO container
-func (g *GPO) UpdateGPO(client *winrm.Client, d *schema.ResourceData) (string, error) {
+func (g *GPO) UpdateGPO(client *winrm.Client, d *schema.ResourceData, execLocally bool) (string, error) {
 	if d.HasChange("name") {
-		err := g.Rename(client, SanitiseTFInput(d, "name"))
+		err := g.Rename(client, SanitiseTFInput(d, "name"), execLocally)
 		if err != nil {
 			return "", err
 		}
 	}
 
 	if d.HasChange("status") {
-		err := g.ChangeStatus(client, SanitiseTFInput(d, "status"))
+		err := g.ChangeStatus(client, SanitiseTFInput(d, "status"), execLocally)
 		if err != nil {
 			return "", err
 		}
@@ -223,9 +223,9 @@ func (g *GPO) UpdateGPO(client *winrm.Client, d *schema.ResourceData) (string, e
 // getGPOFilePath retrieves the AD Object of a GPO via powershell and returns the gPCFileSysPath
 // property. This property points at the UNC that the GPO stores its configuration. We use the output
 // of this function as well as GetsysVolPath to construct the GPO path on the DC's filesystem.
-func (g *GPO) getGPOFilePath(client *winrm.Client) (string, error) {
+func (g *GPO) getGPOFilePath(client *winrm.Client, execLocally bool) (string, error) {
 	cmd := fmt.Sprintf("(Get-ADObject  -LDAPFilter '(&(objectClass=groupPolicyContainer)(cn={%s}))' -Properties gPCFilesysPath).gPCFilesysPath", g.ID)
-	result, err := RunWinRMCommand(client, []string{cmd}, false, false)
+	result, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally)
 	if err != nil {
 		return "", fmt.Errorf("error while retrieving GPO with %q path: %s", g.ID, err)
 	}
@@ -237,9 +237,9 @@ func (g *GPO) getGPOFilePath(client *winrm.Client) (string, error) {
 
 //getSysVolPath returns the local path for the SYSVOL share on a Domain Controller. The combination of this
 // and the value we get from getGPOFilePath is used to construct the GPO path on the DC's filesystem.
-func getSysVolPath(client *winrm.Client) (string, error) {
+func getSysVolPath(client *winrm.Client, execLocally bool) (string, error) {
 	cmd := "(Get-SmbShare sysvol).path"
-	result, err := RunWinRMCommand(client, []string{cmd}, false, false)
+	result, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally)
 	if err != nil {
 		return "", fmt.Errorf("error while retrieving SYSVOL path")
 	}
@@ -251,15 +251,15 @@ func getSysVolPath(client *winrm.Client) (string, error) {
 
 // GetGPOBasePath returns the base path of a GPO on the DC. All GPO related files go
 // in that location.
-func (g *GPO) loadGPOBasePath(client *winrm.Client) (string, error) {
-	gpoPath, err := g.getGPOFilePath(client)
+func (g *GPO) loadGPOBasePath(client *winrm.Client, execLocally bool) (string, error) {
+	gpoPath, err := g.getGPOFilePath(client, execLocally)
 	if err != nil {
 		return "", err
 	}
 	// gpoPath is a UNC. The first bit is the hostname and the second the share name
 	// We are interested for the rest
 	gPath := strings.Join(strings.Split(gpoPath, "\\")[4:], "\\")
-	sysvolPath, err := getSysVolPath(client)
+	sysvolPath, err := getSysVolPath(client, execLocally)
 	if err != nil {
 		return "", err
 	}
@@ -285,9 +285,9 @@ func (g *GPO) loadGPOVersions(client *winrm.Client, gpoPath string) error {
 }
 
 // SetADGPOVersions updates AD with the given versions for a GPO
-func (g *GPO) SetADGPOVersions(client *winrm.Client, gpoVersion uint32) error {
+func (g *GPO) SetADGPOVersions(client *winrm.Client, gpoVersion uint32, execLocally bool) error {
 	cmd := fmt.Sprintf("$o=(Get-ADObject  -LDAPFilter '(&(objectClass=groupPolicyContainer)(cn={%s}))' -Properties *);$o.VersionNumber=%d;Set-AdObject -Instance $o", g.ID, gpoVersion)
-	result, err := RunWinRMCommand(client, []string{cmd}, false, false)
+	result, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally)
 	if err != nil {
 		return fmt.Errorf("error while setting new version in AD for GPO %q: %s", g.ID, err)
 	}
@@ -321,7 +321,7 @@ func (g *GPO) SetINIGPOVersions(client *winrm.Client, cpConn *winrmcp.Winrmcp, g
 }
 
 // SetGPOVersions updates gpt.ini on the DC with the given values for user and computer version of a GPO.
-func (g *GPO) SetGPOVersions(client *winrm.Client, cpConn *winrmcp.Winrmcp, userVersion, computerVersion uint16) error {
+func (g *GPO) SetGPOVersions(client *winrm.Client, cpConn *winrmcp.Winrmcp, userVersion, computerVersion uint16, execLocally bool) error {
 	outBuf := make([]byte, 4)
 	binary.LittleEndian.PutUint16(outBuf[:2], computerVersion)
 	binary.LittleEndian.PutUint16(outBuf[2:], userVersion)
@@ -332,18 +332,18 @@ func (g *GPO) SetGPOVersions(client *winrm.Client, cpConn *winrmcp.Winrmcp, user
 		return err
 	}
 
-	err = g.SetADGPOVersions(client, newVersion)
+	err = g.SetADGPOVersions(client, newVersion, execLocally)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (g *GPO) loadGPTIni(client *winrm.Client) error {
+func (g *GPO) loadGPTIni(client *winrm.Client, execLocally bool) error {
 	gptPath := fmt.Sprintf("%s\\gpt.ini", g.basePath)
 	log.Printf("[DEBUG] Getting GPT ini from %s", gptPath)
 	cmd := fmt.Sprintf(`Get-Content "%s"`, gptPath)
-	result, err := RunWinRMCommand(client, []string{cmd}, false, false)
+	result, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally)
 	if err != nil {
 		return fmt.Errorf("error while retrieving contents of %q: %s", gptPath, err)
 	}

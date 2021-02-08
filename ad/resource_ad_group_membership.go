@@ -38,6 +38,7 @@ func resourceADGroupMembership() *schema.Resource {
 }
 
 func resourceADGroupMembershipRead(d *schema.ResourceData, meta interface{}) error {
+	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
 		return err
@@ -46,7 +47,7 @@ func resourceADGroupMembershipRead(d *schema.ResourceData, meta interface{}) err
 
 	toks := strings.Split(d.Id(), "_")
 
-	gm, err := winrmhelper.NewGroupMembershipFromHost(client, toks[0])
+	gm, err := winrmhelper.NewGroupMembershipFromHost(client, toks[0], isLocal)
 	if err != nil {
 		return err
 	}
@@ -61,6 +62,7 @@ func resourceADGroupMembershipRead(d *schema.ResourceData, meta interface{}) err
 }
 
 func resourceADGroupMembershipCreate(d *schema.ResourceData, meta interface{}) error {
+	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
 		return err
@@ -72,7 +74,7 @@ func resourceADGroupMembershipCreate(d *schema.ResourceData, meta interface{}) e
 		return err
 	}
 
-	err = gm.Create(client)
+	err = gm.Create(client, isLocal)
 	if err != nil {
 		return err
 	}
@@ -89,6 +91,7 @@ func resourceADGroupMembershipCreate(d *schema.ResourceData, meta interface{}) e
 }
 
 func resourceADGroupMembershipUpdate(d *schema.ResourceData, meta interface{}) error {
+	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
 		return err
@@ -100,7 +103,7 @@ func resourceADGroupMembershipUpdate(d *schema.ResourceData, meta interface{}) e
 		return err
 	}
 
-	err = gm.Update(client, gm.GroupMembers)
+	err = gm.Update(client, gm.GroupMembers, isLocal)
 	if err != nil {
 		return err
 	}
@@ -109,6 +112,7 @@ func resourceADGroupMembershipUpdate(d *schema.ResourceData, meta interface{}) e
 }
 
 func resourceADGroupMembershipDelete(d *schema.ResourceData, meta interface{}) error {
+	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
 		return err
@@ -120,7 +124,7 @@ func resourceADGroupMembershipDelete(d *schema.ResourceData, meta interface{}) e
 		return err
 	}
 
-	err = gm.Delete(client)
+	err = gm.Delete(client, isLocal)
 	if err != nil {
 		return err
 	}

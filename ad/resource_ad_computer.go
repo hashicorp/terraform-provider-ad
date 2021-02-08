@@ -61,13 +61,15 @@ func resourceADComputerRead(d *schema.ResourceData, meta interface{}) error {
 		return nil
 	}
 
+	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
+
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
 		return err
 	}
 	defer meta.(ProviderConf).ReleaseWinRMClient(client)
 
-	computer, err := winrmhelper.NewComputerFromHost(client, d.Id())
+	computer, err := winrmhelper.NewComputerFromHost(client, d.Id(), isLocal)
 	if err != nil {
 		if strings.Contains(err.Error(), "ObjectNotFound") {
 			// Resource no longer exists
@@ -87,6 +89,7 @@ func resourceADComputerRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceADComputerCreate(d *schema.ResourceData, meta interface{}) error {
+	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
 		return err
@@ -95,7 +98,7 @@ func resourceADComputerCreate(d *schema.ResourceData, meta interface{}) error {
 
 	computer := winrmhelper.NewComputerFromResource(d)
 
-	guid, err := computer.Create(client)
+	guid, err := computer.Create(client, isLocal)
 	if err != nil {
 		return fmt.Errorf("error while creating new computer object: %s", err)
 	}
@@ -104,6 +107,7 @@ func resourceADComputerCreate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceADComputerUpdate(d *schema.ResourceData, meta interface{}) error {
+	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
 		return err
@@ -119,7 +123,7 @@ func resourceADComputerUpdate(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	err = computer.Update(client, changes)
+	err = computer.Update(client, changes, isLocal)
 	if err != nil {
 		return fmt.Errorf("error while updating computer with id %q: %s", d.Id(), err)
 	}
@@ -130,6 +134,7 @@ func resourceADComputerDelete(d *schema.ResourceData, meta interface{}) error {
 	if d.Id() == "" {
 		return nil
 	}
+	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
 		return err
@@ -137,7 +142,7 @@ func resourceADComputerDelete(d *schema.ResourceData, meta interface{}) error {
 	defer meta.(ProviderConf).ReleaseWinRMClient(client)
 
 	computer := winrmhelper.NewComputerFromResource(d)
-	err = computer.Delete(client)
+	err = computer.Delete(client, isLocal)
 	if err != nil {
 		return fmt.Errorf("error while deleting a computer object with id %q: %s", d.Id(), err)
 	}

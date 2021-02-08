@@ -63,7 +63,7 @@ func testAccADGroupMembershipExists(resourceName string, expected bool, desiredM
 		}
 		defer testAccProvider.Meta().(ProviderConf).ReleaseWinRMClient(client)
 		toks := strings.Split(rs.Primary.ID, "_")
-		gm, err := winrmhelper.NewGroupMembershipFromHost(client, toks[0])
+		gm, err := winrmhelper.NewGroupMembershipFromHost(client, toks[0], false)
 		if err != nil {
 			if strings.Contains(err.Error(), "ADIdentityNotFoundException") && !expected {
 				return nil

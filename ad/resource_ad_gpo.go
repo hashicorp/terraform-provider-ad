@@ -54,6 +54,7 @@ func resourceADGPO() *schema.Resource {
 }
 
 func resourceADGPOCreate(d *schema.ResourceData, meta interface{}) error {
+	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
 	g := winrmhelper.GetGPOFromResource(d)
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
@@ -61,7 +62,7 @@ func resourceADGPOCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 	defer meta.(ProviderConf).ReleaseWinRMClient(client)
 
-	guid, err := g.NewGPO(client)
+	guid, err := g.NewGPO(client, isLocal)
 	if err != nil {
 		return err
 	}
@@ -73,13 +74,14 @@ func resourceADGPORead(d *schema.ResourceData, meta interface{}) error {
 	if d.Id() == "" {
 		return nil
 	}
+	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
 		return err
 	}
 	defer meta.(ProviderConf).ReleaseWinRMClient(client)
 
-	g, err := winrmhelper.GetGPOFromHost(client, "", d.Id())
+	g, err := winrmhelper.GetGPOFromHost(client, "", d.Id(), isLocal)
 	if err != nil {
 		if strings.Contains(err.Error(), "GpoWithNameNotFound") || strings.Contains(err.Error(), "GpoWithIdNotFound") {
 			d.SetId("")
@@ -96,6 +98,7 @@ func resourceADGPORead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceADGPOUpdate(d *schema.ResourceData, meta interface{}) error {
+	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
 		return err
@@ -103,7 +106,7 @@ func resourceADGPOUpdate(d *schema.ResourceData, meta interface{}) error {
 	defer meta.(ProviderConf).ReleaseWinRMClient(client)
 
 	g := winrmhelper.GetGPOFromResource(d)
-	_, err = g.UpdateGPO(client, d)
+	_, err = g.UpdateGPO(client, d, isLocal)
 	if err != nil {
 		return err
 	}
@@ -111,6 +114,7 @@ func resourceADGPOUpdate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceADGPODelete(d *schema.ResourceData, meta interface{}) error {
+	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
 		return err
@@ -118,7 +122,7 @@ func resourceADGPODelete(d *schema.ResourceData, meta interface{}) error {
 	defer meta.(ProviderConf).ReleaseWinRMClient(client)
 
 	g := winrmhelper.GetGPOFromResource(d)
-	err = g.DeleteGPO(client)
+	err = g.DeleteGPO(client, isLocal)
 	if err != nil {
 		return err
 	}

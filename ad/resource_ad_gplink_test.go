@@ -146,7 +146,7 @@ func testAccResourceADGPLinkExists(resourceName string, order int, enforced, ena
 		if len(idParts) != 2 {
 			return fmt.Errorf("malformed ID for GPLink resource with ID %q", id)
 		}
-		gplink, err := winrmhelper.GetGPLinkFromHost(client, idParts[0], idParts[1])
+		gplink, err := winrmhelper.GetGPLinkFromHost(client, idParts[0], idParts[1], false)
 		if err != nil {
 			// Check that the err is really because the GPO was not found
 			// and not because of other issues

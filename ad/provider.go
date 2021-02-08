@@ -1,6 +1,9 @@
 package ad
 
 import (
+	"fmt"
+	"log"
+	"runtime"
 	"strings"
 	"sync"
 
@@ -18,6 +21,14 @@ func Provider() *schema.Provider {
 				Required:    true,
 				DefaultFunc: schema.EnvDefaultFunc("AD_USER", nil),
 				Description: "The username used to authenticate to the server's WinRM service. (Environment variable: AD_USER)",
+				ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
+					v := val.(string)
+					os := runtime.GOOS
+					if v == "" && os != "windows" {
+						errs = append(errs, fmt.Errorf("%q is allowed to be empty only if terraform runs on windows, (curent os: %q) ", key, os))
+					}
+					return
+				},
 			},
 			"winrm_password": {
 				Type:        schema.TypeString,
@@ -30,6 +41,14 @@ func Provider() *schema.Provider {
 				Required:    true,
 				DefaultFunc: schema.EnvDefaultFunc("AD_HOSTNAME", nil),
 				Description: "The hostname of the server we will use to run powershell scripts over WinRM. (Environment variable: AD_HOSTNAME)",
+				ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
+					v := val.(string)
+					os := runtime.GOOS
+					if v == "" && os != "windows" {
+						errs = append(errs, fmt.Errorf("%q is allowed to be empty only if terraform runs on windows, (curent os: %q) ", key, os))
+					}
+					return
+				},
 			},
 			"winrm_port": {
 				Type:        schema.TypeInt,
@@ -147,6 +166,23 @@ func (pcfg ProviderConf) ReleaseWinRMCPClient(winRMCPClient *winrmcp.Winrmcp) {
 	pcfg.mx.Lock()
 	defer pcfg.mx.Unlock()
 	pcfg.winRMCPClients = append(pcfg.winRMCPClients, winRMCPClient)
+}
+
+// isConnectionTypeLocal check if connection is local
+func (pcfg ProviderConf) isConnectionTypeLocal() bool {
+	pcfg.mx.Lock()
+	defer pcfg.mx.Unlock()
+
+	log.Printf("[DEBUG] Checking if connection should be local")
+	isLocal := false
+	if runtime.GOOS == "windows" {
+		if pcfg.Configuration.WinRMHost == "" && pcfg.Configuration.WinRMUsername == "" && pcfg.Configuration.WinRMPassword == "" {
+			log.Printf("[DEBUG] Matching criteria for local execution")
+			isLocal = true
+		}
+	}
+	log.Printf("[DEBUG] Local connection ? %t", isLocal)
+	return isLocal
 }
 
 func initProviderConfig(d *schema.ResourceData) (interface{}, error) {

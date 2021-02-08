@@ -188,6 +188,7 @@ func dataSourceADUser() *schema.Resource {
 }
 
 func dataSourceADUserRead(d *schema.ResourceData, meta interface{}) error {
+	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
 	userID := d.Get("user_id").(string)
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
@@ -195,7 +196,7 @@ func dataSourceADUserRead(d *schema.ResourceData, meta interface{}) error {
 	}
 	defer meta.(ProviderConf).ReleaseWinRMClient(client)
 
-	u, err := winrmhelper.GetUserFromHost(client, userID, nil)
+	u, err := winrmhelper.GetUserFromHost(client, userID, nil, isLocal)
 	if err != nil {
 		return err
 	}

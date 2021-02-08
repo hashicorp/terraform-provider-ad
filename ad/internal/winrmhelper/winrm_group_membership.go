@@ -66,10 +66,10 @@ func getMembershipList(g []*GroupMember) string {
 	return strings.Join(out, ",")
 }
 
-func (g *GroupMembership) getGroupMembers(client *winrm.Client) ([]*GroupMember, error) {
+func (g *GroupMembership) getGroupMembers(client *winrm.Client, execLocally bool) ([]*GroupMember, error) {
 	cmd := fmt.Sprintf("Get-ADGroupMember -Identity %q", g.GroupGUID)
 
-	result, err := RunWinRMCommand(client, []string{cmd}, true, true)
+	result, err := RunWinRMCommand(client, []string{cmd}, true, true, execLocally)
 	if err != nil {
 		return nil, fmt.Errorf("while running Get-ADGroupMember: %s", err)
 	} else if result.ExitCode != 0 {
@@ -88,7 +88,7 @@ func (g *GroupMembership) getGroupMembers(client *winrm.Client) ([]*GroupMember,
 	return gm, nil
 }
 
-func (g *GroupMembership) bulkGroupMembersOp(client *winrm.Client, operation string, members []*GroupMember) error {
+func (g *GroupMembership) bulkGroupMembersOp(client *winrm.Client, operation string, members []*GroupMember, execLocally bool) error {
 	if len(members) == 0 {
 		return nil
 	}
@@ -96,7 +96,7 @@ func (g *GroupMembership) bulkGroupMembersOp(client *winrm.Client, operation str
 	memberList := getMembershipList(members)
 	cmd := fmt.Sprintf("%s -Identity %q %s -Confirm:$false", operation, g.GroupGUID, memberList)
 
-	result, err := RunWinRMCommand(client, []string{cmd}, false, false)
+	result, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally)
 	if err != nil {
 		return fmt.Errorf("while running %s: %s", operation, err)
 	} else if result.ExitCode != 0 {
@@ -106,27 +106,27 @@ func (g *GroupMembership) bulkGroupMembersOp(client *winrm.Client, operation str
 	return nil
 }
 
-func (g *GroupMembership) addGroupMembers(client *winrm.Client, members []*GroupMember) error {
-	return g.bulkGroupMembersOp(client, "Add-ADGroupMember", members)
+func (g *GroupMembership) addGroupMembers(client *winrm.Client, members []*GroupMember, execLocally bool) error {
+	return g.bulkGroupMembersOp(client, "Add-ADGroupMember", members, execLocally)
 }
 
-func (g *GroupMembership) removeGroupMembers(client *winrm.Client, members []*GroupMember) error {
-	return g.bulkGroupMembersOp(client, "Remove-ADGroupMember", members)
+func (g *GroupMembership) removeGroupMembers(client *winrm.Client, members []*GroupMember, execLocally bool) error {
+	return g.bulkGroupMembersOp(client, "Remove-ADGroupMember", members, execLocally)
 }
 
-func (g *GroupMembership) Update(client *winrm.Client, expected []*GroupMember) error {
-	existing, err := g.getGroupMembers(client)
+func (g *GroupMembership) Update(client *winrm.Client, expected []*GroupMember, execLocally bool) error {
+	existing, err := g.getGroupMembers(client, execLocally)
 	if err != nil {
 		return err
 	}
 
 	toAdd, toRemove := diffGroupMemberLists(expected, existing)
-	err = g.addGroupMembers(client, toAdd)
+	err = g.addGroupMembers(client, toAdd, execLocally)
 	if err != nil {
 		return err
 	}
 
-	err = g.removeGroupMembers(client, toRemove)
+	err = g.removeGroupMembers(client, toRemove, execLocally)
 	if err != nil {
 		return err
 	}
@@ -134,14 +134,14 @@ func (g *GroupMembership) Update(client *winrm.Client, expected []*GroupMember) 
 	return nil
 }
 
-func (g *GroupMembership) Create(client *winrm.Client) error {
+func (g *GroupMembership) Create(client *winrm.Client, execLocally bool) error {
 	if len(g.GroupMembers) == 0 {
 		return nil
 	}
 
 	memberList := getMembershipList(g.GroupMembers)
 	cmd := []string{fmt.Sprintf("Add-ADGroupMember -Identity %q -Members %s", g.GroupGUID, memberList)}
-	result, err := RunWinRMCommand(client, cmd, false, false)
+	result, err := RunWinRMCommand(client, cmd, false, false, execLocally)
 	if err != nil {
 		return fmt.Errorf("while running Add-ADGroupMember: %s", err)
 	} else if result.ExitCode != 0 {
@@ -151,9 +151,9 @@ func (g *GroupMembership) Create(client *winrm.Client) error {
 	return nil
 }
 
-func (g *GroupMembership) Delete(client *winrm.Client) error {
+func (g *GroupMembership) Delete(client *winrm.Client, execLocally bool) error {
 	cmd := fmt.Sprintf("Remove-ADGroupMember %q -Members (Get-ADGroupMember %q) -Confirm:$false", g.GroupGUID, g.GroupGUID)
-	result, err := RunWinRMCommand(client, []string{cmd}, false, false)
+	result, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally)
 	if err != nil {
 		return fmt.Errorf("while running Remove-ADGroupMember: %s", err)
 	} else if result.ExitCode != 0 && !strings.Contains(result.StdErr, "InvalidData") {
@@ -162,12 +162,12 @@ func (g *GroupMembership) Delete(client *winrm.Client) error {
 	return nil
 }
 
-func NewGroupMembershipFromHost(client *winrm.Client, groupID string) (*GroupMembership, error) {
+func NewGroupMembershipFromHost(client *winrm.Client, groupID string, execLocally bool) (*GroupMembership, error) {
 	result := &GroupMembership{
 		GroupGUID: groupID,
 	}
 
-	gm, err := result.getGroupMembers(client)
+	gm, err := result.getGroupMembers(client, execLocally)
 	if err != nil {
 		return nil, err
 	}
