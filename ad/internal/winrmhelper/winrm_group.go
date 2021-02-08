@@ -62,7 +62,7 @@ func (g *Group) ModifyGroup(d *schema.ResourceData, client *winrm.Client) error 
 		"category":         "GroupCategory",
 	}
 
-	cmds := []string{fmt.Sprintf("Set-Group -Identity %q", g.GUID)}
+	cmds := []string{fmt.Sprintf("Set-ADGroup -Identity %q", g.GUID)}
 	for k, param := range keyMap {
 		if d.HasChange(k) {
 			value := d.Get(k).(string)
@@ -77,7 +77,7 @@ func (g *Group) ModifyGroup(d *schema.ResourceData, client *winrm.Client) error 
 		}
 		if result.ExitCode != 0 {
 			log.Printf("[DEBUG] stderr: %s\nstdout: %s", result.StdErr, result.Stdout)
-			return fmt.Errorf("command Set-Group exited with a non-zero exit code %d, stderr: %s", result.ExitCode, result.StdErr)
+			return fmt.Errorf("command Set-ADGroup exited with a non-zero exit code %d, stderr: %s", result.ExitCode, result.StdErr)
 		}
 	}
 
@@ -131,6 +131,7 @@ func GetGroupFromResource(d *schema.ResourceData) *Group {
 		Container:      SanitiseTFInput(d, "container"),
 		Scope:          SanitiseTFInput(d, "scope"),
 		Category:       SanitiseTFInput(d, "category"),
+		GUID:           SanitiseString(d.Id()),
 	}
 
 	return &g

@@ -33,6 +33,60 @@ func TestAccGroup_basic(t *testing.T) {
 	})
 }
 
+func TestAccGroup_categories(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		CheckDestroy: resource.ComposeTestCheckFunc(
+			testAccGroupExists("ad_group.g", "yourdomain.com", "testgroup", false),
+		),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccGroupConfigBasic("yourdomain.com", "test group", "testgroup", "global", "security"),
+				Check: resource.ComposeTestCheckFunc(
+					testAccGroupExists("ad_group.g", "yourdomain.com", "testgroup", true),
+				),
+			},
+			{
+				Config: testAccGroupConfigBasic("yourdomain.com", "test group", "testgroup", "global", "system"),
+				Check: resource.ComposeTestCheckFunc(
+					testAccGroupExists("ad_group.g", "yourdomain.com", "testgroup", true),
+				),
+			},
+		},
+	})
+}
+
+func TestAccGroup_scopes(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		CheckDestroy: resource.ComposeTestCheckFunc(
+			testAccGroupExists("ad_group.g", "yourdomain.com", "testgroup", false),
+		),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccGroupConfigBasic("yourdomain.com", "test group", "testgroup", "domainlocal", "security"),
+				Check: resource.ComposeTestCheckFunc(
+					testAccGroupExists("ad_group.g", "yourdomain.com", "testgroup", true),
+				),
+			},
+			{
+				Config: testAccGroupConfigBasic("yourdomain.com", "test group", "testgroup", "universal", "security"),
+				Check: resource.ComposeTestCheckFunc(
+					testAccGroupExists("ad_group.g", "yourdomain.com", "testgroup", true),
+				),
+			},
+			{
+				Config: testAccGroupConfigBasic("yourdomain.com", "test group", "testgroup", "global", "security"),
+				Check: resource.ComposeTestCheckFunc(
+					testAccGroupExists("ad_group.g", "yourdomain.com", "testgroup", true),
+				),
+			},
+		},
+	})
+}
+
 func testAccGroupConfigBasic(domain, name, sam, scope, gtype string) string {
 	return fmt.Sprintf(`
 	variable "name" { default = %q }
@@ -73,6 +127,14 @@ func testAccGroupExists(name, domain, groupSAM string, expected bool) resource.T
 
 		if u.SAMAccountName != groupSAM {
 			return fmt.Errorf("username from LDAP does not match expected username, %s != %s", u.SAMAccountName, groupSAM)
+		}
+
+		if u.Scope != rs.Primary.Attributes["scope"] {
+			return fmt.Errorf("actual scope does not match expected scope, %s != %s", rs.Primary.Attributes["scope"], u.Scope)
+		}
+
+		if u.Category != rs.Primary.Attributes["category"] {
+			return fmt.Errorf("actual scope does not match expected scope, %s != %s", rs.Primary.Attributes["category"], u.Category)
 		}
 		return nil
 	}
