@@ -13,3 +13,7 @@ data "ad_group" "g2" {
 output "g2_guid" {
     value = data.ad_group.g2.id
 }
+
+output "g2_description" {
+    value = data.ad_group.g2.description
+}

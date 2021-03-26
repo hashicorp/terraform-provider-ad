@@ -66,19 +66,19 @@ func TestAccGroup_scopes(t *testing.T) {
 		),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccGroupConfigBasic("yourdomain.com", "test group", "testgroup", "domainlocal", "security"),
+				Config: testAccGroupConfigBasic("yourdomain.com", "test group", "testgroup", "domainlocal", "security", "some description"),
 				Check: resource.ComposeTestCheckFunc(
 					testAccGroupExists("ad_group.g", "yourdomain.com", "testgroup", true),
 				),
 			},
 			{
-				Config: testAccGroupConfigBasic("yourdomain.com", "test group", "testgroup", "universal", "security"),
+				Config: testAccGroupConfigBasic("yourdomain.com", "test group", "testgroup", "universal", "security", "some description"),
 				Check: resource.ComposeTestCheckFunc(
 					testAccGroupExists("ad_group.g", "yourdomain.com", "testgroup", true),
 				),
 			},
 			{
-				Config: testAccGroupConfigBasic("yourdomain.com", "test group", "testgroup", "global", "security"),
+				Config: testAccGroupConfigBasic("yourdomain.com", "test group", "testgroup", "global", "security", "some description"),
 				Check: resource.ComposeTestCheckFunc(
 					testAccGroupExists("ad_group.g", "yourdomain.com", "testgroup", true),
 				),
@@ -87,13 +87,14 @@ func TestAccGroup_scopes(t *testing.T) {
 	})
 }
 
-func testAccGroupConfigBasic(domain, name, sam, scope, gtype string) string {
+func testAccGroupConfigBasic(domain, name, sam, scope, gtype string, desc string) string {
 	return fmt.Sprintf(`
 	variable "name" { default = %q }
 	variable "sam_account_name" { default = %q }
 	variable "scope" { default = %q }
 	variable "category" { default = %q }
 	variable "container" { default = "CN=Users,dc=yourdomain,dc=com" }
+	variable "description" { default = %q }
 
 	resource "ad_group" "g" {
 		name = var.name
@@ -101,8 +102,9 @@ func testAccGroupConfigBasic(domain, name, sam, scope, gtype string) string {
 		scope = var.scope
 		category = var.category
 		container = var.container
+		description = var.description
  	}
-`, name, sam, scope, gtype)
+`, name, sam, scope, gtype, desc)
 }
 
 func testAccGroupExists(name, domain, groupSAM string, expected bool) resource.TestCheckFunc {
@@ -134,7 +136,7 @@ func testAccGroupExists(name, domain, groupSAM string, expected bool) resource.T
 		}
 
 		if u.Category != rs.Primary.Attributes["category"] {
-			return fmt.Errorf("actual scope does not match expected scope, %s != %s", rs.Primary.Attributes["category"], u.Category)
+			return fmt.Errorf("actual category does not match expected scope, %s != %s", rs.Primary.Attributes["category"], u.Category)
 		}
 		return nil
 	}

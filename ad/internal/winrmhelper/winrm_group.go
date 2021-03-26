@@ -21,6 +21,7 @@ type Group struct {
 	Scope             string
 	Category          string
 	Container         string
+	Description       string
 	SID               SID `json:"SID"`
 }
 
@@ -31,6 +32,10 @@ func (g *Group) AddGroup(client *winrm.Client, execLocally bool) (string, error)
 
 	if g.SAMAccountName != "" {
 		cmds = append(cmds, fmt.Sprintf("-SamAccountName %q", g.SAMAccountName))
+	}
+
+	if g.Description != "" {
+		cmds = append(cmds, fmt.Sprintf("-Description %q", g.Description))
 	}
 
 	result, err := RunWinRMCommand(client, cmds, true, false, execLocally)
@@ -56,17 +61,24 @@ func (g *Group) AddGroup(client *winrm.Client, execLocally bool) (string, error)
 
 // ModifyGroup updates an existing group
 func (g *Group) ModifyGroup(d *schema.ResourceData, client *winrm.Client, execLocally bool) error {
-	keyMap := map[string]string{
+	KeyMap := map[string]string{
 		"sam_account_name": "SamAccountName",
 		"scope":            "GroupScope",
 		"category":         "GroupCategory",
+		"description":      "Description",
 	}
 
 	cmds := []string{fmt.Sprintf("Set-ADGroup -Identity %q", g.GUID)}
-	for k, param := range keyMap {
+
+	for k, param := range KeyMap {
 		if d.HasChange(k) {
-			value := d.Get(k).(string)
-			cmds = append(cmds, fmt.Sprintf("-%s %q", param, value))
+			value := SanitiseTFInput(d, k)
+			if value == "" {
+				value = "$null"
+			} else {
+				value = fmt.Sprintf(`"%s"`, value)
+			}
+			cmds = append(cmds, fmt.Sprintf(`-%s %s`, param, value))
 		}
 	}
 
@@ -132,6 +144,7 @@ func GetGroupFromResource(d *schema.ResourceData) *Group {
 		Scope:          SanitiseTFInput(d, "scope"),
 		Category:       SanitiseTFInput(d, "category"),
 		GUID:           SanitiseString(d.Id()),
+		Description:    SanitiseTFInput(d, "description"),
 	}
 
 	return &g
