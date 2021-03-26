@@ -19,7 +19,7 @@ func TestAccGroup_basic(t *testing.T) {
 		),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccGroupConfigBasic("yourdomain.com", "test group", "testgroup", "global", "security"),
+				Config: testAccGroupConfigBasic("yourdomain.com", "test group", "testgroup", "global", "security", "some description"),
 				Check: resource.ComposeTestCheckFunc(
 					testAccGroupExists("ad_group.g", "yourdomain.com", "testgroup", true),
 				),
@@ -42,13 +42,13 @@ func TestAccGroup_categories(t *testing.T) {
 		),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccGroupConfigBasic("yourdomain.com", "test group", "testgroup", "global", "security"),
+				Config: testAccGroupConfigBasic("yourdomain.com", "test group", "testgroup", "global", "security", "some description"),
 				Check: resource.ComposeTestCheckFunc(
 					testAccGroupExists("ad_group.g", "yourdomain.com", "testgroup", true),
 				),
 			},
 			{
-				Config: testAccGroupConfigBasic("yourdomain.com", "test group", "testgroup", "global", "system"),
+				Config: testAccGroupConfigBasic("yourdomain.com", "test group", "testgroup", "global", "system", "some description"),
 				Check: resource.ComposeTestCheckFunc(
 					testAccGroupExists("ad_group.g", "yourdomain.com", "testgroup", true),
 				),
