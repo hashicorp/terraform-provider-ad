@@ -53,6 +53,12 @@ func TestAccResourceADComputer_description(t *testing.T) {
 					testAccResourceADComputerDescriptionExists("ad_computer.c", "testdescription", true),
 				),
 			},
+			{
+				Config: testAccResourceADComputerConfigBasic("testcomputer", "TESTCOMPUTER$"),
+				Check: resource.ComposeTestCheckFunc(
+					testAccResourceADComputerDescriptionExists("ad_computer.c", "", true),
+				),
+			},
 		},
 	})
 }

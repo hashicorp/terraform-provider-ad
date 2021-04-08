@@ -107,7 +107,12 @@ func (m *Computer) Update(conn *winrm.Client, changes map[string]interface{}, ex
 	}
 
 	if description, ok := changes["description"]; ok {
-		cmd := fmt.Sprintf("Set-ADComputer -Identity %q -Description %q", m.GUID, description)
+		if description == "" {
+			description = "$null"
+		} else {
+			description = fmt.Sprintf("%q", description)
+		}
+		cmd := fmt.Sprintf("Set-ADComputer -Identity %q -Description %s", m.GUID, description)
 		result, err := RunWinRMCommand(conn, []string{cmd}, true, false, execLocally)
 		if err != nil {
 			return fmt.Errorf("winrm execution failure while modifying computer description: %s", err)
