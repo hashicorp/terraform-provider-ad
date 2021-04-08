@@ -23,6 +23,11 @@ func dataSourceADGroup() *schema.Resource {
 				Computed:    true,
 				Description: "The SAM account name of the Group object.",
 			},
+			"description": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "Description of the Group object.",
+			},
 			"display_name": {
 				Type:        schema.TypeString,
 				Computed:    true,
@@ -81,6 +86,7 @@ func dataSourceADGroupRead(d *schema.ResourceData, meta interface{}) error {
 	_ = d.Set("container", g.Container)
 	_ = d.Set("name", g.Name)
 	_ = d.Set("group_id", groupID)
+	_ = d.Set("description", g.Description)
 	_ = d.Set("sid", g.SID.Value)
 
 	d.SetId(g.GUID)

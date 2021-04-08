@@ -44,6 +44,7 @@ output "g2_guid" {
 - **category** (String, Read-only) The Group's category.
 - **container** (String, Read-only) The Group's container object.
 - **display_name** (String, Read-only) The display name of the Group object.
+- **description** (String, Read-only) Description of the Group object.
 - **name** (String, Read-only) The name of the Group object.
 - **sam_account_name** (String, Read-only) The SAM account name of the Group object.
 - **scope** (String, Read-only) The Group's scope.

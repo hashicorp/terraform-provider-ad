@@ -42,14 +42,19 @@ func resourceADGroup() *schema.Resource {
 				Type:         schema.TypeString,
 				Optional:     true,
 				Default:      "security",
-				ValidateFunc: validation.StringInSlice([]string{"system", "security"}, false),
-				Description:  "The group's category. Can be one of `system` or `security` (case sensitive).",
+				ValidateFunc: validation.StringInSlice([]string{"distribution", "security"}, false),
+				Description:  "The group's category. Can be one of `distribution` or `security` (case sensitive).",
 			},
 			"container": {
 				Type:             schema.TypeString,
 				Required:         true,
 				Description:      "A DN of a container object holding the group.",
 				DiffSuppressFunc: suppressCaseDiff,
+			},
+			"description": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Description of the Group.",
 			},
 			"sid": {
 				Type:        schema.TypeString,
@@ -103,6 +108,7 @@ func resourceADGroupRead(d *schema.ResourceData, meta interface{}) error {
 	_ = d.Set("scope", g.Scope)
 	_ = d.Set("category", g.Category)
 	_ = d.Set("container", g.Container)
+	_ = d.Set("description", g.Description)
 	_ = d.Set("sid", g.SID.Value)
 
 	return nil
