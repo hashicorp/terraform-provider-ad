@@ -15,6 +15,7 @@ type Computer struct {
 	Name           string
 	GUID           string `json:"ObjectGuid"`
 	DN             string `json:"DistinguishedName"`
+	Description    string
 	SAMAccountName string `json:"SamAccountName"`
 	Path           string
 	SID            SID `json:"SID"`
@@ -25,6 +26,7 @@ func NewComputerFromResource(d *schema.ResourceData) *Computer {
 	return &Computer{
 		Name:           SanitiseTFInput(d, "name"),
 		DN:             SanitiseTFInput(d, "dn"),
+		Description:    SanitiseTFInput(d, "description"),
 		GUID:           SanitiseTFInput(d, "guid"),
 		SAMAccountName: SanitiseTFInput(d, "pre2kname"),
 		Path:           SanitiseTFInput(d, "container"),
@@ -67,6 +69,10 @@ func (m *Computer) Create(conn *winrm.Client, execLocally bool) (string, error) 
 		cmd = fmt.Sprintf("%s -Path %q", cmd, m.Path)
 	}
 
+	if m.Description != "" {
+		cmd = fmt.Sprintf("%s -Description %q", cmd, m.Description)
+	}
+
 	result, err := RunWinRMCommand(conn, []string{cmd}, true, false, execLocally)
 	if err != nil {
 		return "", fmt.Errorf("winrm execution failure while creating computer object: %s", err)
@@ -97,6 +103,22 @@ func (m *Computer) Update(conn *winrm.Client, changes map[string]interface{}, ex
 		}
 		if result.ExitCode != 0 {
 			return fmt.Errorf("Move-ADObject exited with a non zero exit code (%d), stderr: %s", result.ExitCode, result.StdErr)
+		}
+	}
+
+	if description, ok := changes["description"]; ok {
+		if description == "" {
+			description = "$null"
+		} else {
+			description = fmt.Sprintf("%q", description)
+		}
+		cmd := fmt.Sprintf("Set-ADComputer -Identity %q -Description %s", m.GUID, description)
+		result, err := RunWinRMCommand(conn, []string{cmd}, true, false, execLocally)
+		if err != nil {
+			return fmt.Errorf("winrm execution failure while modifying computer description: %s", err)
+		}
+		if result.ExitCode != 0 {
+			return fmt.Errorf("Set-ADComputer exited with a non zero exit code (%d), stderr: %s", result.ExitCode, result.StdErr)
 		}
 	}
 

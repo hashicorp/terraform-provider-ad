@@ -43,6 +43,11 @@ func resourceADComputer() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+			"description": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Specifies a description of the object. This parameter sets the value of the Description property for the computer object.",
+			},
 			"guid": {
 				Type:     schema.TypeString,
 				Computed: true,
@@ -80,6 +85,7 @@ func resourceADComputerRead(d *schema.ResourceData, meta interface{}) error {
 	}
 	_ = d.Set("name", computer.Name)
 	_ = d.Set("dn", computer.DN)
+	_ = d.Set("description", computer.Description)
 	_ = d.Set("guid", computer.GUID)
 	_ = d.Set("pre2kname", computer.SAMAccountName)
 	_ = d.Set("container", computer.Path)
@@ -115,7 +121,7 @@ func resourceADComputerUpdate(d *schema.ResourceData, meta interface{}) error {
 	defer meta.(ProviderConf).ReleaseWinRMClient(client)
 
 	computer := winrmhelper.NewComputerFromResource(d)
-	keys := []string{"container"}
+	keys := []string{"container", "description"}
 	changes := make(map[string]interface{})
 	for _, key := range keys {
 		if d.HasChange(key) {

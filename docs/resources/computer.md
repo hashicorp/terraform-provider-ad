@@ -30,6 +30,7 @@ resource "ad_computer" "c" {
 ### Optional
 
 - **container** (String, Optional) The DN of the container used to hold the computer account.
+- **description** (String, Optional) Specifies a description of the object. This parameter sets the value of the Description property for the computer object.
 - **id** (String, Optional) The ID of this resource.
 - **pre2kname** (String, Optional) The pre-win2k name for the computer account.
 
