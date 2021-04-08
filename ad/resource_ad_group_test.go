@@ -48,7 +48,7 @@ func TestAccGroup_categories(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccGroupConfigBasic("yourdomain.com", "test group", "testgroup", "global", "system", "some description"),
+				Config: testAccGroupConfigBasic("yourdomain.com", "test group", "testgroup", "global", "distribution", "some description"),
 				Check: resource.ComposeTestCheckFunc(
 					testAccGroupExists("ad_group.g", "yourdomain.com", "testgroup", true),
 				),

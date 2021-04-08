@@ -42,8 +42,8 @@ func resourceADGroup() *schema.Resource {
 				Type:         schema.TypeString,
 				Optional:     true,
 				Default:      "security",
-				ValidateFunc: validation.StringInSlice([]string{"system", "security"}, false),
-				Description:  "The group's category. Can be one of `system` or `security` (case sensitive).",
+				ValidateFunc: validation.StringInSlice([]string{"distribution", "security"}, false),
+				Description:  "The group's category. Can be one of `distribution` or `security` (case sensitive).",
 			},
 			"container": {
 				Type:             schema.TypeString,
