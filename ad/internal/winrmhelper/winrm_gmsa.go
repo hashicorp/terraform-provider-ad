@@ -218,12 +218,12 @@ func (g *Gmsa) ModifyGmsa(d *schema.ResourceData, client *winrm.Client, execLoca
 			if d == "" {
 				continue
 			}
-			del = append(del, d.(string))
+			del = append(del, fmt.Sprintf("%q", d.(string)))
 		}
 
 		cmds := []string{fmt.Sprintf("Set-ADServiceAccount -Identity %q -PrincipalsAllowedToDelegateToAccount $null", g.GUID)}
 		if len(del) > 0 {
-			princ_del := "\"" + strings.Join(del, "\",\"") + "\""
+			princ_del := strings.Join(del, ",")
 			log.Printf("[DEBUG] Principal list: %s", princ_del)
 			cmds = append(cmds, fmt.Sprintf(" ; Set-ADServiceAccount -Identity %q -PrincipalsAllowedToDelegateToAccount %s", g.GUID, princ_del))
 		}
@@ -244,11 +244,11 @@ func (g *Gmsa) ModifyGmsa(d *schema.ResourceData, client *winrm.Client, execLoca
 			if p == "" {
 				continue
 			}
-			pass = append(pass, p.(string))
+			pass = append(pass, fmt.Sprintf("%q", p.(string)))
 		}
 		cmds := []string{fmt.Sprintf("Set-ADServiceAccount -Identity %q -PrincipalsAllowedToRetrieveManagedPassword $null", g.GUID)}
 		if len(pass) > 0 {
-			princ_pass := "\"" + strings.Join(pass, "\",\"") + "\""
+			princ_pass := strings.Join(pass, ",")
 			log.Printf("[DEBUG] Principal list: %s", princ_pass)
 			cmds = append(cmds, fmt.Sprintf(" ; Set-ADServiceAccount -Identity %q -PrincipalsAllowedToRetrieveManagedPassword %s", g.GUID, princ_pass))
 		}
@@ -269,10 +269,10 @@ func (g *Gmsa) ModifyGmsa(d *schema.ResourceData, client *winrm.Client, execLoca
 			if k == "" {
 				continue
 			}
-			krb = append(krb, k.(string))
+			krb = append(krb, fmt.Sprintf("%q", k.(string)))
 		}
+		kerb_enc := strings.Join(krb, ",")
 
-		kerb_enc := "\"" + strings.Join(krb, "\",\"") + "\""
 		log.Printf("[DEBUG] Kerberos encryption list: %s", kerb_enc)
 
 		cmd := fmt.Sprintf("Set-ADServiceAccount -Identity %q -KerberosEncryptionType %s", g.GUID, kerb_enc)
@@ -419,6 +419,11 @@ func unmarshallGmsa(input []byte) (*Gmsa, error) {
 		var regdate = regexp.MustCompile(`^\/Date\((.+)\)\/$`)
 		// extract unixtime date
 		match := regdate.FindStringSubmatch(gmsa.ExpirationString)
+
+		if len(match) == 0 {
+			return nil, fmt.Errorf("Failed to unmarshall a ADGmsa json, expiration date format is not matching regex.")
+		}
+
 		log.Printf("[DEBUG] unmarshall :: unixtimestamp extracted from AccountExpirationDate attribute: %q", match[1])
 		// convert string date to int64
 		log.Printf("[DEBUG] unmarshall :: converting unixtimestamp to %s int64", match[1])
