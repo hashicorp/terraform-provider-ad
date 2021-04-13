@@ -12,8 +12,18 @@ import (
 )
 
 func TestAccResourceADGPLink_basic(t *testing.T) {
+	envVars := []string{
+		"TF_VAR_ad_ou_name",
+		"TF_VAR_ad_ou_path",
+		"TF_VAR_ad_ou_protected",
+		"TF_VAR_ad_ou_description",
+		"TF_VAR_ad_gpo_name",
+		"TF_VAR_ad_gpo_domain",
+		"TF_VAR_ad_gpo_description",
+		"TF_VAR_ad_gpo_status",
+	}
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
+		PreCheck:  func() { testAccPreCheck(t, envVars) },
 		Providers: testAccProviders,
 		CheckDestroy: resource.ComposeTestCheckFunc(
 			testAccResourceADGPLinkExists("ad_gplink.og", 1, true, true, false),
@@ -68,9 +78,15 @@ func TestAccResourceADGPLink_basic(t *testing.T) {
 }
 
 func TestAccResourceADGPLink_badguid(t *testing.T) {
+	envVars := []string{
+		"TF_VAR_ad_ou_name",
+		"TF_VAR_ad_ou_path",
+		"TF_VAR_ad_ou_protected",
+		"TF_VAR_ad_ou_description",
+	}
 	//lintignore:AT001
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
+		PreCheck:  func() { testAccPreCheck(t, envVars) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
@@ -83,12 +99,16 @@ func TestAccResourceADGPLink_badguid(t *testing.T) {
 
 func testAccResourceADGPLinkConfigBadGUID(enforced, enabled bool, order int) string {
 	return fmt.Sprintf(`
+	variable ad_ou_name {}
+	variable ad_ou_path {}
+	variable ad_ou_protected {}
+	variable ad_ou_description {}
 
-	resource "ad_ou" "o" { 
-		name = "gplinktestOU"
-		path = "dc=yourdomain,dc=com"
-		description = "OU for gplink tests"
-		protected = false
+	resource "ad_ou" "o" {
+		name = var.ad_ou_name
+		path = var.ad_ou_path
+		description = var.ad_ou_description
+		protected = var.ad_ou_protected
 	}
 		
 	resource "ad_gplink" "og" { 
@@ -104,19 +124,27 @@ func testAccResourceADGPLinkConfigBadGUID(enforced, enabled bool, order int) str
 
 func testAccResourceADGPLinkConfigBasic(enforced, enabled bool, order int) string {
 	return fmt.Sprintf(`
+	variable ad_ou_name {}
+	variable ad_ou_path {}
+	variable ad_ou_protected {}
+	variable ad_ou_description {}
+	variable ad_gpo_name {}
+	variable ad_gpo_domain {}
+	variable ad_gpo_description {}
+	variable ad_gpo_status {}
 
-	resource "ad_ou" "o" { 
-		name = "gplinktestOU"
-		path = "dc=yourdomain,dc=com"
-		description = "OU for gplink tests"
-		protected = false
+	resource "ad_ou" "o" {
+		name = var.ad_ou_name
+		path = var.ad_ou_path
+		description = var.ad_ou_description
+		protected = var.ad_ou_protected
 	}
 		
 	resource "ad_gpo" "g" {
-		name        = "gplinktestGPO"
-		domain      = "yourdomain.com"
-		description = "gpo for gplink tests"
-		status      = "AllSettingsEnabled"
+		name        = var.ad_gpo_name
+		domain      = var.ad_gpo_domain
+		description = var.ad_gpo_description
+		status      = var.ad_gpo_status
 	}
 	
 	resource "ad_gplink" "og" { 

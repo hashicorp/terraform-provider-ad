@@ -11,13 +11,17 @@ import (
 )
 
 func TestAccResourceADGPOSecurity_basic(t *testing.T) {
+	envVars := []string{
+		"TF_VAR_ad_gpo_name",
+		"TF_VAR_ad_gpo_domain",
+	}
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
+		PreCheck:     func() { testAccPreCheck(t, envVars) },
 		Providers:    testAccProviders,
 		CheckDestroy: resource.ComposeTestCheckFunc(testAccResourceADGPOSecurityExists("ad_gpo_security.gpo_sec", false)),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceADGPOSecurityConfigBasic("yourdomain.com", "tfgpo"),
+				Config: testAccResourceADGPOSecurityConfigBasic(),
 				Check: resource.ComposeTestCheckFunc(
 					testAccResourceADGPOSecurityExists("ad_gpo_security.gpo_sec", true),
 				),
@@ -70,14 +74,14 @@ func testAccResourceADGPOSecurityExists(resourceName string, desired bool) resou
 	}
 }
 
-func testAccResourceADGPOSecurityConfigBasic(domain, name string) string {
-	return fmt.Sprintf(`
-variable "domain"      { default = "%s" }
-variable "name"        { default = "%s" }
+func testAccResourceADGPOSecurityConfigBasic() string {
+	return `
+variable "ad_gpo_domain" {}
+variable "ad_gpo_name" {}
 
 resource "ad_gpo" "gpo" {
-    name        = var.name
-    domain      = var.domain
+    name        = var.ad_gpo_name
+    domain      = var.ad_gpo_domain
 }
 
 resource "ad_gpo_security" "gpo_sec" {
@@ -86,5 +90,5 @@ resource "ad_gpo_security" "gpo_sec" {
         minimum_password_length = 3
     }
 }
-`, domain, name)
+`
 }

@@ -2,6 +2,7 @@ package ad
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 
@@ -11,17 +12,20 @@ import (
 )
 
 func TestAccResourceADComputer_basic(t *testing.T) {
+	computerName := os.Getenv("TF_VAR_ad_computer_name")
+
+	envVars := []string{"TF_VAR_ad_computer_name", "TF_VAR_ad_computer_sam"}
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
+		PreCheck:  func() { testAccPreCheck(t, envVars) },
 		Providers: testAccProviders,
 		CheckDestroy: resource.ComposeTestCheckFunc(
-			testAccResourceADComputerExists("ad_computer.c", "testcomputer", false),
+			testAccResourceADComputerExists("ad_computer.c", computerName, false),
 		),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceADComputerConfigBasic("testcomputer", "TESTCOMPUTER$"),
+				Config: testAccResourceADComputerConfigBasic(),
 				Check: resource.ComposeTestCheckFunc(
-					testAccResourceADComputerExists("ad_computer.c", "testcomputer", true),
+					testAccResourceADComputerExists("ad_computer.c", computerName, true),
 				),
 			},
 			{
@@ -34,27 +38,31 @@ func TestAccResourceADComputer_basic(t *testing.T) {
 }
 
 func TestAccResourceADComputer_description(t *testing.T) {
+	computerName := os.Getenv("TF_VAR_ad_computer_name")
+	description := os.Getenv("TF_VAR_ad_computer_description")
+
+	envVars := []string{"TF_VAR_ad_computer_name", "TF_VAR_ad_computer_description", "TF_VAR_ad_computer_sam"}
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
+		PreCheck:  func() { testAccPreCheck(t, envVars) },
 		Providers: testAccProviders,
 		CheckDestroy: resource.ComposeTestCheckFunc(
-			testAccResourceADComputerDescriptionExists("ad_computer.c", "testdescription", false),
+			testAccResourceADComputerDescriptionExists("ad_computer.c", computerName, false),
 		),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceADComputerConfigBasic("testcomputer", "TESTCOMPUTER$"),
+				Config: testAccResourceADComputerConfigBasic(),
 				Check: resource.ComposeTestCheckFunc(
-					testAccResourceADComputerExists("ad_computer.c", "testcomputer", true),
+					testAccResourceADComputerExists("ad_computer.c", computerName, true),
 				),
 			},
 			{
-				Config: testAccResourceADComputerConfigDescription("testcomputer", "TESTCOMPUTER$", "testdescription"),
+				Config: testAccResourceADComputerConfigDescription(),
 				Check: resource.ComposeTestCheckFunc(
-					testAccResourceADComputerDescriptionExists("ad_computer.c", "testdescription", true),
+					testAccResourceADComputerDescriptionExists("ad_computer.c", description, true),
 				),
 			},
 			{
-				Config: testAccResourceADComputerConfigBasic("testcomputer", "TESTCOMPUTER$"),
+				Config: testAccResourceADComputerConfigBasic(),
 				Check: resource.ComposeTestCheckFunc(
 					testAccResourceADComputerDescriptionExists("ad_computer.c", "", true),
 				),
@@ -64,70 +72,76 @@ func TestAccResourceADComputer_description(t *testing.T) {
 }
 
 func TestAccResourceADComputer_move(t *testing.T) {
+	computerName := os.Getenv("TF_VAR_ad_computer_name")
+
+	envVars := []string{"TF_VAR_ad_computer_name", "TF_VAR_ad_computer_sam", "TF_VAR_ad_ou_name", "TF_VAR_ad_ou_path"}
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
+		PreCheck:  func() { testAccPreCheck(t, envVars) },
 		Providers: testAccProviders,
 		CheckDestroy: resource.ComposeTestCheckFunc(
-			testAccResourceADComputerExists("ad_computer.c", "testcomputer", false),
+			testAccResourceADComputerExists("ad_computer.c", computerName, false),
 		),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceADComputerConfigBasic("testcomputer", "TESTCOMPUTER$"),
+				Config: testAccResourceADComputerConfigBasic(),
 				Check: resource.ComposeTestCheckFunc(
-					testAccResourceADComputerExists("ad_computer.c", "testcomputer", true),
+					testAccResourceADComputerExists("ad_computer.c", computerName, true),
 				),
 			},
 			{
-				Config: testAccResourceADComputerConfigMove("testcomputer", "TESTCOMPUTER$"),
+				Config: testAccResourceADComputerConfigMove(),
 				Check: resource.ComposeTestCheckFunc(
-					testAccResourceADComputerExists("ad_computer.c", "testcomputer", true),
+					testAccResourceADComputerExists("ad_computer.c", computerName, true),
 				),
 			},
 		},
 	})
 }
 
-func testAccResourceADComputerConfigBasic(name, prewin2kname string) string {
-	return fmt.Sprintf(`
-variable "name" { default = %q }
-variable "pre2kname" { default = %q }
+func testAccResourceADComputerConfigBasic() string {
+	return `
+variable "ad_computer_name" {}
+variable "ad_computer_sam" {}
 
 resource "ad_computer" "c" {
-	name = var.name
-	pre2kname = var.pre2kname
+	name = var.ad_computer_name
+	pre2kname = var.ad_computer_sam
 }
-`, name, prewin2kname)
+`
 }
 
-func testAccResourceADComputerConfigDescription(name, prewin2kname, description string) string {
-	return fmt.Sprintf(`
-variable "name" { default = %q }
-variable "pre2kname" { default = %q }
-variable "description" { default = %q }
+func testAccResourceADComputerConfigDescription() string {
+	return `
+variable "ad_computer_name" {}
+variable "ad_computer_sam" {}
+variable "ad_computer_description" {}
 
 resource "ad_computer" "c" {
-	name = var.name
-	pre2kname = var.pre2kname
-	description = var.description
+	name = var.ad_computer_name
+	pre2kname = var.ad_computer_sam
+	description = var.ad_computer_description
 }
-`, name, prewin2kname, description)
+`
 }
 
-func testAccResourceADComputerConfigMove(name, prewin2kname string) string {
-	return fmt.Sprintf(`
-variable "name" { default = %q }
-variable "pre2kname" { default = %q }
+func testAccResourceADComputerConfigMove() string {
+	return `
+variable "ad_computer_name" {}
+variable "ad_computer_sam" {}
+variable "ad_ou_name" {}
+variable "ad_ou_path" {}
 
 resource "ad_ou" "o" { 
-	name = "anotherou"
-	path = "dc=yourdomain,dc=com"
+	name = var.ad_ou_name
+	path = var.ad_ou_path
 }
+
 resource "ad_computer" "c" {
-	name = var.name
-	pre2kname = var.pre2kname
+	name = var.ad_computer_name
+	pre2kname = var.ad_computer_sam
 	container = ad_ou.o.dn
 }
-`, name, prewin2kname)
+`
 }
 
 func testAccResourceADComputerExists(resource, name string, expected bool) resource.TestCheckFunc {
@@ -153,7 +167,7 @@ func testAccResourceADComputerExists(resource, name string, expected bool) resou
 		}
 
 		if computer.Name != name {
-			return fmt.Errorf("Computer name %q does not match expected name %q", computer.Name, name)
+			return fmt.Errorf("computer name %q does not match expected name %q", computer.Name, name)
 		}
 		return nil
 	}
@@ -182,7 +196,7 @@ func testAccResourceADComputerDescriptionExists(resource, description string, ex
 		}
 
 		if computer.Description != description {
-			return fmt.Errorf("Computer description %q does not match expected description %q", computer.Description, description)
+			return fmt.Errorf("computer description %q does not match expected description %q", computer.Description, description)
 		}
 		return nil
 	}

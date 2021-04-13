@@ -2,6 +2,7 @@ package ad
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 
@@ -11,29 +12,37 @@ import (
 )
 
 func TestAccResourceADOU_basic(t *testing.T) {
+	envVars := []string{
+		"TF_VAR_ad_ou_name",
+		"TF_VAR_ad_ou_description",
+		"TF_VAR_ad_ou_path",
+		"TF_VAR_ad_ou_protected",
+	}
+
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
+		PreCheck:  func() { testAccPreCheck(t, envVars) },
 		Providers: testAccProviders,
 		CheckDestroy: resource.ComposeTestCheckFunc(
 			testAccResourceADOUExists("ad_ou.o", "", false),
 		),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceADOUConfigBasic("testOU", "dc=yourdomain,dc=com", "some description", true),
+				Config: testAccResourceADOUConfigBasic("", true),
 				Check: resource.ComposeTestCheckFunc(
-					testAccResourceADOUExists("ad_ou.o", "testOU", true),
+					testAccResourceADOUExists("ad_ou.o", os.Getenv("TF_VAR_ad_ou_name"), true),
 				),
 			},
 			{
-				Config: testAccResourceADOUConfigBasic("testOU1", "dc=yourdomain,dc=com", "some description", true),
+				Config: testAccResourceADOUConfigBasic("-renamed", true),
 				Check: resource.ComposeTestCheckFunc(
-					testAccResourceADOUExists("ad_ou.o", "testOU1", true),
+					testAccResourceADOUExists("ad_ou.o", fmt.Sprintf("%s-renamed",
+						os.Getenv("TF_VAR_ad_ou_name")), true),
 				),
 			},
 			{
-				Config: testAccResourceADOUConfigBasic("testOU", "dc=yourdomain,dc=com", "some description", false),
+				Config: testAccResourceADOUConfigBasic("", false),
 				Check: resource.ComposeTestCheckFunc(
-					testAccResourceADOUExists("ad_ou.o", "testOU", false),
+					testAccResourceADOUExists("ad_ou.o", os.Getenv("TF_VAR_ad_ou_name"), true),
 				),
 			},
 			{
@@ -45,20 +54,20 @@ func TestAccResourceADOU_basic(t *testing.T) {
 	})
 }
 
-func testAccResourceADOUConfigBasic(name, path, description string, protected bool) string {
+func testAccResourceADOUConfigBasic(nameSuffix string, protection bool) string {
 	return fmt.Sprintf(`
-variable name { default = "%s" }
-variable path { default = "%s" }
-variable description { default = "%s" }
-variable protected { default = %t }
+variable ad_ou_name {}
+variable ad_ou_path {}
+variable ad_ou_description {}
+variable protected { default = %t}
 
 resource "ad_ou" "o" { 
-    name = var.name
-    path = var.path
-    description = var.description
+    name = "${var.ad_ou_name}%s"
+    path = var.ad_ou_path
+    description = var.ad_ou_description
     protected = var.protected
 }
-`, name, path, description, protected)
+`, protection, nameSuffix)
 }
 
 func testAccResourceADOUExists(resource, name string, expected bool) resource.TestCheckFunc {

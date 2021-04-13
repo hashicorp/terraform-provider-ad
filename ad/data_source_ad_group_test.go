@@ -1,18 +1,25 @@
 package ad
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccDatasourceADGroup_basic(t *testing.T) {
+	envVars := []string{
+		"TF_VAR_ad_group_name",
+		"TF_VAR_ad_group_sam",
+		"TF_VAR_ad_group_scope",
+		"TF_VAR_ad_group_category",
+		"TF_VAR_ad_group_container",
+	}
 	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t, envVars) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDatasourceADGroupConfigBasic("yourdomain.com", "test group", "testgroup", "global", "security"),
+				Config: testAccDatasourceADGroupConfigBasic(),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
 						"data.ad_group.d", "id",
@@ -25,24 +32,24 @@ func TestAccDatasourceADGroup_basic(t *testing.T) {
 
 }
 
-func testAccDatasourceADGroupConfigBasic(domain, name, sam, scope, gtype string) string {
-	return fmt.Sprintf(`
-	variable "name" { default = "%s" }
-	variable "sam_account_name" { default = "%s" }
-	variable "scope" { default = "%s" }
-	variable "category" { default = "%s" }
-	variable "container" { default = "cn=Users,dc=yourdomain,dc=com" }
+func testAccDatasourceADGroupConfigBasic() string {
+	return `
+	variable "ad_group_name" {}
+	variable "ad_group_sam" {}
+	variable "ad_group_scope" {}
+	variable "ad_group_category" {}
+	variable "ad_group_container" {}
 
 	resource "ad_group" "g" {
-		name = var.name
-		sam_account_name = var.sam_account_name
-		scope = var.scope
-		category = var.category
-		container = var.container
+		name = var.ad_group_name
+		sam_account_name = var.ad_group_sam
+		scope = var.ad_group_scope
+		category = var.ad_group_category
+		container = var.ad_group_container
 	 }
 	 
 	 data "ad_group" "d" {
 		 group_id = ad_group.g.id
 	 }
-`, name, sam, scope, gtype)
+`
 }
