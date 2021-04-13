@@ -1,0 +1,55 @@
+base_description="AD terraform provider acceptance tests"
+base_container="CN=Users,DC=yourdomain,DC=com"
+
+export TF_VAR_ad_domain_name="yourdomain.com"
+
+export TF_VAR_ad_computer_name="tfacc-test-computer"
+export TF_VAR_ad_computer_sam="TFACCTEST$"
+export TF_VAR_ad_computer_description=$base_description
+
+export TF_VAR_ad_group_scope_domainlocal="domainlocal"
+export TF_VAR_ad_group_scope_universal="universal"
+export TF_VAR_ad_group_scope_global="global"
+
+export TF_VAR_ad_group_category_security="security"
+export TF_VAR_ad_group_category_distribution="distribution"
+
+export TF_VAR_ad_group_name="tfacc-test-group"
+export TF_VAR_ad_group_sam="TFACCTESTGROUP"
+export TF_VAR_ad_group_scope=$TF_VAR_ad_group_scope_global
+export TF_VAR_ad_group_category=$TF_VAR_ad_group_category_security
+export TF_VAR_ad_group_container=$base_container
+export TF_VAR_ad_group_description=$base_description
+
+export TF_VAR_ad_group2_name="tfacc-test-group2"
+export TF_VAR_ad_group2_sam="TFACCTESTGROUP2"
+export TF_VAR_ad_group2_scope=$TF_VAR_ad_group_scope_global
+export TF_VAR_ad_group2_category=$TF_VAR_ad_group_category_security
+export TF_VAR_ad_group2_container=$base_container
+export TF_VAR_ad_group2_description=$base_description
+
+
+export TF_VAR_ad_group3_name="tfacc-test-group3"
+export TF_VAR_ad_group3_sam="TFACCTESTGROUP3"
+export TF_VAR_ad_group3_scope=$TF_VAR_ad_group_scope_global
+export TF_VAR_ad_group3_category=$TF_VAR_ad_group_category_security
+export TF_VAR_ad_group3_container=$base_container
+export TF_VAR_ad_group3_description=$base_description
+
+export TF_VAR_ad_ou_name="TFAcc-TestOU"
+export TF_VAR_ad_ou_path="DC=yourdomain,DC=com"
+export TF_VAR_ad_ou_protected="false"
+export TF_VAR_ad_ou_description=$base_description
+
+export TF_VAR_ad_user_sam="TFACCTESTUSER"
+export TF_VAR_ad_user_password="Password123!"
+export TF_VAR_ad_user_principal_name="TFAcc Test User"
+export TF_VAR_ad_user_display_name="TF Acceptance Test User"
+export TF_VAR_ad_user_container=$base_container
+
+export TF_VAR_ad_gpo_name="tfacc-test-gpo"
+export TF_VAR_ad_gpo_domain=$TF_VAR_ad_domain_name
+export TF_VAR_ad_gpo_description=$base_description
+export TF_VAR_ad_gpo_status="AllSettingsEnabled"
+
+

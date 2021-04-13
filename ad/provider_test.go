@@ -1,6 +1,7 @@
 package ad
 
 import (
+	"os"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -16,6 +17,10 @@ func init() {
 	}
 }
 
-func testAccPreCheck(t *testing.T) {
-
+func testAccPreCheck(t *testing.T, envVars []string) {
+	for _, envVar := range envVars {
+		if val := os.Getenv(envVar); val == "" {
+			t.Fatalf("%s must be set for acceptance tests to work", envVar)
+		}
+	}
 }
