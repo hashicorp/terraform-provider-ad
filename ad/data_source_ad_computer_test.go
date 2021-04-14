@@ -1,18 +1,19 @@
 package ad
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccDataSourceADComputer_basic(t *testing.T) {
+	envVars := []string{"TF_VAR_ad_computer_name"}
 	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t, envVars) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceADComputerBasic("testcomputer"),
+				Config: testAccDataSourceADComputerBasic(),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
 						"data.ad_computer.dsc", "guid",
@@ -24,17 +25,18 @@ func TestAccDataSourceADComputer_basic(t *testing.T) {
 	})
 }
 
-func testAccDataSourceADComputerBasic(name string) string {
-	return fmt.Sprintf(`
-	variable "name" { default = %q }
-	
+func testAccDataSourceADComputerBasic() string {
+	return `
+
+	variable "ad_computer_name" {}
+
 	resource "ad_computer" "c" {
-		name = var.name
+		name = var.ad_computer_name
 	}	
 	
 	data "ad_computer" "dsc" {
 		guid = ad_computer.c.guid
 	}
 	
-	`, name)
+	`
 }

@@ -10,18 +10,33 @@ import (
 	"github.com/hashicorp/terraform-provider-ad/ad/internal/winrmhelper"
 )
 
-func TestAccADGroupMembership_basic(t *testing.T) {
+func TestAccResourceADGroupMembership_basic(t *testing.T) {
+
+	envVars := []string{
+		"TF_VAR_ad_group_name",
+		"TF_VAR_ad_group_sam",
+		"TF_VAR_ad_group_container",
+		"TF_VAR_ad_group2_name",
+		"TF_VAR_ad_group2_sam",
+		"TF_VAR_ad_group2_container",
+		"TF_VAR_ad_user_display_name",
+		"TF_VAR_ad_user_sam",
+		"TF_VAR_ad_user_password",
+		"TF_VAR_ad_user_principal_name",
+		"TF_VAR_ad_user_container",
+	}
+
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
+		PreCheck:  func() { testAccPreCheck(t, envVars) },
 		Providers: testAccProviders,
 		CheckDestroy: resource.ComposeTestCheckFunc(
-			testAccADGroupMembershipExists("ad_group_membership.gm", false, 0),
+			testAccResourceADGroupMembershipExists("ad_group_membership.gm", false, 0),
 		),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccADGroupMembershipConfigBasic(),
+				Config: testAccResourceADGroupMembershipConfigBasic(),
 				Check: resource.ComposeTestCheckFunc(
-					testAccADGroupMembershipExists("ad_group_membership.gm", true, 2),
+					testAccResourceADGroupMembershipExists("ad_group_membership.gm", true, 2),
 				),
 			},
 			{
@@ -33,24 +48,40 @@ func TestAccADGroupMembership_basic(t *testing.T) {
 	})
 }
 
-func TestAccADGroupMembership_Uodate(t *testing.T) {
+func TestAccResourceADGroupMembership_Update(t *testing.T) {
+	envVars := []string{
+		"TF_VAR_ad_group_name",
+		"TF_VAR_ad_group_sam",
+		"TF_VAR_ad_group_container",
+		"TF_VAR_ad_group2_name",
+		"TF_VAR_ad_group2_sam",
+		"TF_VAR_ad_group2_container",
+		"TF_VAR_ad_group3_name",
+		"TF_VAR_ad_group3_sam",
+		"TF_VAR_ad_group3_container",
+		"TF_VAR_ad_user_display_name",
+		"TF_VAR_ad_user_sam",
+		"TF_VAR_ad_user_password",
+		"TF_VAR_ad_user_principal_name",
+		"TF_VAR_ad_user_container",
+	}
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
+		PreCheck:  func() { testAccPreCheck(t, envVars) },
 		Providers: testAccProviders,
 		CheckDestroy: resource.ComposeTestCheckFunc(
-			testAccADGroupMembershipExists("ad_group_membership.gm", false, 0),
+			testAccResourceADGroupMembershipExists("ad_group_membership.gm", false, 0),
 		),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccADGroupMembershipUpdate(),
+				Config: testAccResourceADGroupMembershipUpdate(),
 				Check: resource.ComposeTestCheckFunc(
-					testAccADGroupMembershipExists("ad_group_membership.gm", true, 3),
+					testAccResourceADGroupMembershipExists("ad_group_membership.gm", true, 3),
 				),
 			},
 		},
 	})
 }
-func testAccADGroupMembershipExists(resourceName string, expected bool, desiredMemberCount int) resource.TestCheckFunc {
+func testAccResourceADGroupMembershipExists(resourceName string, expected bool, desiredMemberCount int) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[resourceName]
 
@@ -78,26 +109,41 @@ func testAccADGroupMembershipExists(resourceName string, expected bool, desiredM
 	}
 }
 
-func testAccADGroupMembershipConfigBasic() string {
+func testAccResourceADGroupMembershipConfigBasic() string {
 	return `
+
+		variable "ad_group_name" {}
+		variable "ad_group_sam" {}
+		variable "ad_group_container" {}
+
+		variable "ad_group2_name" {}
+		variable "ad_group2_sam" {}
+		variable "ad_group2_container" {}
+
+		variable "ad_user_display_name" {}
+		variable "ad_user_principal_name" {}
+		variable "ad_user_sam" {}
+		variable "ad_user_password" {}
+		variable "ad_user_container" {}
+
 		resource ad_group "g" {
-			name             = "testGroup"
-			sam_account_name = "testgroup"
-			container        = "CN=Users,dc=yourdomain,dc=com"
+			name             = var.ad_group_name
+			sam_account_name = var.ad_group_sam
+			container        = var.ad_group_container
 		}
 
 		resource ad_group "g2" {
-			name             = "memberGroup"
-			sam_account_name = "membergroup"
-			container        = "CN=Users,dc=yourdomain,dc=com"
+			name             = var.ad_group2_name
+			sam_account_name = var.ad_group2_sam
+			container        = var.ad_group2_container
 		}
 
 		resource ad_user "u" {
-			display_name     = "test user"
-			principal_name   = "testUser"
-			sam_account_name = "testUser"
-			initial_password = "SomethingRandom1234!!"
-			container        = "CN=Users,DC=yourdomain,DC=com"
+			display_name     = var.ad_user_display_name
+			principal_name   = var.ad_user_principal_name
+			sam_account_name = var.ad_user_sam
+			initial_password = var.ad_user_password
+			container        = var.ad_user_container
 		}
 
 		resource ad_group_membership "gm" {
@@ -107,32 +153,51 @@ func testAccADGroupMembershipConfigBasic() string {
 	`
 }
 
-func testAccADGroupMembershipUpdate() string {
+func testAccResourceADGroupMembershipUpdate() string {
 	return `
+		variable "ad_group_name" {}
+		variable "ad_group_sam" {}
+		variable "ad_group_container" {}
+
+		variable "ad_group2_name" {}
+		variable "ad_group2_sam" {}
+		variable "ad_group2_container" {}
+
+		variable "ad_group3_name" {}
+		variable "ad_group3_sam" {}
+		variable "ad_group3_container" {}
+
+		variable "ad_user_display_name" {}
+		variable "ad_user_principal_name" {}
+		variable "ad_user_sam" {}
+		variable "ad_user_password" {}
+		variable "ad_user_container" {}
+
 		resource ad_group "g" {
-			name             = "testGroup"
-			sam_account_name = "testgroup"
-			container        = "CN=Users,dc=yourdomain,dc=com"
+			name             = var.ad_group_name
+			sam_account_name = var.ad_group_sam
+			container        = var.ad_group_container
 		}
 
 		resource ad_group "g2" {
-			name             = "memberGroup"
-			sam_account_name = "membergroup"
-			container        = "CN=Users,dc=yourdomain,dc=com"
+			name             = var.ad_group2_name
+			sam_account_name = var.ad_group2_sam
+			container        = var.ad_group2_container
 		}
 
 		resource ad_group "g3" {
-			name             = "memberGroup1"
-			sam_account_name = "membergroup2"
-			container        = "CN=Users,dc=yourdomain,dc=com"
+			name             = var.ad_group3_name
+			sam_account_name = var.ad_group3_sam
+			container        = var.ad_group3_container
 		}
 
+
 		resource ad_user "u" {
-			display_name     = "test user"
-			principal_name   = "testUser"
-			sam_account_name = "testUser"
-			initial_password = "SomethingRandom1234!!"
-			container        = "CN=Users,DC=yourdomain,DC=com"
+			display_name     = var.ad_user_display_name
+			principal_name   = var.ad_user_principal_name
+			sam_account_name = var.ad_user_sam
+			initial_password = var.ad_user_password
+			container        = var.ad_user_container
 		}
 
 		resource ad_group_membership "gm" {

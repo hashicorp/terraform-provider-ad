@@ -2,6 +2,7 @@ package ad
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 
@@ -11,29 +12,37 @@ import (
 )
 
 func TestAccResourceADGPO_basic(t *testing.T) {
+	envVars := []string{
+		"TF_VAR_ad_gpo_name",
+		"TF_VAR_ad_gpo_domain",
+		"TF_VAR_ad_gpo_description",
+		"TF_VAR_ad_gpo_status",
+	}
+
+	gpoName := os.Getenv("TF_VAR_ad_gpo_name")
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
+		PreCheck:  func() { testAccPreCheck(t, envVars) },
 		Providers: testAccProviders,
 		CheckDestroy: resource.ComposeTestCheckFunc(
-			testAccResourceADGPOExists("ad_gpo.gpo", "", false),
+			testAccResourceADGPOExists("ad_gpo.gpo", gpoName, false),
 		),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceADGPOConfigBasic("yourdomain.com", "tfgpo", "TF managed GPO", "AllSettingsEnabled"),
+				Config: testAccResourceADGPOConfigBasic(""),
 				Check: resource.ComposeTestCheckFunc(
-					testAccResourceADGPOExists("ad_gpo.gpo", "tfgpo", true),
+					testAccResourceADGPOExists("ad_gpo.gpo", gpoName, true),
 				),
 			},
 			{
-				Config: testAccResourceADGPOConfigBasic("yourdomain.com", "tfgpo123", "TF managed GPO", "AllSettingsEnabled"),
+				Config: testAccResourceADGPOConfigBasic("-renamed"),
 				Check: resource.ComposeTestCheckFunc(
-					testAccResourceADGPOExists("ad_gpo.gpo", "tfgpo123", true),
+					testAccResourceADGPOExists("ad_gpo.gpo", fmt.Sprintf("%s-renamed", gpoName), true),
 				),
 			},
 			{
-				Config: testAccResourceADGPOConfigBasic("yourdomain.com", "tfgpo123", "TF managed GPO", "AllSettingsDisabled"),
+				Config: testAccResourceADGPOConfigBasic(""),
 				Check: resource.ComposeTestCheckFunc(
-					testAccResourceADGPOExists("ad_gpo.gpo", "tfgpo123", true),
+					testAccResourceADGPOExists("ad_gpo.gpo", gpoName, true),
 				),
 			},
 			{
@@ -45,21 +54,21 @@ func TestAccResourceADGPO_basic(t *testing.T) {
 	})
 }
 
-func testAccResourceADGPOConfigBasic(domain, name, description, status string) string {
+func testAccResourceADGPOConfigBasic(suffix string) string {
 	return fmt.Sprintf(`
 
-	variable "domain"      { default = "%s" }
-	variable "name"        { default = "%s" }
-	variable "description" { default = "%s" }
-	variable "status"      { default = "%s" }
+	variable "ad_gpo_domain" {}
+	variable "ad_gpo_name" {}
+	variable "ad_gpo_description" {}
+	variable "ad_gpo_status" {}
 
 	resource "ad_gpo" "gpo" {
-		name        = var.name
-		domain      = var.domain
-		description = var.description
-		status      = var.status
+		name        = "${var.ad_gpo_name}%s"
+		domain      = var.ad_gpo_domain
+		description = var.ad_gpo_description
+		status      = var.ad_gpo_status
 	}
-	`, domain, name, description, status)
+	`, suffix)
 }
 
 func testAccResourceADGPOExists(resourceName, name string, expected bool) resource.TestCheckFunc {

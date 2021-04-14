@@ -2,6 +2,7 @@ package ad
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 
@@ -10,18 +11,27 @@ import (
 	"github.com/hashicorp/terraform-provider-ad/ad/internal/winrmhelper"
 )
 
-func TestAccGroup_basic(t *testing.T) {
+func TestAccResourceADGroup_basic(t *testing.T) {
+	envVars := []string{
+		"TF_VAR_ad_domain_name",
+		"TF_VAR_ad_group_name",
+		"TF_VAR_ad_group_sam",
+		"TF_VAR_ad_group_container",
+		"TF_VAR_ad_group_scope",
+		"TF_VAR_ad_group_category",
+		"TF_VAR_ad_group_description",
+	}
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
+		PreCheck:  func() { testAccPreCheck(t, envVars) },
 		Providers: testAccProviders,
 		CheckDestroy: resource.ComposeTestCheckFunc(
-			testAccGroupExists("ad_group.g", "yourdomain.com", "testgroup", false),
+			testAccResourceADGroupExists("ad_group.g", os.Getenv("TF_VAR_ad_group_sam"), false),
 		),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccGroupConfigBasic("yourdomain.com", "test group", "testgroup", "global", "security", "some description"),
+				Config: testAccResourceADGroupConfigBasic(os.Getenv("TF_VAR_ad_group_scope_global"), os.Getenv("TF_VAR_ad_group_category_security")),
 				Check: resource.ComposeTestCheckFunc(
-					testAccGroupExists("ad_group.g", "yourdomain.com", "testgroup", true),
+					testAccResourceADGroupExists("ad_group.g", os.Getenv("TF_VAR_ad_group_sam"), true),
 				),
 			},
 			{
@@ -33,81 +43,100 @@ func TestAccGroup_basic(t *testing.T) {
 	})
 }
 
-func TestAccGroup_categories(t *testing.T) {
+func TestAccResourceADGroup_categories(t *testing.T) {
+	envVars := []string{
+		"TF_VAR_ad_domain_name",
+		"TF_VAR_ad_group_name",
+		"TF_VAR_ad_group_sam",
+		"TF_VAR_ad_group_container",
+		"TF_VAR_ad_group_scope",
+		"TF_VAR_ad_group_category",
+		"TF_VAR_ad_group_description",
+	}
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
+		PreCheck:  func() { testAccPreCheck(t, envVars) },
 		Providers: testAccProviders,
 		CheckDestroy: resource.ComposeTestCheckFunc(
-			testAccGroupExists("ad_group.g", "yourdomain.com", "testgroup", false),
+			testAccResourceADGroupExists("ad_group.g", os.Getenv("TF_VAR_ad_group_sam"), false),
 		),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccGroupConfigBasic("yourdomain.com", "test group", "testgroup", "global", "security", "some description"),
+				Config: testAccResourceADGroupConfigBasic(os.Getenv("TF_VAR_ad_group_scope_global"), os.Getenv("TF_VAR_ad_group_category_security")),
 				Check: resource.ComposeTestCheckFunc(
-					testAccGroupExists("ad_group.g", "yourdomain.com", "testgroup", true),
+					testAccResourceADGroupExists("ad_group.g", os.Getenv("TF_VAR_ad_group_sam"), true),
 				),
 			},
 			{
-				Config: testAccGroupConfigBasic("yourdomain.com", "test group", "testgroup", "global", "distribution", "some description"),
+				Config: testAccResourceADGroupConfigBasic(os.Getenv("TF_VAR_ad_group_scope_global"), os.Getenv("TF_VAR_ad_group_category_distribution")),
 				Check: resource.ComposeTestCheckFunc(
-					testAccGroupExists("ad_group.g", "yourdomain.com", "testgroup", true),
+					testAccResourceADGroupExists("ad_group.g", os.Getenv("TF_VAR_ad_group_sam"), true),
 				),
 			},
 		},
 	})
 }
 
-func TestAccGroup_scopes(t *testing.T) {
+func TestAccResourceADGroup_scopes(t *testing.T) {
+	envVars := []string{
+		"TF_VAR_ad_domain_name",
+		"TF_VAR_ad_group_name",
+		"TF_VAR_ad_group_sam",
+		"TF_VAR_ad_group_container",
+		"TF_VAR_ad_group_scope",
+		"TF_VAR_ad_group_category",
+		"TF_VAR_ad_group_description",
+	}
+
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
+		PreCheck:  func() { testAccPreCheck(t, envVars) },
 		Providers: testAccProviders,
 		CheckDestroy: resource.ComposeTestCheckFunc(
-			testAccGroupExists("ad_group.g", "yourdomain.com", "testgroup", false),
+			testAccResourceADGroupExists("ad_group.g", os.Getenv(""), false),
 		),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccGroupConfigBasic("yourdomain.com", "test group", "testgroup", "domainlocal", "security", "some description"),
+				Config: testAccResourceADGroupConfigBasic(os.Getenv("TF_VAR_ad_group_scope_domainlocal"), os.Getenv("TF_VAR_ad_group_category_security")),
 				Check: resource.ComposeTestCheckFunc(
-					testAccGroupExists("ad_group.g", "yourdomain.com", "testgroup", true),
+					testAccResourceADGroupExists("ad_group.g", os.Getenv("TF_VAR_ad_group_sam"), true),
 				),
 			},
 			{
-				Config: testAccGroupConfigBasic("yourdomain.com", "test group", "testgroup", "universal", "security", "some description"),
+				Config: testAccResourceADGroupConfigBasic(os.Getenv("TF_VAR_ad_group_scope_universal"), os.Getenv("TF_VAR_ad_group_category_security")),
 				Check: resource.ComposeTestCheckFunc(
-					testAccGroupExists("ad_group.g", "yourdomain.com", "testgroup", true),
+					testAccResourceADGroupExists("ad_group.g", os.Getenv("TF_VAR_ad_group_sam"), true),
 				),
 			},
 			{
-				Config: testAccGroupConfigBasic("yourdomain.com", "test group", "testgroup", "global", "security", "some description"),
+				Config: testAccResourceADGroupConfigBasic(os.Getenv("TF_VAR_ad_group_scope_global"), os.Getenv("TF_VAR_ad_group_category_security")),
 				Check: resource.ComposeTestCheckFunc(
-					testAccGroupExists("ad_group.g", "yourdomain.com", "testgroup", true),
+					testAccResourceADGroupExists("ad_group.g", os.Getenv("TF_VAR_ad_group_sam"), true),
 				),
 			},
 		},
 	})
 }
 
-func testAccGroupConfigBasic(domain, name, sam, scope, gtype string, desc string) string {
+func testAccResourceADGroupConfigBasic(scope, gtype string) string {
 	return fmt.Sprintf(`
-	variable "name" { default = %q }
-	variable "sam_account_name" { default = %q }
+	variable "ad_group_name" {}
+	variable "ad_group_sam"{}
 	variable "scope" { default = %q }
 	variable "category" { default = %q }
-	variable "container" { default = "CN=Users,dc=yourdomain,dc=com" }
-	variable "description" { default = %q }
+	variable "ad_group_container"{}
+	variable "ad_group_description"{}
 
 	resource "ad_group" "g" {
-		name = var.name
-		sam_account_name = var.sam_account_name
+		name = var.ad_group_name
+		sam_account_name = var.ad_group_sam
 		scope = var.scope
 		category = var.category
-		container = var.container
-		description = var.description
+		container = var.ad_group_container
+		description = var.ad_group_description
  	}
-`, name, sam, scope, gtype, desc)
+`, scope, gtype)
 }
 
-func testAccGroupExists(name, domain, groupSAM string, expected bool) resource.TestCheckFunc {
+func testAccResourceADGroupExists(name, groupSAM string, expected bool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[name]
 

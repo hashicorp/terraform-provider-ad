@@ -2,6 +2,7 @@ package ad
 
 import (
 	"fmt"
+	"os"
 	"reflect"
 	"strings"
 	"testing"
@@ -13,60 +14,77 @@ import (
 	"github.com/hashicorp/terraform-provider-ad/ad/internal/winrmhelper"
 )
 
-func TestAccUser_basic(t *testing.T) {
+func TestAccResourceADUser_basic(t *testing.T) {
+	envVars := []string{
+		"TF_VAR_ad_user_display_name",
+		"TF_VAR_ad_user_sam",
+		"TF_VAR_ad_user_password",
+		"TF_VAR_ad_user_principal_name",
+		"TF_VAR_ad_user_container",
+	}
+
+	username := os.Getenv("TF_VAR_ad_user_sam")
+	resourceName := "ad_user.a"
+
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
+		PreCheck:  func() { testAccPreCheck(t, envVars) },
 		Providers: testAccProviders,
 		CheckDestroy: resource.ComposeTestCheckFunc(
-			testAccUserExists("ad_user.a", "dc=yourdomain,dc=com", "testuser", false),
+			testAccResourceADUserExists(resourceName, username, false),
 		),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccUserConfigBasic("dc=yourdomain,dc=com", "testuser", "thu2too'W?ieJ}a^g0zo"),
+				Config: testAccResourceADUserConfigBasic(""),
 				Check: resource.ComposeTestCheckFunc(
-					testAccUserExists("ad_user.a", "dc=yourdomain,dc=com", "testuser", true),
+					testAccResourceADUserExists(resourceName, username, true),
 				),
 			},
 			{
-				ResourceName:            "ad_user.a",
+				ResourceName:            resourceName,
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"initial_password"},
 			},
 			{
-				Config: testAccUserConfigAttributes("dc=yourdomain,dc=com", "testuser", "thu2too'W?ieJ}a^g0zo"),
+				Config: testAccResourceADUserConfigAttributes(),
 				Check: resource.ComposeTestCheckFunc(
-					testAccUserExists("ad_user.a", "dc=yourdomain,dc=com", "testuser", true),
+					testAccResourceADUserExists(resourceName, username, true),
 				),
 			},
 			{
-				Config: testAccUserConfigBasic("dc=yourdomain,dc=com", "testuser", "thu2too'W?ieJ}a^g0zo"),
+				Config: testAccResourceADUserConfigBasic(""),
 				Check: resource.ComposeTestCheckFunc(
-					testAccUserExists("ad_user.a", "dc=yourdomain,dc=com", "testuser", true),
+					testAccResourceADUserExists(resourceName, username, true),
 				),
 			},
 		},
 	})
 }
 
-func TestAccUser_custom_attributes_basic(t *testing.T) {
+func TestAccResourceADUser_custom_attributes_basic(t *testing.T) {
+	envVars := []string{
+		"TF_VAR_ad_user_display_name",
+		"TF_VAR_ad_user_sam",
+		"TF_VAR_ad_user_password",
+		"TF_VAR_ad_user_principal_name",
+		"TF_VAR_ad_user_container",
+	}
+
 	caConfig := `{"carLicense": ["a value", "another value", "a value with \"\" double quotes"]}`
-	username := "testuser"
-	password := "thu2too'W?ieJ}a^g0zo"
-	domainDN := "dc=yourdomain,dc=com"
+	username := os.Getenv("TF_VAR_ad_user_sam")
 	resourceName := "ad_user.a"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
+		PreCheck:  func() { testAccPreCheck(t, envVars) },
 		Providers: testAccProviders,
 		CheckDestroy: resource.ComposeTestCheckFunc(
-			testAccUserExists(resourceName, domainDN, username, false),
+			testAccResourceADUserExists(resourceName, username, false),
 		),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccUserConfigCustomAttributes(domainDN, username, password, caConfig),
+				Config: testAccResourceADUserConfigCustomAttributes(caConfig),
 				Check: resource.ComposeTestCheckFunc(
-					testCheckADUserCustomAttribute(resourceName, domainDN, caConfig),
+					testCheckADUserCustomAttribute(resourceName, caConfig),
 				),
 			},
 			{
@@ -79,31 +97,37 @@ func TestAccUser_custom_attributes_basic(t *testing.T) {
 	})
 }
 
-func TestAccUser_custom_attributes_extended(t *testing.T) {
+func TestAccResourceADUser_custom_attributes_extended(t *testing.T) {
+	envVars := []string{
+		"TF_VAR_ad_user_display_name",
+		"TF_VAR_ad_user_sam",
+		"TF_VAR_ad_user_password",
+		"TF_VAR_ad_user_principal_name",
+		"TF_VAR_ad_user_container",
+	}
+
 	caConfig := `{"carLicense": ["a value", "another value", "a value with \"\" double quotes"]}`
 	caConfig2 := `{"carLicense": ["a value", "another value", "a value with \"\" double quotes"], "comment": "another string"}`
-	username := "testuser"
-	password := "thu2too'W?ieJ}a^g0zo"
-	domainDN := "dc=yourdomain,dc=com"
+	username := os.Getenv("TF_VAR_ad_user_sam")
 	resourceName := "ad_user.a"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
+		PreCheck:  func() { testAccPreCheck(t, envVars) },
 		Providers: testAccProviders,
 		CheckDestroy: resource.ComposeTestCheckFunc(
-			testAccUserExists(resourceName, domainDN, username, false),
+			testAccResourceADUserExists(resourceName, username, false),
 		),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccUserConfigBasic("dc=yourdomain,dc=com", "testuser", "thu2too'W?ieJ}a^g0zo"),
+				Config: testAccResourceADUserConfigBasic(""),
 				Check: resource.ComposeTestCheckFunc(
-					testAccUserExists("ad_user.a", "dc=yourdomain,dc=com", "testuser", true),
+					testAccResourceADUserExists(resourceName, username, true),
 				),
 			},
 			{
-				Config: testAccUserConfigCustomAttributes(domainDN, username, password, caConfig),
+				Config: testAccResourceADUserConfigCustomAttributes(caConfig),
 				Check: resource.ComposeTestCheckFunc(
-					testCheckADUserCustomAttribute(resourceName, domainDN, caConfig),
+					testCheckADUserCustomAttribute(resourceName, caConfig),
 				),
 			},
 			{
@@ -113,118 +137,144 @@ func TestAccUser_custom_attributes_extended(t *testing.T) {
 				ImportStateVerifyIgnore: []string{"initial_password", "custom_attributes"},
 			},
 			{
-				Config: testAccUserConfigCustomAttributes(domainDN, username, password, caConfig2),
+				Config: testAccResourceADUserConfigCustomAttributes(caConfig2),
 				Check: resource.ComposeTestCheckFunc(
-					testCheckADUserCustomAttribute(resourceName, domainDN, caConfig2),
+					testCheckADUserCustomAttribute(resourceName, caConfig2),
 				),
 			},
 			{
-				Config: testAccUserConfigCustomAttributes(domainDN, username, password, caConfig),
+				Config: testAccResourceADUserConfigCustomAttributes(caConfig),
 				Check: resource.ComposeTestCheckFunc(
-					testCheckADUserCustomAttribute(resourceName, domainDN, caConfig),
+					testCheckADUserCustomAttribute(resourceName, caConfig),
 				),
 			},
 		},
 	})
 }
 
-func TestAccUser_modify(t *testing.T) {
-	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
-		CheckDestroy: resource.ComposeTestCheckFunc(
-			testAccUserExists("ad_user.a", "dc=yourdomain,dc=com", "testuser123", false),
-		),
-		Steps: []resource.TestStep{
-			{
-				Config: testAccUserConfigBasic("dc=yourdomain,dc=com", "testuser", "thu2too'W?ieJ}a^g0zo"),
-				Check: resource.ComposeTestCheckFunc(
-					testAccUserExists("ad_user.a", "dc=yourdomain,dc=com", "testuser", true),
-				),
-			},
-			{
-				Config: testAccUserConfigBasic("dc=yourdomain,dc=com", "testuser123", "thu2too'W?ieJ}a^g0zo"),
-				Check: resource.ComposeTestCheckFunc(
-					testAccUserExists("ad_user.a", "dc=yourdomain,dc=com", "testuser123", true),
-				),
-			},
-			{
-				Config: testAccUserConfigMoved("dc=yourdomain,dc=com", "testuser123", "thu2too'W?ieJ}a^g0zo"),
-				Check: resource.ComposeTestCheckFunc(
-					testAccUserContainer("ad_user.a", "dc=yourdomain,dc=com", "ou=newOU,DC=yourdomain,DC=com"),
-				),
-			},
-		},
-	})
-}
-
-func TestAccUser_UAC(t *testing.T) {
-	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
-		CheckDestroy: resource.ComposeTestCheckFunc(
-			testAccUserExists("ad_user.a", "dc=yourdomain,dc=com", "testuser", false),
-		),
-		Steps: []resource.TestStep{
-			{
-				Config: testAccUserConfigUAC("dc=yourdomain,dc=com", "testuser", "thu2too'W?ieJ}a^g0zo", "false", "false"),
-				Check: resource.ComposeTestCheckFunc(
-					testCheckADUserUAC("ad_user.a", "dc=yourdomain,dc=com", false, false),
-				),
-			},
-			{
-				Config: testAccUserConfigUAC("dc=yourdomain,dc=com", "testuser", "thu2too'W?ieJ}a^g0zo", "true", "false"),
-				Check: resource.ComposeTestCheckFunc(
-					testCheckADUserUAC("ad_user.a", "dc=yourdomain,dc=com", true, false),
-				),
-			},
-			{
-				Config: testAccUserConfigUAC("dc=yourdomain,dc=com", "testuser", "thu2too'W?ieJ}a^g0zo", "false", "true"),
-				Check: resource.ComposeTestCheckFunc(
-					testCheckADUserUAC("ad_user.a", "dc=yourdomain,dc=com", false, true),
-				),
-			},
-			{
-				Config: testAccUserConfigUAC("dc=yourdomain,dc=com", "testuser", "thu2too'W?ieJ}a^g0zo", "true", "true"),
-				Check: resource.ComposeTestCheckFunc(
-					testCheckADUserUAC("ad_user.a", "dc=yourdomain,dc=com", true, true),
-				),
-			},
-		},
-	})
-}
-
-func defaultVariablesSection(domain, username, password string) string {
-	principalName := fmt.Sprintf("%s@%s", username, domain)
-	return fmt.Sprintf(`
-	variable "principal_name" { default = %q }
-	variable "password" { default = %q }
-	variable "samaccountname" { default = %q }
-
-	`, principalName, password, username)
-}
-
-func defaultUserSection(container string) string {
-	if container == "" {
-		container = `"CN=Users,DC=yourdomain,DC=com"`
+func TestAccResourceADUser_modify(t *testing.T) {
+	envVars := []string{
+		"TF_VAR_ad_user_display_name",
+		"TF_VAR_ad_user_sam",
+		"TF_VAR_ad_user_password",
+		"TF_VAR_ad_user_principal_name",
+		"TF_VAR_ad_user_container",
+		"TF_VAR_ad_ou_name",
+		"TF_VAR_ad_ou_description",
+		"TF_VAR_ad_ou_path",
+		"TF_VAR_ad_ou_protected",
 	}
-	return fmt.Sprintf(`
-	principal_name = var.principal_name
-	sam_account_name = var.samaccountname
-	initial_password = var.password
-	display_name = "Terraform Test User"
-	container = %s
-	`, container)
+
+	username := os.Getenv("TF_VAR_ad_user_sam")
+	usernameSuffix := "renamed"
+	renamedUsername := fmt.Sprintf("%s%s", username, usernameSuffix)
+	resourceName := "ad_user.a"
+	expectedContainerDN := fmt.Sprintf("%s,%s", os.Getenv("TF_VAR_ad_ou_name"),
+		os.Getenv("TF_VAR_ad_ou_path"))
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t, envVars) },
+		Providers: testAccProviders,
+		CheckDestroy: resource.ComposeTestCheckFunc(
+			testAccResourceADUserExists(resourceName, renamedUsername, false),
+		),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccResourceADUserConfigBasic(""),
+				Check: resource.ComposeTestCheckFunc(
+					testAccResourceADUserExists(resourceName, username, true),
+				),
+			},
+			{
+				Config: testAccResourceADUserConfigBasic(usernameSuffix),
+				Check: resource.ComposeTestCheckFunc(
+					testAccResourceADUserExists(resourceName, renamedUsername, true),
+				),
+			},
+			{
+				Config: testAccResourceADUserConfigMoved(usernameSuffix),
+				Check: resource.ComposeTestCheckFunc(
+					testAccResourceADUserContainer(resourceName, expectedContainerDN),
+				),
+			},
+		},
+	})
 }
 
-func testAccUserConfigBasic(domain, username, password string) string {
+func TestAccResourceADUser_UAC(t *testing.T) {
+	envVars := []string{
+		"TF_VAR_ad_user_display_name",
+		"TF_VAR_ad_user_sam",
+		"TF_VAR_ad_user_password",
+		"TF_VAR_ad_user_principal_name",
+		"TF_VAR_ad_user_container",
+	}
+	username := os.Getenv("TF_VAR_ad_user_sam")
+	resourceName := "ad_user.a"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t, envVars) },
+		Providers: testAccProviders,
+		CheckDestroy: resource.ComposeTestCheckFunc(
+			testAccResourceADUserExists("ad_user.a", username, false),
+		),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccResourceADUserConfigUAC("false", "false"),
+				Check: resource.ComposeTestCheckFunc(
+					testCheckADUserUAC(resourceName, false, false),
+				),
+			},
+			{
+				Config: testAccResourceADUserConfigUAC("true", "false"),
+				Check: resource.ComposeTestCheckFunc(
+					testCheckADUserUAC(resourceName, true, false),
+				),
+			},
+			{
+				Config: testAccResourceADUserConfigUAC("false", "true"),
+				Check: resource.ComposeTestCheckFunc(
+					testCheckADUserUAC(resourceName, false, true),
+				),
+			},
+			{
+				Config: testAccResourceADUserConfigUAC("true", "true"),
+				Check: resource.ComposeTestCheckFunc(
+					testCheckADUserUAC(resourceName, true, true),
+				),
+			},
+		},
+	})
+}
+
+func defaultVariablesSection() string {
+	return `
+	variable "ad_user_principal_name"  {}
+	variable "ad_user_password" {}
+	variable "ad_user_sam" {}
+	variable "ad_user_display_name" {}
+	`
+}
+
+func defaultUserSection(usernameSuffix, container string) string {
+	return fmt.Sprintf(`
+	principal_name = var.ad_user_principal_name
+	sam_account_name = "${var.ad_user_sam}%s"
+	initial_password = var.ad_user_password
+	display_name = var.ad_user_display_name
+	container = %s
+	`, usernameSuffix, container)
+}
+
+func testAccResourceADUserConfigBasic(usernameSuffix string) string {
 	return fmt.Sprintf(`%s
 	resource "ad_user" "a" {%s
- 	}`, defaultVariablesSection(domain, username, password), defaultUserSection(""))
+ 	}`, defaultVariablesSection(), defaultUserSection(usernameSuffix, fmt.Sprintf("%q",
+		os.Getenv("TF_VAR_ad_user_container"))))
 
 }
 
-func testAccUserConfigAttributes(domain, username, password string) string {
+func testAccResourceADUserConfigAttributes() string {
 	return fmt.Sprintf(`%s
 	resource "ad_user" "a" {%s
 	  city                      = "City"
@@ -256,36 +306,41 @@ func testAccUserConfigAttributes(domain, username, password string) string {
 	  title                     = "Title"
 	  smart_card_logon_required = false
 	  trusted_for_delegation    = true
-	}`, defaultVariablesSection(domain, username, password), defaultUserSection(""))
+	}`, defaultVariablesSection(), defaultUserSection("", fmt.Sprintf("%q",
+		os.Getenv("TF_VAR_ad_user_container"))))
 
 }
 
-func testAccUserConfigCustomAttributes(domain, username, password, customAttributes string) string {
+func testAccResourceADUserConfigCustomAttributes(customAttributes string) string {
 	return fmt.Sprintf(`%s
 	resource "ad_user" "a" {%s
 		custom_attributes = jsonencode(%s)
  	}`,
-		defaultVariablesSection(domain, username, password),
-		defaultUserSection(""),
+		defaultVariablesSection(),
+		defaultUserSection("", fmt.Sprintf("%q", os.Getenv("TF_VAR_ad_user_container"))),
 		customAttributes)
 }
 
-func testAccUserConfigMoved(domain, username, password string) string {
+func testAccResourceADUserConfigMoved(usernameSuffix string) string {
 	return fmt.Sprintf(`%s
-
-	resource "ad_ou" "o" {
-		name = "newOU"
-		path = "DC=yourdomain,DC=com"
-		description = "ou for user move test"
-		protected = false
+	variable ad_ou_name {}
+	variable ad_ou_path {}
+	variable ad_ou_description {}
+	variable ad_ou_protected {}
+	
+	resource "ad_ou" "o" { 
+		name = var.ad_ou_name
+		path = var.ad_ou_path
+		description = var.ad_ou_description
+		protected = var.ad_ou_protected
 	}
 
 	resource "ad_user" "a" {%s
- 	}`, defaultVariablesSection(domain, username, password), defaultUserSection("ad_ou.o.dn"))
+ 	}`, defaultVariablesSection(), defaultUserSection(usernameSuffix, "ad_ou.o.dn"))
 
 }
 
-func testAccUserConfigUAC(domain, username, password, enabled, expires string) string {
+func testAccResourceADUserConfigUAC(enabled, expires string) string {
 	return fmt.Sprintf(`%s
 	variable "enabled" { default = %q }
 	variable "password_never_expires" { default = %q }
@@ -294,10 +349,11 @@ func testAccUserConfigUAC(domain, username, password, enabled, expires string) s
 		enabled = var.enabled
 		password_never_expires = var.password_never_expires
  	}
-`, defaultVariablesSection(domain, username, password), enabled, expires, defaultUserSection(""))
+`, defaultVariablesSection(), enabled, expires, defaultUserSection("",
+		fmt.Sprintf("%q", os.Getenv("TF_VAR_ad_user_container"))))
 }
 
-func retrieveADUserFromRunningState(name, domain string, s *terraform.State, attributeList []string) (*winrmhelper.User, error) {
+func retrieveADUserFromRunningState(name string, s *terraform.State, attributeList []string) (*winrmhelper.User, error) {
 	rs, ok := s.RootModule().Resources[name]
 
 	if !ok {
@@ -315,10 +371,10 @@ func retrieveADUserFromRunningState(name, domain string, s *terraform.State, att
 
 }
 
-func testAccUserContainer(name, domain, expectedContainer string) resource.TestCheckFunc {
+func testAccResourceADUserContainer(name, expectedContainer string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
-		u, err := retrieveADUserFromRunningState(name, domain, s, nil)
+		u, err := retrieveADUserFromRunningState(name, s, nil)
 		if err != nil {
 			return err
 		}
@@ -330,9 +386,9 @@ func testAccUserContainer(name, domain, expectedContainer string) resource.TestC
 	}
 }
 
-func testAccUserExists(name, domain, username string, expected bool) resource.TestCheckFunc {
+func testAccResourceADUserExists(name, username string, expected bool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		u, err := retrieveADUserFromRunningState(name, domain, s, nil)
+		u, err := retrieveADUserFromRunningState(name, s, nil)
 		if err != nil {
 			if strings.Contains(err.Error(), "ADIdentityNotFoundException") && !expected {
 				return nil
@@ -347,9 +403,9 @@ func testAccUserExists(name, domain, username string, expected bool) resource.Te
 	}
 }
 
-func testCheckADUserUAC(name, domain string, enabledState, passwordNeverExpires bool) resource.TestCheckFunc {
+func testCheckADUserUAC(name string, enabledState, passwordNeverExpires bool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		u, err := retrieveADUserFromRunningState(name, domain, s, nil)
+		u, err := retrieveADUserFromRunningState(name, s, nil)
 
 		if err != nil {
 			return err
@@ -366,7 +422,7 @@ func testCheckADUserUAC(name, domain string, enabledState, passwordNeverExpires 
 	}
 }
 
-func testCheckADUserCustomAttribute(name, domain, customAttributes string) resource.TestCheckFunc {
+func testCheckADUserCustomAttribute(name, customAttributes string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		ca, err := structure.ExpandJsonFromString(customAttributes)
 		if err != nil {
@@ -378,7 +434,7 @@ func testCheckADUserCustomAttribute(name, domain, customAttributes string) resou
 			attributeList = append(attributeList, k)
 		}
 
-		u, err := retrieveADUserFromRunningState(name, domain, s, attributeList)
+		u, err := retrieveADUserFromRunningState(name, s, attributeList)
 		if err != nil {
 			return err
 		}

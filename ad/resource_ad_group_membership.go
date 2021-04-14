@@ -57,7 +57,7 @@ func resourceADGroupMembershipRead(d *schema.ResourceData, meta interface{}) err
 		memberList[idx] = m.GUID
 	}
 	_ = d.Set("group_members", memberList)
-
+	_ = d.Set("group_id", toks[0])
 	return nil
 }
 

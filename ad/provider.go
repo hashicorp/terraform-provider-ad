@@ -21,6 +21,7 @@ func Provider() *schema.Provider {
 				Required:    true,
 				DefaultFunc: schema.EnvDefaultFunc("AD_USER", nil),
 				Description: "The username used to authenticate to the server's WinRM service. (Environment variable: AD_USER)",
+				//lintignore: V013
 				ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
 					v := val.(string)
 					os := runtime.GOOS
@@ -41,6 +42,7 @@ func Provider() *schema.Provider {
 				Required:    true,
 				DefaultFunc: schema.EnvDefaultFunc("AD_HOSTNAME", nil),
 				Description: "The hostname of the server we will use to run powershell scripts over WinRM. (Environment variable: AD_HOSTNAME)",
+				//lintignore: V013
 				ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
 					v := val.(string)
 					os := runtime.GOOS
