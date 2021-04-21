@@ -1,4 +1,4 @@
-## 0.4.2 (Unreleased)
+## 0.4.2 (April 21, 2021)
 
 BUGFIXES:
 * **Resource:** `ad_user`: Fix bug when removing user attributes. ([#77](https://github.com/hashicorp/terraform-provider-ad/pull/77))
