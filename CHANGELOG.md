@@ -1,3 +1,20 @@
+## 0.4.2 (Unreleased)
+
+BUGFIXES:
+* **Resource:** `ad_user`: Fix bug when removing user attributes. ([#77](https://github.com/hashicorp/terraform-provider-ad/pull/77))
+* **Resource:** `ad_group`: Use correct command when updating AD groups. ([#83](https://github.com/hashicorp/terraform-provider-ad/pull/83))
+* **Resource:** `ad_group`: Fix category name. ([#69](https://github.com/hashicorp/terraform-provider-ad/pull/69))
+
+FEATURES:
+* **provider:** Execute commands as current user when running on windows. ([#80](https://github.com/hashicorp/terraform-provider-ad/pull/80))
+
+IMPROVEMENTS:
+* **Resource:** `ad_computer`: Add description attribute to resource. ([#85](https://github.com/hashicorp/terraform-provider-ad/pull/85))
+* **Resource:** `ad_group`: Add description attribute to resource. ([#93](https://github.com/hashicorp/terraform-provider-ad/pull/93))
+* **Resource:** `ad_group, ad_user, ad_computer`: Add a computed field that holds the object's SID. ([#76](https://github.com/hashicorp/terraform-provider-ad/pull/76))
+* **provider**: Upgraded the terraform plugin SDK version to 2.5.0
+* **provider**: Extract error messages from CLIXML. ([#74](https://github.com/hashicorp/terraform-provider-ad/pull/74))
+
 ## 0.4.1 (January 18, 2021)
 
 **BREAKING CHANGES:**
