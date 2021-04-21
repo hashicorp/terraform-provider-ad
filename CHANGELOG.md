@@ -6,7 +6,7 @@ BUGFIXES:
 * **Resource:** `ad_group`: Fix category name. ([#69](https://github.com/hashicorp/terraform-provider-ad/pull/69))
 
 FEATURES:
-* **provider:** Execute commands as current user when running on windows. ([#83](https://github.com/hashicorp/terraform-provider-ad/pull/83))
+* **provider:** Execute commands as current user when running on windows. ([#80](https://github.com/hashicorp/terraform-provider-ad/pull/80))
 
 IMPROVEMENTS:
 * **Resource:** `ad_computer`: Add description attribute to resource. ([#85](https://github.com/hashicorp/terraform-provider-ad/pull/85))
