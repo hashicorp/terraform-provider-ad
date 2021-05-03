@@ -252,6 +252,7 @@ func suppressJsonDiff(k, old, new string, d *schema.ResourceData) bool {
 
 func resourceADUserCreate(d *schema.ResourceData, meta interface{}) error {
 	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
+	isPassCredentialsEnabled := meta.(ProviderConf).isPassCredentialsEnabled()
 	u, err := winrmhelper.GetUserFromResource(d)
 	if err != nil {
 		return fmt.Errorf("while building a User struct from resource data: %s", err)
@@ -262,7 +263,7 @@ func resourceADUserCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 	defer meta.(ProviderConf).ReleaseWinRMClient(client)
 
-	guid, err := u.NewUser(client, isLocal)
+	guid, err := u.NewUser(client, isLocal, isPassCredentialsEnabled, meta.(ProviderConf).Configuration.WinRMUsername, meta.(ProviderConf).Configuration.WinRMPassword)
 	if err != nil {
 		return err
 	}
@@ -286,6 +287,7 @@ func resourceADUserCreate(d *schema.ResourceData, meta interface{}) error {
 func resourceADUserRead(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("Reading ad_user resource for user with guid: %q", d.Id())
 	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
+	isPassCredentialsEnabled := meta.(ProviderConf).isPassCredentialsEnabled()
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
 		return err
@@ -298,7 +300,7 @@ func resourceADUserRead(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	u, err := winrmhelper.GetUserFromHost(client, d.Id(), caKeys, isLocal)
+	u, err := winrmhelper.GetUserFromHost(client, d.Id(), caKeys, isLocal, isPassCredentialsEnabled, meta.(ProviderConf).Configuration.WinRMUsername, meta.(ProviderConf).Configuration.WinRMPassword)
 	if err != nil {
 		if strings.Contains(err.Error(), "ADIdentityNotFoundException") {
 			d.SetId("")
@@ -361,6 +363,7 @@ func resourceADUserRead(d *schema.ResourceData, meta interface{}) error {
 
 func resourceADUserUpdate(d *schema.ResourceData, meta interface{}) error {
 	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
+	isPassCredentialsEnabled := meta.(ProviderConf).isPassCredentialsEnabled()
 	u, err := winrmhelper.GetUserFromResource(d)
 	if err != nil {
 		return err
@@ -372,7 +375,7 @@ func resourceADUserUpdate(d *schema.ResourceData, meta interface{}) error {
 	}
 	defer meta.(ProviderConf).ReleaseWinRMClient(client)
 
-	err = u.ModifyUser(d, client, isLocal)
+	err = u.ModifyUser(d, client, isLocal, isPassCredentialsEnabled, meta.(ProviderConf).Configuration.WinRMUsername, meta.(ProviderConf).Configuration.WinRMPassword)
 	if err != nil {
 		return err
 	}
@@ -381,20 +384,21 @@ func resourceADUserUpdate(d *schema.ResourceData, meta interface{}) error {
 
 func resourceADUserDelete(d *schema.ResourceData, meta interface{}) error {
 	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
+	isPassCredentialsEnabled := meta.(ProviderConf).isPassCredentialsEnabled()
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
 		return err
 	}
 	defer meta.(ProviderConf).ReleaseWinRMClient(client)
 
-	u, err := winrmhelper.GetUserFromHost(client, d.Id(), nil, isLocal)
+	u, err := winrmhelper.GetUserFromHost(client, d.Id(), nil, isLocal, isPassCredentialsEnabled, meta.(ProviderConf).Configuration.WinRMUsername, meta.(ProviderConf).Configuration.WinRMPassword)
 	if err != nil {
 		if strings.Contains(err.Error(), "ADIdentityNotFoundException") {
 			return nil
 		}
 		return fmt.Errorf("while retrieving user data from host: %s", err)
 	}
-	err = u.DeleteUser(client, isLocal)
+	err = u.DeleteUser(client, isLocal, isPassCredentialsEnabled, meta.(ProviderConf).Configuration.WinRMUsername, meta.(ProviderConf).Configuration.WinRMPassword)
 	if err != nil {
 		return fmt.Errorf("while deleting user: %s", err)
 	}

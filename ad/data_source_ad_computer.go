@@ -38,6 +38,7 @@ func dataSourceADComputer() *schema.Resource {
 
 func dataSourceADComputerRead(d *schema.ResourceData, meta interface{}) error {
 	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
+	isPassCredentialsEnabled := meta.(ProviderConf).isPassCredentialsEnabled()
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
 		return err
@@ -56,7 +57,7 @@ func dataSourceADComputerRead(d *schema.ResourceData, meta interface{}) error {
 		identity = dn
 	}
 
-	computer, err := winrmhelper.NewComputerFromHost(client, identity, isLocal)
+	computer, err := winrmhelper.NewComputerFromHost(client, identity, isLocal, isPassCredentialsEnabled, meta.(ProviderConf).Configuration.WinRMUsername, meta.(ProviderConf).Configuration.WinRMPassword)
 	if err != nil {
 		return err
 	}
