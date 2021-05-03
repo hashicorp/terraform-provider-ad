@@ -15,7 +15,7 @@ This provider is a technical preview, which means it's a community supported pro
 
 * [Terraform](https://www.terraform.io/downloads.html) version 0.12.x+
 * [Windows Server](https://www.microsoft.com/en-us/windows-server) 2012R2 or greater 
-* [Go](https://golang.org/doc/install) version 1.14.x+
+* [Go](https://golang.org/doc/install) version 1.16.x+
 
 ## Getting Started
 

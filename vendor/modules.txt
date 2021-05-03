@@ -72,7 +72,6 @@ github.com/bgentry/go-netrc/netrc
 # github.com/davecgh/go-spew v1.1.1
 github.com/davecgh/go-spew/spew
 # github.com/dylanmei/iso8601 v0.1.0
-## explicit
 github.com/dylanmei/iso8601
 # github.com/fatih/color v1.7.0
 github.com/fatih/color
@@ -124,7 +123,6 @@ github.com/hashicorp/go-plugin/internal/plugin
 # github.com/hashicorp/go-safetemp v1.0.0
 github.com/hashicorp/go-safetemp
 # github.com/hashicorp/go-uuid v1.0.2
-## explicit
 github.com/hashicorp/go-uuid
 # github.com/hashicorp/go-version v1.2.1
 github.com/hashicorp/go-version
@@ -148,7 +146,6 @@ github.com/hashicorp/terraform-plugin-go/tfprotov5/internal/toproto
 github.com/hashicorp/terraform-plugin-go/tfprotov5/server
 github.com/hashicorp/terraform-plugin-go/tfprotov5/tftypes
 # github.com/hashicorp/terraform-plugin-sdk/v2 v2.5.0
-## explicit
 github.com/hashicorp/terraform-plugin-sdk/v2/diag
 github.com/hashicorp/terraform-plugin-sdk/v2/helper/logging
 github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource
@@ -178,7 +175,6 @@ github.com/jcmturner/gofork/x/crypto/pbkdf2
 # github.com/jcmturner/goidentity/v6 v6.0.1
 github.com/jcmturner/goidentity/v6
 # github.com/jcmturner/gokrb5/v8 v8.4.2
-## explicit
 github.com/jcmturner/gokrb5/v8/asn1tools
 github.com/jcmturner/gokrb5/v8/client
 github.com/jcmturner/gokrb5/v8/config
@@ -223,7 +219,6 @@ github.com/jstemmer/go-junit-report/parser
 # github.com/masterzen/simplexml v0.0.0-20160608183007-4572e39b1ab9
 github.com/masterzen/simplexml/dom
 # github.com/masterzen/winrm v0.0.0-20190308153735-1d17eaf15943
-## explicit
 github.com/masterzen/winrm
 github.com/masterzen/winrm/soap
 # github.com/mattn/go-colorable v0.1.4
@@ -239,20 +234,15 @@ github.com/mitchellh/go-testing-interface
 # github.com/mitchellh/go-wordwrap v1.0.0
 github.com/mitchellh/go-wordwrap
 # github.com/mitchellh/mapstructure v1.1.2
-## explicit
 github.com/mitchellh/mapstructure
 # github.com/mitchellh/reflectwalk v1.0.1
 github.com/mitchellh/reflectwalk
 # github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d
-## explicit
 github.com/nu7hatch/gouuid
 # github.com/oklog/run v1.0.0
 github.com/oklog/run
 # github.com/packer-community/winrmcp v0.0.0-20180921211025-c76d91c1e7db
-## explicit
 github.com/packer-community/winrmcp/winrmcp
-# github.com/smartystreets/goconvey v1.6.4
-## explicit
 # github.com/ulikunitz/xz v0.5.8
 github.com/ulikunitz/xz
 github.com/ulikunitz/xz/internal/hash
@@ -324,7 +314,6 @@ golang.org/x/oauth2/jwt
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 # golang.org/x/text v0.3.3
-## explicit
 golang.org/x/text/encoding
 golang.org/x/text/encoding/charmap
 golang.org/x/text/encoding/htmlindex
@@ -476,5 +465,4 @@ google.golang.org/protobuf/types/known/emptypb
 google.golang.org/protobuf/types/known/timestamppb
 google.golang.org/protobuf/types/pluginpb
 # gopkg.in/ini.v1 v1.55.0
-## explicit
 gopkg.in/ini.v1

@@ -1,6 +1,6 @@
 module github.com/hashicorp/terraform-provider-ad
 
-go 1.15
+go 1.16
 
 require (
 	github.com/dylanmei/iso8601 v0.1.0 // indirect
