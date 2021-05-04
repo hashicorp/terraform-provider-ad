@@ -64,6 +64,7 @@ func resourceADGPLink() *schema.Resource {
 
 func resourceADGPLinkRead(d *schema.ResourceData, meta interface{}) error {
 	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
+	isPassCredentialsEnabled := meta.(ProviderConf).isPassCredentialsEnabled()
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
 		return err
@@ -74,7 +75,7 @@ func resourceADGPLinkRead(d *schema.ResourceData, meta interface{}) error {
 	if len(idParts) != 2 {
 		return fmt.Errorf("malformed ID for GPLink resource with ID %q", d.Id())
 	}
-	gplink, err := winrmhelper.GetGPLinkFromHost(client, idParts[0], idParts[1], isLocal)
+	gplink, err := winrmhelper.GetGPLinkFromHost(client, idParts[0], idParts[1], isLocal, isPassCredentialsEnabled, meta.(ProviderConf).Configuration.WinRMUsername, meta.(ProviderConf).Configuration.WinRMPassword)
 	if err != nil {
 		if strings.Contains(err.Error(), "did not find") {
 			d.SetId("")
@@ -94,6 +95,7 @@ func resourceADGPLinkRead(d *schema.ResourceData, meta interface{}) error {
 
 func resourceADGPLinkCreate(d *schema.ResourceData, meta interface{}) error {
 	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
+	isPassCredentialsEnabled := meta.(ProviderConf).isPassCredentialsEnabled()
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
 		return err
@@ -101,7 +103,7 @@ func resourceADGPLinkCreate(d *schema.ResourceData, meta interface{}) error {
 	defer meta.(ProviderConf).ReleaseWinRMClient(client)
 
 	gplink := winrmhelper.GetGPLinkFromResource(d)
-	gpLinkID, err := gplink.NewGPLink(client, isLocal)
+	gpLinkID, err := gplink.NewGPLink(client, isLocal, isPassCredentialsEnabled, meta.(ProviderConf).Configuration.WinRMUsername, meta.(ProviderConf).Configuration.WinRMPassword)
 	if err != nil {
 		return fmt.Errorf("while creating GPLink resource: %s", err)
 	}
@@ -112,6 +114,7 @@ func resourceADGPLinkCreate(d *schema.ResourceData, meta interface{}) error {
 
 func resourceADGPLinkUpdate(d *schema.ResourceData, meta interface{}) error {
 	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
+	isPassCredentialsEnabled := meta.(ProviderConf).isPassCredentialsEnabled()
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
 		return err
@@ -126,7 +129,7 @@ func resourceADGPLinkUpdate(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 	gplink := winrmhelper.GetGPLinkFromResource(d)
-	err = gplink.ModifyGPLink(client, changes, isLocal)
+	err = gplink.ModifyGPLink(client, changes, isLocal, isPassCredentialsEnabled, meta.(ProviderConf).Configuration.WinRMUsername, meta.(ProviderConf).Configuration.WinRMPassword)
 	if err != nil {
 		return fmt.Errorf("while modifying GPLink with id %q: %s", d.Id(), err)
 	}
@@ -136,6 +139,7 @@ func resourceADGPLinkUpdate(d *schema.ResourceData, meta interface{}) error {
 
 func resourceADGPLinkDelete(d *schema.ResourceData, meta interface{}) error {
 	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
+	isPassCredentialsEnabled := meta.(ProviderConf).isPassCredentialsEnabled()
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
 		return err
@@ -143,7 +147,7 @@ func resourceADGPLinkDelete(d *schema.ResourceData, meta interface{}) error {
 	defer meta.(ProviderConf).ReleaseWinRMClient(client)
 
 	gplink := winrmhelper.GetGPLinkFromResource(d)
-	err = gplink.RemoveGPLink(client, isLocal)
+	err = gplink.RemoveGPLink(client, isLocal, isPassCredentialsEnabled, meta.(ProviderConf).Configuration.WinRMUsername, meta.(ProviderConf).Configuration.WinRMPassword)
 	if err != nil {
 		return fmt.Errorf("while deleting resource with ID %q: %s", d.Id(), err)
 	}

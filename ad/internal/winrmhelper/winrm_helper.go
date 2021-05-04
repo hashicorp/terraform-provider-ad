@@ -124,17 +124,38 @@ func (p *PowerShell) ExecutePScmd(args ...string) (stdout string, stderr string,
 	return
 }
 
-// RunWinRMCommand will run a powershell command and return the stdout and stderr
+// RunWinRMCommandWithCreds will run a powershell command and return the stdout and stderr
 // The output is converted to JSON if the json patameter is set to true.
-func RunWinRMCommand(conn *winrm.Client, cmds []string, json bool, forceArray bool, execLocally bool) (*WinRMResult, error) {
+func RunWinRMCommand(conn *winrm.Client, cmds []string, json bool, forceArray bool, execLocally bool, passCredentials bool, username string, password string) (*WinRMResult, error) {
+	if passCredentials {
+		cmds = append(cmds, "-Credential $Credential")
+	}
+
 	if json {
 		cmds = append(cmds, "| ConvertTo-Json")
 	}
 
+	cmd_redacted := strings.Join(cmds, " ")
+	encodedCmdRedacted := winrm.Powershell(cmd_redacted)
+
+	if passCredentials {
+		cmd_username := fmt.Sprintf("$User = \"%s\"\n", username)
+		cmd_password := fmt.Sprintf("$Password = ConvertTo-SecureString -String \"%s\" -AsPlainText -Force\n", password)
+		cmds = append([]string{"$Credential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $User, $Password\n"}, cmds...)
+		cmds = append([]string{cmd_username}, cmds...)
+		cmds = append([]string{cmd_password}, cmds...)
+	}
+
 	cmd := strings.Join(cmds, " ")
 	encodedCmd := winrm.Powershell(cmd)
-	log.Printf("[DEBUG] Running command %s via powershell", cmd)
-	log.Printf("[DEBUG] Encoded command: %s", encodedCmd)
+
+	if passCredentials {
+	        log.Printf("[DEBUG] Running command %s via powershell", cmd_redacted)
+		log.Printf("[DEBUG] Encoded command: %s", encodedCmdRedacted)
+	} else {
+		log.Printf("[DEBUG] Running command %s via powershell", cmd)
+		log.Printf("[DEBUG] Encoded command: %s", encodedCmd)
+	}
 
 	var (
 		stdout string
@@ -213,9 +234,9 @@ func SanitiseString(key string) string {
 
 // SetMachineExtensionName will add the necessary GUIDs to the GPO's gPCMachineExtensionNames attribute.
 // These are required for the security settings part of a GPO to work.
-func SetMachineExtensionNames(client *winrm.Client, gpoDN, value string, execLocally bool) error {
+func SetMachineExtensionNames(client *winrm.Client, gpoDN, value string, execLocally bool, passCredentials bool, username string, password string) error {
 	cmd := fmt.Sprintf(`Set-ADObject -Identity "%s" -Replace @{gPCMachineExtensionNames="%s"}`, gpoDN, value)
-	result, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally)
+	result, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally, passCredentials, username, password)
 	if err != nil {
 		return fmt.Errorf("error while setting machine extension names for GPO %q: %s", gpoDN, err)
 	}

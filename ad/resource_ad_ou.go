@@ -59,6 +59,7 @@ func resourceADOURead(d *schema.ResourceData, meta interface{}) error {
 		return nil
 	}
 	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
+	isPassCredentialsEnabled := meta.(ProviderConf).isPassCredentialsEnabled()
 
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
@@ -66,7 +67,7 @@ func resourceADOURead(d *schema.ResourceData, meta interface{}) error {
 	}
 	defer meta.(ProviderConf).ReleaseWinRMClient(client)
 
-	ou, err := winrmhelper.NewOrgUnitFromHost(client, d.Id(), "", "", isLocal)
+	ou, err := winrmhelper.NewOrgUnitFromHost(client, d.Id(), "", "", isLocal, isPassCredentialsEnabled, meta.(ProviderConf).Configuration.WinRMUsername, meta.(ProviderConf).Configuration.WinRMPassword)
 	if err != nil {
 		if strings.Contains(err.Error(), "ObjectNotFound") {
 			// Resource no longer exists
@@ -88,6 +89,7 @@ func resourceADOURead(d *schema.ResourceData, meta interface{}) error {
 
 func resourceADOUCreate(d *schema.ResourceData, meta interface{}) error {
 	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
+	isPassCredentialsEnabled := meta.(ProviderConf).isPassCredentialsEnabled()
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
 		return err
@@ -95,7 +97,7 @@ func resourceADOUCreate(d *schema.ResourceData, meta interface{}) error {
 	defer meta.(ProviderConf).ReleaseWinRMClient(client)
 
 	ou := winrmhelper.NewOrgUnitFromResource(d)
-	guid, err := ou.Create(client, isLocal)
+	guid, err := ou.Create(client, isLocal, isPassCredentialsEnabled, meta.(ProviderConf).Configuration.WinRMUsername, meta.(ProviderConf).Configuration.WinRMPassword)
 	if err != nil {
 		return err
 	}
@@ -106,6 +108,7 @@ func resourceADOUCreate(d *schema.ResourceData, meta interface{}) error {
 
 func resourceADOUUpdate(d *schema.ResourceData, meta interface{}) error {
 	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
+	isPassCredentialsEnabled := meta.(ProviderConf).isPassCredentialsEnabled()
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
 		return err
@@ -122,7 +125,7 @@ func resourceADOUUpdate(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	err = ou.Update(client, changes, isLocal)
+	err = ou.Update(client, changes, isLocal, isPassCredentialsEnabled, meta.(ProviderConf).Configuration.WinRMUsername, meta.(ProviderConf).Configuration.WinRMPassword)
 	if err != nil {
 		return err
 	}
@@ -131,6 +134,7 @@ func resourceADOUUpdate(d *schema.ResourceData, meta interface{}) error {
 
 func resourceADOUDelete(d *schema.ResourceData, meta interface{}) error {
 	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
+	isPassCredentialsEnabled := meta.(ProviderConf).isPassCredentialsEnabled()
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
 		return err
@@ -138,7 +142,7 @@ func resourceADOUDelete(d *schema.ResourceData, meta interface{}) error {
 	defer meta.(ProviderConf).ReleaseWinRMClient(client)
 
 	ou := winrmhelper.NewOrgUnitFromResource(d)
-	err = ou.Delete(client, isLocal)
+	err = ou.Delete(client, isLocal, isPassCredentialsEnabled, meta.(ProviderConf).Configuration.WinRMUsername, meta.(ProviderConf).Configuration.WinRMPassword)
 	if err != nil {
 		return err
 	}

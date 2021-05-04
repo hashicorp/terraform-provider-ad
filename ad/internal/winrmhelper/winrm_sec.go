@@ -41,12 +41,12 @@ func GetSecIniFromResource(d *schema.ResourceData, schemaKeys map[string]*schema
 
 // GetSecIniContents returns a byte array with the contents of the INF file
 // encoded in UTF-8 (since we get the ouput via stdout).
-func GetSecIniContents(client *winrm.Client, gpo *GPO, execLocally bool) ([]byte, error) {
+func GetSecIniContents(client *winrm.Client, gpo *GPO, execLocally bool, passCredentials bool, username string, password string) ([]byte, error) {
 	gptPath := fmt.Sprintf("%s\\Machine\\Microsoft\\Windows NT\\SecEdit\\GptTmpl.inf", gpo.basePath)
 	log.Printf("[DEBUG] Getting security settings inf from %s", gptPath)
 
 	cmd := fmt.Sprintf(`Get-Content "%s"`, gptPath)
-	result, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally)
+	result, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally, passCredentials, username, password)
 	if err != nil {
 		return nil, fmt.Errorf("error while retrieving contents of %q: %s", gptPath, err)
 	}
@@ -59,9 +59,9 @@ func GetSecIniContents(client *winrm.Client, gpo *GPO, execLocally bool) ([]byte
 }
 
 // GetSecIniFromHost returns a struct representing the data retrieved from the host.
-func GetSecIniFromHost(client *winrm.Client, gpo *GPO, execLocally bool) (*gposec.SecuritySettings, error) {
+func GetSecIniFromHost(client *winrm.Client, gpo *GPO, execLocally bool, passCredentials bool, username string, password string) (*gposec.SecuritySettings, error) {
 
-	iniBytes, err := GetSecIniContents(client, gpo, execLocally)
+	iniBytes, err := GetSecIniContents(client, gpo, execLocally, passCredentials, username, password)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func GetSecIniFromHost(client *winrm.Client, gpo *GPO, execLocally bool) (*gpose
 
 // UploadSecIni uploads the security settings ini to the correct folder of a GPO and updates
 // the GPO's gpt.ini by incrementing the computer version by 1.
-func UploadSecIni(conn *winrm.Client, cpConn *winrmcp.Winrmcp, gpo *GPO, iniFile *ini.File, execLocally bool) error {
+func UploadSecIni(conn *winrm.Client, cpConn *winrmcp.Winrmcp, gpo *GPO, iniFile *ini.File, execLocally bool, passCredentials bool, username string, password string) error {
 	ini.LineBreak = "\r\n"
 	buf := bytes.NewBuffer([]byte{})
 	iniLocation := fmt.Sprintf("%s\\Machine\\Microsoft\\Windows NT\\SecEdit\\GptTmpl.inf", gpo.basePath)
@@ -88,7 +88,7 @@ func UploadSecIni(conn *winrm.Client, cpConn *winrmcp.Winrmcp, gpo *GPO, iniFile
 	}
 	cVer := gpo.computerVersion + 1
 
-	err = gpo.SetGPOVersions(conn, cpConn, gpo.userVersion, cVer, execLocally)
+	err = gpo.SetGPOVersions(conn, cpConn, gpo.userVersion, cVer, execLocally, passCredentials, username, password)
 	if err != nil {
 		return err
 	}
@@ -97,12 +97,12 @@ func UploadSecIni(conn *winrm.Client, cpConn *winrmcp.Winrmcp, gpo *GPO, iniFile
 
 // RemoveSecIni removes the ini file from the host and updates the GPO's  gpt.ini by incrementing the
 // computer version by 1.
-func RemoveSecIni(conn *winrm.Client, cpConn *winrmcp.Winrmcp, gpo *GPO, execLocally bool) error {
+func RemoveSecIni(conn *winrm.Client, cpConn *winrmcp.Winrmcp, gpo *GPO, execLocally bool, passCredentials bool, username string, password string) error {
 	gptPath := fmt.Sprintf("%s\\Machine\\Microsoft\\Windows NT\\SecEdit\\GptTmpl.inf", gpo.basePath)
 	log.Printf("[DEBUG] Getting security settings inf from %s", gptPath)
 
 	cmd := fmt.Sprintf(`Remove-Item "%s"`, gptPath)
-	result, err := RunWinRMCommand(conn, []string{cmd}, false, false, execLocally)
+	result, err := RunWinRMCommand(conn, []string{cmd}, false, false, execLocally, passCredentials, username, password)
 	if err != nil {
 		return fmt.Errorf("error while retrieving contents of %q: %s", gptPath, err)
 	}
@@ -114,7 +114,7 @@ func RemoveSecIni(conn *winrm.Client, cpConn *winrmcp.Winrmcp, gpo *GPO, execLoc
 	}
 
 	cVer := gpo.computerVersion + 1
-	err = gpo.SetGPOVersions(conn, cpConn, gpo.userVersion, cVer, execLocally)
+	err = gpo.SetGPOVersions(conn, cpConn, gpo.userVersion, cVer, execLocally, passCredentials, username, password)
 	if err != nil {
 		return err
 	}
