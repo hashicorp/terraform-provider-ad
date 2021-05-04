@@ -64,7 +64,6 @@ func NewOrgUnitFromHost(conn *winrm.Client, guid, name, path string, execLocally
 
 // Create creates a new OU in the AD tree
 func (o *OrgUnit) Create(conn *winrm.Client, execLocally, passCredentials bool, username, password string) (string, error) {
-
 	cmd := "New-ADOrganizationalUnit -Passthru"
 	if o.Name == "" {
 		return "", fmt.Errorf("missing required attribute name, cannot create OU")

@@ -60,7 +60,6 @@ func GetSecIniContents(client *winrm.Client, gpo *GPO, execLocally, passCredenti
 
 // GetSecIniFromHost returns a struct representing the data retrieved from the host.
 func GetSecIniFromHost(client *winrm.Client, gpo *GPO, execLocally, passCredentials bool, username, password string) (*gposec.SecuritySettings, error) {
-
 	iniBytes, err := GetSecIniContents(client, gpo, execLocally, passCredentials, username, password)
 	if err != nil {
 		return nil, err
