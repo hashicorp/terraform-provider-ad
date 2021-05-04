@@ -141,7 +141,7 @@ func (o *OrgUnit) Update(conn *winrm.Client, changes map[string]interface{}, exe
 		cmd := fmt.Sprintf("Move-ADObject -Identity %q -TargetPath %q", o.GUID, path.(string))
 		result, err := RunWinRMCommand(conn, []string{cmd}, true, false, execLocally)
 		if err != nil {
-			return fmt.Errorf("winrm execution failure while moving computer object: %s", err)
+			return fmt.Errorf("winrm execution failure while moving OU object: %s", err)
 		}
 		if result.ExitCode != 0 {
 			return fmt.Errorf("Move-ADObject exited with a non zero exit code (%d), stderr: %s", result.ExitCode, result.StdErr)
