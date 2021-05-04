@@ -39,6 +39,7 @@ func resourceADGroupMembership() *schema.Resource {
 
 func resourceADGroupMembershipRead(d *schema.ResourceData, meta interface{}) error {
 	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
+	isPassCredentialsEnabled := meta.(ProviderConf).isPassCredentialsEnabled()
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
 		return err
@@ -47,7 +48,7 @@ func resourceADGroupMembershipRead(d *schema.ResourceData, meta interface{}) err
 
 	toks := strings.Split(d.Id(), "_")
 
-	gm, err := winrmhelper.NewGroupMembershipFromHost(client, toks[0], isLocal)
+	gm, err := winrmhelper.NewGroupMembershipFromHost(client, toks[0], isLocal, isPassCredentialsEnabled, meta.(ProviderConf).Configuration.WinRMUsername, meta.(ProviderConf).Configuration.WinRMPassword)
 	if err != nil {
 		return err
 	}
@@ -63,6 +64,7 @@ func resourceADGroupMembershipRead(d *schema.ResourceData, meta interface{}) err
 
 func resourceADGroupMembershipCreate(d *schema.ResourceData, meta interface{}) error {
 	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
+	isPassCredentialsEnabled := meta.(ProviderConf).isPassCredentialsEnabled()
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
 		return err
@@ -74,7 +76,7 @@ func resourceADGroupMembershipCreate(d *schema.ResourceData, meta interface{}) e
 		return err
 	}
 
-	err = gm.Create(client, isLocal)
+	err = gm.Create(client, isLocal, isPassCredentialsEnabled, meta.(ProviderConf).Configuration.WinRMUsername, meta.(ProviderConf).Configuration.WinRMPassword)
 	if err != nil {
 		return err
 	}
@@ -92,6 +94,7 @@ func resourceADGroupMembershipCreate(d *schema.ResourceData, meta interface{}) e
 
 func resourceADGroupMembershipUpdate(d *schema.ResourceData, meta interface{}) error {
 	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
+	isPassCredentialsEnabled := meta.(ProviderConf).isPassCredentialsEnabled()
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
 		return err
@@ -103,7 +106,7 @@ func resourceADGroupMembershipUpdate(d *schema.ResourceData, meta interface{}) e
 		return err
 	}
 
-	err = gm.Update(client, gm.GroupMembers, isLocal)
+	err = gm.Update(client, gm.GroupMembers, isLocal, isPassCredentialsEnabled, meta.(ProviderConf).Configuration.WinRMUsername, meta.(ProviderConf).Configuration.WinRMPassword)
 	if err != nil {
 		return err
 	}
@@ -113,6 +116,7 @@ func resourceADGroupMembershipUpdate(d *schema.ResourceData, meta interface{}) e
 
 func resourceADGroupMembershipDelete(d *schema.ResourceData, meta interface{}) error {
 	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
+	isPassCredentialsEnabled := meta.(ProviderConf).isPassCredentialsEnabled()
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
 		return err
@@ -124,7 +128,7 @@ func resourceADGroupMembershipDelete(d *schema.ResourceData, meta interface{}) e
 		return err
 	}
 
-	err = gm.Delete(client, isLocal)
+	err = gm.Delete(client, isLocal, isPassCredentialsEnabled, meta.(ProviderConf).Configuration.WinRMUsername, meta.(ProviderConf).Configuration.WinRMPassword)
 	if err != nil {
 		return err
 	}

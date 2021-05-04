@@ -120,6 +120,20 @@ provider "ad" {
   winrm_username = ""
   winrm_password = ""
 }
+
+// remote using Kerberos authentication with krb5.conf file located in module when remote is not a Domain Controller
+provider "ad" {
+  winrm_hostname         = "10.0.0.1"
+  winrm_username         = var.username
+  winrm_password         = var.password
+  krb_realm              = "YOURDOMAIN.COM"
+  krb_conf               = "${path.module}/krb5.conf"
+  krb_spn                = "winserver1"
+  winrm_insecure         = true
+  winrm_port             = 5986
+  winrm_proto            = "https"
+  winrm_pass_credentials = true
+}
 ```
 
 ## Schema
@@ -139,3 +153,4 @@ provider "ad" {
 - **winrm_port** (Number, Optional) The port WinRM is listening for connections. (default: 5985, environment variable: AD_PORT)
 - **winrm_proto** (String, Optional) The WinRM protocol we will use. (default: http, environment variable: AD_PROTO)
 - **winrm_use_ntlm** (Boolean, Optional) Use NTLM authentication. (default: false, environment variable: AD_WINRM_USE_NTLM)
+- **winrm_pass_credentials** (Boolean, Optional) Pass credentials in WinRM session to create a System.Management.Automation.PSCredential. (default: false, environment variable: AD_WINRM_PASS_CREDENTIALS)
