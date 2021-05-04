@@ -67,6 +67,7 @@ func resourceADGroup() *schema.Resource {
 
 func resourceADGroupCreate(d *schema.ResourceData, meta interface{}) error {
 	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
+	isPassCredentialsEnabled := meta.(ProviderConf).isPassCredentialsEnabled()
 	u := winrmhelper.GetGroupFromResource(d)
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
@@ -74,7 +75,8 @@ func resourceADGroupCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 	defer meta.(ProviderConf).ReleaseWinRMClient(client)
 
-	guid, err := u.AddGroup(client, isLocal)
+	guid, err := u.AddGroup(client, isLocal, isPassCredentialsEnabled, meta.(ProviderConf).Configuration.WinRMUsername, meta.(ProviderConf).Configuration.WinRMPassword)
+
 	if err != nil {
 		return err
 	}
@@ -84,6 +86,7 @@ func resourceADGroupCreate(d *schema.ResourceData, meta interface{}) error {
 
 func resourceADGroupRead(d *schema.ResourceData, meta interface{}) error {
 	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
+	isPassCredentialsEnabled := meta.(ProviderConf).isPassCredentialsEnabled()
 	log.Printf("Reading ad_Group resource for group with GUID: %q", d.Id())
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
@@ -91,7 +94,7 @@ func resourceADGroupRead(d *schema.ResourceData, meta interface{}) error {
 	}
 	defer meta.(ProviderConf).ReleaseWinRMClient(client)
 
-	g, err := winrmhelper.GetGroupFromHost(client, d.Id(), isLocal)
+	g, err := winrmhelper.GetGroupFromHost(client, d.Id(), isLocal, isPassCredentialsEnabled, meta.(ProviderConf).Configuration.WinRMUsername, meta.(ProviderConf).Configuration.WinRMPassword)
 	if err != nil {
 		if strings.Contains(err.Error(), "ADIdentityNotFoundException") {
 			d.SetId("")
@@ -116,6 +119,7 @@ func resourceADGroupRead(d *schema.ResourceData, meta interface{}) error {
 
 func resourceADGroupUpdate(d *schema.ResourceData, meta interface{}) error {
 	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
+	isPassCredentialsEnabled := meta.(ProviderConf).isPassCredentialsEnabled()
 	g := winrmhelper.GetGroupFromResource(d)
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
@@ -123,7 +127,7 @@ func resourceADGroupUpdate(d *schema.ResourceData, meta interface{}) error {
 	}
 	defer meta.(ProviderConf).ReleaseWinRMClient(client)
 
-	err = g.ModifyGroup(d, client, isLocal)
+	err = g.ModifyGroup(d, client, isLocal, isPassCredentialsEnabled, meta.(ProviderConf).Configuration.WinRMUsername, meta.(ProviderConf).Configuration.WinRMPassword)
 	if err != nil {
 		return err
 	}
@@ -132,20 +136,21 @@ func resourceADGroupUpdate(d *schema.ResourceData, meta interface{}) error {
 
 func resourceADGroupDelete(d *schema.ResourceData, meta interface{}) error {
 	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
+	isPassCredentialsEnabled := meta.(ProviderConf).isPassCredentialsEnabled()
 	conn, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
 		return err
 	}
 	defer meta.(ProviderConf).ReleaseWinRMClient(conn)
 
-	g, err := winrmhelper.GetGroupFromHost(conn, d.Id(), isLocal)
+	g, err := winrmhelper.GetGroupFromHost(conn, d.Id(), isLocal, isPassCredentialsEnabled, meta.(ProviderConf).Configuration.WinRMUsername, meta.(ProviderConf).Configuration.WinRMPassword)
 	if err != nil {
 		if strings.Contains(err.Error(), "ADIdentityNotFoundException") {
 			return nil
 		}
 		return err
 	}
-	err = g.DeleteGroup(conn, isLocal)
+	err = g.DeleteGroup(conn, isLocal, isPassCredentialsEnabled, meta.(ProviderConf).Configuration.WinRMUsername, meta.(ProviderConf).Configuration.WinRMPassword)
 	if err != nil {
 		return fmt.Errorf("while deleting group: %s", err)
 	}

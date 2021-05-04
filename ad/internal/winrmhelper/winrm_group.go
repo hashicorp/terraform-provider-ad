@@ -26,7 +26,7 @@ type Group struct {
 }
 
 // AddGroup creates a new group
-func (g *Group) AddGroup(client *winrm.Client, execLocally bool) (string, error) {
+func (g *Group) AddGroup(client *winrm.Client, execLocally bool, passCredentials bool, username string, password string) (string, error) {
 	log.Printf("[DEBUG] Adding group with name %q", g.Name)
 	cmds := []string{fmt.Sprintf("New-ADGroup -Passthru -Name %q -GroupScope %q -GroupCategory %q -Path %q", g.Name, g.Scope, g.Category, g.Container)}
 
@@ -38,7 +38,11 @@ func (g *Group) AddGroup(client *winrm.Client, execLocally bool) (string, error)
 		cmds = append(cmds, fmt.Sprintf("-Description %q", g.Description))
 	}
 
-	result, err := RunWinRMCommand(client, cmds, true, false, execLocally)
+	var result *WinRMResult
+	var err error
+
+	result, err = RunWinRMCommand(client, cmds, true, false, execLocally, passCredentials, username, password)
+
 	if err != nil {
 		return "", err
 	}
@@ -60,7 +64,7 @@ func (g *Group) AddGroup(client *winrm.Client, execLocally bool) (string, error)
 }
 
 // ModifyGroup updates an existing group
-func (g *Group) ModifyGroup(d *schema.ResourceData, client *winrm.Client, execLocally bool) error {
+func (g *Group) ModifyGroup(d *schema.ResourceData, client *winrm.Client, execLocally bool, passCredentials bool, username string, password string) error {
 	KeyMap := map[string]string{
 		"sam_account_name": "SamAccountName",
 		"scope":            "GroupScope",
@@ -83,7 +87,7 @@ func (g *Group) ModifyGroup(d *schema.ResourceData, client *winrm.Client, execLo
 	}
 
 	if len(cmds) > 1 {
-		result, err := RunWinRMCommand(client, cmds, false, false, execLocally)
+		result, err := RunWinRMCommand(client, cmds, false, false, execLocally, passCredentials, username, password)
 		if err != nil {
 			return err
 		}
@@ -94,8 +98,8 @@ func (g *Group) ModifyGroup(d *schema.ResourceData, client *winrm.Client, execLo
 	}
 
 	if d.HasChange("name") {
-		cmds := fmt.Sprintf("Rename-ADObject -Identity %q -NewName %q", g.GUID, d.Get("name").(string))
-		result, err := RunWinRMCommand(client, []string{cmds}, false, false, execLocally)
+		cmds := []string{"Rename-ADObject -Identity %q -NewName %q", g.GUID, d.Get("name").(string)}
+		result, err := RunWinRMCommand(client, cmds, false, false, execLocally, passCredentials, username, password)
 		if err != nil {
 			return err
 		}
@@ -106,8 +110,8 @@ func (g *Group) ModifyGroup(d *schema.ResourceData, client *winrm.Client, execLo
 	}
 
 	if d.HasChange("container") {
-		cmd := fmt.Sprintf("Move-ADObject -Identity %q -TargetPath %q", g.GUID, d.Get("container").(string))
-		result, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally)
+		cmds := []string{"Rename-ADObject -Identity %q -NewName %q", g.GUID, d.Get("name").(string)}
+		result, err := RunWinRMCommand(client, cmds, false, false, execLocally, passCredentials, username, password)
 		if err != nil {
 			return fmt.Errorf("winrm execution failure while moving group object: %s", err)
 		}
@@ -120,9 +124,9 @@ func (g *Group) ModifyGroup(d *schema.ResourceData, client *winrm.Client, execLo
 }
 
 // DeleteGroup removes a group
-func (g *Group) DeleteGroup(client *winrm.Client, execLocally bool) error {
+func (g *Group) DeleteGroup(client *winrm.Client, execLocally bool, passCredentials bool, username string, password string) error {
 	cmd := fmt.Sprintf("Remove-ADGroup -Identity %s -Confirm:$false", g.GUID)
-	_, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally)
+	_, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally, passCredentials, username, password)
 	if err != nil {
 		// Check if the resource is already deleted
 		if strings.Contains(err.Error(), "ADIdentityNotFoundException") {
@@ -150,9 +154,14 @@ func GetGroupFromResource(d *schema.ResourceData) *Group {
 
 // GetGroupFromHost returns a Group struct based on data
 // retrieved from the AD Controller.
-func GetGroupFromHost(client *winrm.Client, guid string, execLocally bool) (*Group, error) {
+func GetGroupFromHost(client *winrm.Client, guid string, execLocally bool, passCredentials bool, username string, password string) (*Group, error) {
 	cmd := fmt.Sprintf("Get-ADGroup -identity %q -properties *", guid)
-	result, err := RunWinRMCommand(client, []string{cmd}, true, false, execLocally)
+
+	var result *WinRMResult
+	var err error
+
+	result, err = RunWinRMCommand(client, []string{cmd}, true, false, execLocally, passCredentials, username, password)
+
 	if err != nil {
 		return nil, err
 	}
