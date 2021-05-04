@@ -33,6 +33,7 @@ func dataSourceADGPO() *schema.Resource {
 
 func dataSourceADGPORead(d *schema.ResourceData, meta interface{}) error {
 	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
+	isPassCredentialsEnabled := meta.(ProviderConf).isPassCredentialsEnabled()
 	name := winrmhelper.SanitiseTFInput(d, "name")
 	guid := winrmhelper.SanitiseTFInput(d, "guid")
 
@@ -42,7 +43,7 @@ func dataSourceADGPORead(d *schema.ResourceData, meta interface{}) error {
 	}
 	defer meta.(ProviderConf).ReleaseWinRMClient(client)
 
-	gpo, err := winrmhelper.GetGPOFromHost(client, name, guid, isLocal)
+	gpo, err := winrmhelper.GetGPOFromHost(client, name, guid, isLocal, isPassCredentialsEnabled, meta.(ProviderConf).Configuration.WinRMUsername, meta.(ProviderConf).Configuration.WinRMPassword)
 	if err != nil {
 		if strings.Contains(err.Error(), "GpoWithNameNotFound") || strings.Contains(err.Error(), "GpoWithIdNotFound") {
 			d.SetId("")

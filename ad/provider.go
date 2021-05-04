@@ -94,6 +94,12 @@ func Provider() *schema.Provider {
 				DefaultFunc: schema.EnvDefaultFunc("AD_WINRM_USE_NTLM", false),
 				Description: "Use NTLM authentication. (default: false, environment variable: AD_WINRM_USE_NTLM)",
 			},
+			"winrm_pass_credentials": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				DefaultFunc: schema.EnvDefaultFunc("AD_WINRM_PASS_CREDENTIALS", false),
+				Description: "Pass credentials in WinRM session to create a System.Management.Automation.PSCredential. (default: false, environment variable: AD_WINRM_PASS_CREDENTIALS)",
+			},
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"ad_user":     dataSourceADUser(),
@@ -185,6 +191,21 @@ func (pcfg ProviderConf) isConnectionTypeLocal() bool {
 	}
 	log.Printf("[DEBUG] Local connection ? %t", isLocal)
 	return isLocal
+}
+
+// isPassCredentialsEnabled check if credentials should be passed
+// requires that https be enabled
+func (pcfg ProviderConf) isPassCredentialsEnabled() bool {
+	pcfg.mx.Lock()
+	defer pcfg.mx.Unlock()
+	log.Printf("[DEBUG] Checking to see if credentials should be passed")
+	isPassCredentialsEnabled := false
+	if pcfg.Configuration.WinRMProto == "https" && pcfg.Configuration.WinRMPassCredentials {
+		log.Printf("[DEBUG] Matching criteria for passing credenitals")
+		isPassCredentialsEnabled = true
+	}
+	log.Printf("[DEBUG] Pass Credentials ? %t", isPassCredentialsEnabled)
+	return isPassCredentialsEnabled
 }
 
 func initProviderConfig(d *schema.ResourceData) (interface{}, error) {

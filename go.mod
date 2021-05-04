@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	github.com/dylanmei/iso8601 v0.1.0 // indirect
+	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/hashicorp/go-uuid v1.0.2
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.5.0
 	github.com/jcmturner/gokrb5/v8 v8.4.2
@@ -13,5 +14,6 @@ require (
 	github.com/packer-community/winrmcp v0.0.0-20180921211025-c76d91c1e7db
 	github.com/smartystreets/goconvey v1.6.4 // indirect
 	golang.org/x/text v0.3.3
+	google.golang.org/appengine v1.6.6 // indirect
 	gopkg.in/ini.v1 v1.55.0
 )
