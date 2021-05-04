@@ -22,16 +22,17 @@ import (
 
 // ProviderConfig holds all the information necessary to configure the provider
 type ProviderConfig struct {
-	WinRMUsername string
-	WinRMPassword string
-	WinRMHost     string
-	WinRMPort     int
-	WinRMProto    string
-	WinRMInsecure bool
-	KrbRealm      string
-	KrbConfig     string
-	KrbSpn        string
-	WinRMUseNTLM  bool
+	WinRMUsername        string
+	WinRMPassword        string
+	WinRMHost            string
+	WinRMPort            int
+	WinRMProto           string
+	WinRMInsecure        bool
+	KrbRealm             string
+	KrbConfig            string
+	KrbSpn               string
+	WinRMUseNTLM         bool
+	WinRMPassCredentials bool
 }
 
 // NewConfig returns a new Config struct populated with Resource Data.
@@ -47,18 +48,20 @@ func NewConfig(d *schema.ResourceData) ProviderConfig {
 	krbConfig := d.Get("krb_conf").(string)
 	krbSpn := d.Get("krb_spn").(string)
 	winRMUseNTLM := d.Get("winrm_use_ntlm").(bool)
+	winRMPassCredentials := d.Get("winrm_pass_credentials").(bool)
 
 	cfg := ProviderConfig{
-		WinRMHost:     winRMHost,
-		WinRMPort:     winRMPort,
-		WinRMProto:    winRMProto,
-		WinRMUsername: winRMUsername,
-		WinRMPassword: winRMPassword,
-		WinRMInsecure: winRMInsecure,
-		KrbRealm:      krbRealm,
-		KrbConfig:     krbConfig,
-		KrbSpn:        krbSpn,
-		WinRMUseNTLM:  winRMUseNTLM,
+		WinRMHost:            winRMHost,
+		WinRMPort:            winRMPort,
+		WinRMProto:           winRMProto,
+		WinRMUsername:        winRMUsername,
+		WinRMPassword:        winRMPassword,
+		WinRMInsecure:        winRMInsecure,
+		KrbRealm:             krbRealm,
+		KrbConfig:            krbConfig,
+		KrbSpn:               krbSpn,
+		WinRMUseNTLM:         winRMUseNTLM,
+		WinRMPassCredentials: winRMPassCredentials,
 	}
 
 	return cfg

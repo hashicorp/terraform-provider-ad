@@ -67,6 +67,7 @@ func resourceADComputerRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
+	isPassCredentialsEnabled := meta.(ProviderConf).isPassCredentialsEnabled()
 
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
@@ -74,7 +75,7 @@ func resourceADComputerRead(d *schema.ResourceData, meta interface{}) error {
 	}
 	defer meta.(ProviderConf).ReleaseWinRMClient(client)
 
-	computer, err := winrmhelper.NewComputerFromHost(client, d.Id(), isLocal)
+	computer, err := winrmhelper.NewComputerFromHost(client, d.Id(), isLocal, isPassCredentialsEnabled, meta.(ProviderConf).Configuration.WinRMUsername, meta.(ProviderConf).Configuration.WinRMPassword)
 	if err != nil {
 		if strings.Contains(err.Error(), "ObjectNotFound") {
 			// Resource no longer exists
@@ -96,6 +97,7 @@ func resourceADComputerRead(d *schema.ResourceData, meta interface{}) error {
 
 func resourceADComputerCreate(d *schema.ResourceData, meta interface{}) error {
 	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
+	isPassCredentialsEnabled := meta.(ProviderConf).isPassCredentialsEnabled()
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
 		return err
@@ -104,7 +106,7 @@ func resourceADComputerCreate(d *schema.ResourceData, meta interface{}) error {
 
 	computer := winrmhelper.NewComputerFromResource(d)
 
-	guid, err := computer.Create(client, isLocal)
+	guid, err := computer.Create(client, isLocal, isPassCredentialsEnabled, meta.(ProviderConf).Configuration.WinRMUsername, meta.(ProviderConf).Configuration.WinRMPassword)
 	if err != nil {
 		return fmt.Errorf("error while creating new computer object: %s", err)
 	}
@@ -114,6 +116,7 @@ func resourceADComputerCreate(d *schema.ResourceData, meta interface{}) error {
 
 func resourceADComputerUpdate(d *schema.ResourceData, meta interface{}) error {
 	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
+	isPassCredentialsEnabled := meta.(ProviderConf).isPassCredentialsEnabled()
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
 		return err
@@ -129,7 +132,7 @@ func resourceADComputerUpdate(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	err = computer.Update(client, changes, isLocal)
+	err = computer.Update(client, changes, isLocal, isPassCredentialsEnabled, meta.(ProviderConf).Configuration.WinRMUsername, meta.(ProviderConf).Configuration.WinRMPassword)
 	if err != nil {
 		return fmt.Errorf("error while updating computer with id %q: %s", d.Id(), err)
 	}
@@ -141,6 +144,7 @@ func resourceADComputerDelete(d *schema.ResourceData, meta interface{}) error {
 		return nil
 	}
 	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
+	isPassCredentialsEnabled := meta.(ProviderConf).isPassCredentialsEnabled()
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {
 		return err
@@ -148,7 +152,7 @@ func resourceADComputerDelete(d *schema.ResourceData, meta interface{}) error {
 	defer meta.(ProviderConf).ReleaseWinRMClient(client)
 
 	computer := winrmhelper.NewComputerFromResource(d)
-	err = computer.Delete(client, isLocal)
+	err = computer.Delete(client, isLocal, isPassCredentialsEnabled, meta.(ProviderConf).Configuration.WinRMUsername, meta.(ProviderConf).Configuration.WinRMPassword)
 	if err != nil {
 		return fmt.Errorf("error while deleting a computer object with id %q: %s", d.Id(), err)
 	}

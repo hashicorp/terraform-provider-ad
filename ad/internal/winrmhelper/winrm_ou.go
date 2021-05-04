@@ -36,7 +36,7 @@ func NewOrgUnitFromResource(d *schema.ResourceData) *OrgUnit {
 
 // NewOrgUnitFromHost returns a new OrgUnit struct populated from data we get from
 // the domain controller
-func NewOrgUnitFromHost(conn *winrm.Client, guid, name, path string, execLocally bool) (*OrgUnit, error) {
+func NewOrgUnitFromHost(conn *winrm.Client, guid, name, path string, execLocally bool, passCredentials bool, username string, password string) (*OrgUnit, error) {
 	var cmd string
 	if guid != "" {
 		cmd = fmt.Sprintf("Get-ADObject -Properties * -Identity %q", guid)
@@ -46,7 +46,7 @@ func NewOrgUnitFromHost(conn *winrm.Client, guid, name, path string, execLocally
 		return nil, fmt.Errorf("invalid inputs, dn or a combination of path and name are required")
 	}
 
-	result, err := RunWinRMCommand(conn, []string{cmd}, true, false, execLocally)
+	result, err := RunWinRMCommand(conn, []string{cmd}, true, false, execLocally, passCredentials, username, password)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +63,7 @@ func NewOrgUnitFromHost(conn *winrm.Client, guid, name, path string, execLocally
 }
 
 // Create creates a new OU in the AD tree
-func (o *OrgUnit) Create(conn *winrm.Client, execLocally bool) (string, error) {
+func (o *OrgUnit) Create(conn *winrm.Client, execLocally bool, passCredentials bool, username string, password string) (string, error) {
 
 	cmd := "New-ADOrganizationalUnit -Passthru"
 	if o.Name == "" {
@@ -81,7 +81,7 @@ func (o *OrgUnit) Create(conn *winrm.Client, execLocally bool) (string, error) {
 
 	cmd = fmt.Sprintf("%s -ProtectedFromAccidentalDeletion:$%t", cmd, o.Protected)
 
-	result, err := RunWinRMCommand(conn, []string{cmd}, true, false, execLocally)
+	result, err := RunWinRMCommand(conn, []string{cmd}, true, false, execLocally, passCredentials, username, password)
 	if err != nil {
 		return "", err
 	}
@@ -97,7 +97,7 @@ func (o *OrgUnit) Create(conn *winrm.Client, execLocally bool) (string, error) {
 }
 
 // Update updates an existing OU in the AD tree
-func (o *OrgUnit) Update(conn *winrm.Client, changes map[string]interface{}, execLocally bool) error {
+func (o *OrgUnit) Update(conn *winrm.Client, changes map[string]interface{}, execLocally bool, passCredentials bool, username string, password string) error {
 	if o.DistinguishedName == "" {
 		return fmt.Errorf("Cannot update OU with name %q, distiguished name is empty", o.Name)
 	}
@@ -116,7 +116,7 @@ func (o *OrgUnit) Update(conn *winrm.Client, changes map[string]interface{}, exe
 	}
 
 	if cmd != "Set-ADOrganizationalUnit -Identity" {
-		result, err := RunWinRMCommand(conn, []string{cmd}, true, false, execLocally)
+		result, err := RunWinRMCommand(conn, []string{cmd}, true, false, execLocally, passCredentials, username, password)
 		if err != nil {
 			return err
 		}
@@ -127,7 +127,7 @@ func (o *OrgUnit) Update(conn *winrm.Client, changes map[string]interface{}, exe
 
 	if protected, ok := changes["protected"]; ok {
 		cmd = fmt.Sprintf("Set-ADObject -Identity %s -ProtectedFromAccidentalDeletion:$%t", o.GUID, protected.(bool))
-		result, err := RunWinRMCommand(conn, []string{cmd}, true, false, execLocally)
+		result, err := RunWinRMCommand(conn, []string{cmd}, true, false, execLocally, passCredentials, username, password)
 		if err != nil {
 			return err
 		}
@@ -138,7 +138,7 @@ func (o *OrgUnit) Update(conn *winrm.Client, changes map[string]interface{}, exe
 
 	if name, ok := changes["name"]; ok {
 		cmd = fmt.Sprintf("Rename-ADObject -Identity %q %q ", o.GUID, name.(string))
-		result, err := RunWinRMCommand(conn, []string{cmd}, true, false, execLocally)
+		result, err := RunWinRMCommand(conn, []string{cmd}, true, false, execLocally, passCredentials, username, password)
 		if err != nil {
 			return err
 		}
@@ -151,12 +151,12 @@ func (o *OrgUnit) Update(conn *winrm.Client, changes map[string]interface{}, exe
 }
 
 // Delete deletes an existing OU from an AD tree
-func (o *OrgUnit) Delete(conn *winrm.Client, execLocally bool) error {
+func (o *OrgUnit) Delete(conn *winrm.Client, execLocally bool, passCredentials bool, username string, password string) error {
 	if o.DistinguishedName == "" {
 		return fmt.Errorf("Cannot remove OU with name %q, distiguished name is empty", o.Name)
 	}
 	cmd := fmt.Sprintf("Get-ADObject -Properties * -Identity %q | Set-ADObject -ProtectedFromAccidentalDeletion:$false -Passthru | Remove-ADOrganizationalUnit -confirm:$false", o.DistinguishedName)
-	result, err := RunWinRMCommand(conn, []string{cmd}, true, false, execLocally)
+	result, err := RunWinRMCommand(conn, []string{cmd}, true, false, execLocally, passCredentials, username, password)
 	if err != nil {
 		return err
 	}
