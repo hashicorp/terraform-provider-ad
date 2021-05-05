@@ -126,7 +126,7 @@ func (p *PowerShell) ExecutePScmd(args ...string) (stdout string, stderr string,
 
 // RunWinRMCommand will run a powershell command and return the stdout and stderr
 // The output is converted to JSON if the json patameter is set to true.
-func RunWinRMCommand(conn *winrm.Client, cmds []string, json bool, forceArray bool, execLocally bool, passCredentials bool, username string, password string) (*WinRMResult, error) {
+func RunWinRMCommand(conn *winrm.Client, cmds []string, json, forceArray, execLocally, passCredentials bool, username, password string) (*WinRMResult, error) {
 	if passCredentials {
 		cmds = append(cmds, "-Credential $Credential")
 	}
@@ -234,7 +234,7 @@ func SanitiseString(key string) string {
 
 // SetMachineExtensionName will add the necessary GUIDs to the GPO's gPCMachineExtensionNames attribute.
 // These are required for the security settings part of a GPO to work.
-func SetMachineExtensionNames(client *winrm.Client, gpoDN, value string, execLocally bool, passCredentials bool, username string, password string) error {
+func SetMachineExtensionNames(client *winrm.Client, gpoDN, value string, execLocally, passCredentials bool, username, password string) error {
 	cmd := fmt.Sprintf(`Set-ADObject -Identity "%s" -Replace @{gPCMachineExtensionNames="%s"}`, gpoDN, value)
 	result, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally, passCredentials, username, password)
 	if err != nil {
