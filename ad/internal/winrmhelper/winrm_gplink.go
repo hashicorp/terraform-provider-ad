@@ -23,7 +23,7 @@ type GPLink struct {
 }
 
 //NewGPLink creates a link between a GPO and an AD object
-func (g *GPLink) NewGPLink(client *winrm.Client, execLocally bool, passCredentials bool, username string, password string) (string, error) {
+func (g *GPLink) NewGPLink(client *winrm.Client, execLocally, passCredentials bool, username, password string) (string, error) {
 	log.Printf("[DEBUG] Creating new user")
 	enforced := "No"
 	if g.Enforced {
@@ -71,7 +71,7 @@ func (g *GPLink) NewGPLink(client *winrm.Client, execLocally bool, passCredentia
 }
 
 //ModifyGPLink changes a GPO link
-func (g *GPLink) ModifyGPLink(client *winrm.Client, changes map[string]interface{}, execLocally bool, passCredentials bool, username string, password string) error {
+func (g *GPLink) ModifyGPLink(client *winrm.Client, changes map[string]interface{}, execLocally, passCredentials bool, username, password string) error {
 	cmds := []string{fmt.Sprintf("Set-GPLink -guid %q -target %q", g.GPOGuid, g.Target)}
 	keyMap := map[string]string{
 		"enforced": "Enforced",
@@ -108,7 +108,7 @@ func (g *GPLink) ModifyGPLink(client *winrm.Client, changes map[string]interface
 }
 
 //RemoveGPLink deletes a link between a GPO and an AD object
-func (g *GPLink) RemoveGPLink(client *winrm.Client, execLocally bool, passCredentials bool, username string, password string) error {
+func (g *GPLink) RemoveGPLink(client *winrm.Client, execLocally, passCredentials bool, username, password string) error {
 	cmd := fmt.Sprintf("Remove-GPlink -Guid %q -Target %q", g.GPOGuid, g.Target)
 	_, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally, passCredentials, username, password)
 	if err != nil {
@@ -136,7 +136,7 @@ func GetGPLinkFromResource(d *schema.ResourceData) *GPLink {
 
 //GetGPLinkFromHost returns a GPLink struct populated with data retrieved from the
 //Domain Controller
-func GetGPLinkFromHost(client *winrm.Client, gpoGUID, containerGUID string, execLocally bool, passCredentials bool, username string, password string) (*GPLink, error) {
+func GetGPLinkFromHost(client *winrm.Client, gpoGUID, containerGUID string, execLocally, passCredentials bool, username, password string) (*GPLink, error) {
 	cmds := []string{fmt.Sprintf("Get-ADObject -filter {ObjectGUID -eq %q} -properties gplink", containerGUID)}
 	result, err := RunWinRMCommand(client, cmds, true, false, execLocally, passCredentials, username, password)
 	if err != nil {

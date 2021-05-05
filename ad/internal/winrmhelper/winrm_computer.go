@@ -35,7 +35,7 @@ func NewComputerFromResource(d *schema.ResourceData) *Computer {
 
 // NewComputerFromHost return a new Machine struct populated from data we get
 // from the domain controller
-func NewComputerFromHost(conn *winrm.Client, identity string, execLocally bool, passCredentials bool, username string, password string) (*Computer, error) {
+func NewComputerFromHost(conn *winrm.Client, identity string, execLocally, passCredentials bool, username, password string) (*Computer, error) {
 	cmd := fmt.Sprintf("Get-ADComputer -Identity %q -Properties *", identity)
 	result, err := RunWinRMCommand(conn, []string{cmd}, true, false, execLocally, passCredentials, username, password)
 	if err != nil {
@@ -55,7 +55,7 @@ func NewComputerFromHost(conn *winrm.Client, identity string, execLocally bool, 
 }
 
 // Create creates a new Computer object in the AD tree
-func (m *Computer) Create(conn *winrm.Client, execLocally bool, passCredentials bool, username string, password string) (string, error) {
+func (m *Computer) Create(conn *winrm.Client, execLocally, passCredentials bool, username, password string) (string, error) {
 	if m.Name == "" {
 		return "", fmt.Errorf("Computer.Create: missing name variable")
 	}
@@ -90,7 +90,7 @@ func (m *Computer) Create(conn *winrm.Client, execLocally bool, passCredentials 
 }
 
 // Update updates an existing Computer objects in the AD tree
-func (m *Computer) Update(conn *winrm.Client, changes map[string]interface{}, execLocally bool, passCredentials bool, username string, password string) error {
+func (m *Computer) Update(conn *winrm.Client, changes map[string]interface{}, execLocally, passCredentials bool, username, password string) error {
 	if m.GUID == "" {
 		return fmt.Errorf("cannot update computer object with name %q, guid is not set", m.Name)
 	}
@@ -126,7 +126,7 @@ func (m *Computer) Update(conn *winrm.Client, changes map[string]interface{}, ex
 }
 
 // Delete deletes an existing Computer objects from the AD tree
-func (m *Computer) Delete(conn *winrm.Client, execLocally bool, passCredentials bool, username string, password string) error {
+func (m *Computer) Delete(conn *winrm.Client, execLocally, passCredentials bool, username, password string) error {
 	cmd := fmt.Sprintf("Remove-ADComputer -confirm:$false -Identity %q", m.GUID)
 	result, err := RunWinRMCommand(conn, []string{cmd}, false, false, execLocally, passCredentials, username, password)
 	if err != nil {

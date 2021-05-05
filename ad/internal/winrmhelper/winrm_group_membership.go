@@ -66,7 +66,7 @@ func getMembershipList(g []*GroupMember) string {
 	return strings.Join(out, ",")
 }
 
-func (g *GroupMembership) getGroupMembers(client *winrm.Client, execLocally bool, passCredentials bool, username string, password string) ([]*GroupMember, error) {
+func (g *GroupMembership) getGroupMembers(client *winrm.Client, execLocally, passCredentials bool, username, password string) ([]*GroupMember, error) {
 	cmd := fmt.Sprintf("Get-ADGroupMember -Identity %q", g.GroupGUID)
 
 	result, err := RunWinRMCommand(client, []string{cmd}, true, true, execLocally, passCredentials, username, password)
@@ -88,7 +88,7 @@ func (g *GroupMembership) getGroupMembers(client *winrm.Client, execLocally bool
 	return gm, nil
 }
 
-func (g *GroupMembership) bulkGroupMembersOp(client *winrm.Client, operation string, members []*GroupMember, execLocally bool, passCredentials bool, username string, password string) error {
+func (g *GroupMembership) bulkGroupMembersOp(client *winrm.Client, operation string, members []*GroupMember, execLocally, passCredentials bool, username, password string) error {
 	if len(members) == 0 {
 		return nil
 	}
@@ -106,15 +106,15 @@ func (g *GroupMembership) bulkGroupMembersOp(client *winrm.Client, operation str
 	return nil
 }
 
-func (g *GroupMembership) addGroupMembers(client *winrm.Client, members []*GroupMember, execLocally bool, passCredentials bool, username string, password string) error {
+func (g *GroupMembership) addGroupMembers(client *winrm.Client, members []*GroupMember, execLocally, passCredentials bool, username, password string) error {
 	return g.bulkGroupMembersOp(client, "Add-ADGroupMember", members, execLocally, passCredentials, username, password)
 }
 
-func (g *GroupMembership) removeGroupMembers(client *winrm.Client, members []*GroupMember, execLocally bool, passCredentials bool, username string, password string) error {
+func (g *GroupMembership) removeGroupMembers(client *winrm.Client, members []*GroupMember, execLocally, passCredentials bool, username, password string) error {
 	return g.bulkGroupMembersOp(client, "Remove-ADGroupMember", members, execLocally, passCredentials, username, password)
 }
 
-func (g *GroupMembership) Update(client *winrm.Client, expected []*GroupMember, execLocally bool, passCredentials bool, username string, password string) error {
+func (g *GroupMembership) Update(client *winrm.Client, expected []*GroupMember, execLocally, passCredentials bool, username, password string) error {
 	existing, err := g.getGroupMembers(client, execLocally, passCredentials, username, password)
 	if err != nil {
 		return err
@@ -134,7 +134,7 @@ func (g *GroupMembership) Update(client *winrm.Client, expected []*GroupMember, 
 	return nil
 }
 
-func (g *GroupMembership) Create(client *winrm.Client, execLocally bool, passCredentials bool, username string, password string) error {
+func (g *GroupMembership) Create(client *winrm.Client, execLocally, passCredentials bool, username, password string) error {
 	if len(g.GroupMembers) == 0 {
 		return nil
 	}
@@ -151,7 +151,7 @@ func (g *GroupMembership) Create(client *winrm.Client, execLocally bool, passCre
 	return nil
 }
 
-func (g *GroupMembership) Delete(client *winrm.Client, execLocally bool, passCredentials bool, username string, password string) error {
+func (g *GroupMembership) Delete(client *winrm.Client, execLocally, passCredentials bool, username, password string) error {
 	cmd := fmt.Sprintf("Remove-ADGroupMember %q -Members (Get-ADGroupMember %q) -Confirm:$false", g.GroupGUID, g.GroupGUID)
 	result, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally, passCredentials, username, password)
 	if err != nil {
@@ -162,7 +162,7 @@ func (g *GroupMembership) Delete(client *winrm.Client, execLocally bool, passCre
 	return nil
 }
 
-func NewGroupMembershipFromHost(client *winrm.Client, groupID string, execLocally bool, passCredentials bool, username string, password string) (*GroupMembership, error) {
+func NewGroupMembershipFromHost(client *winrm.Client, groupID string, execLocally, passCredentials bool, username, password string) (*GroupMembership, error) {
 	result := &GroupMembership{
 		GroupGUID: groupID,
 	}

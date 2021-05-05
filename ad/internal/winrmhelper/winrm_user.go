@@ -62,7 +62,7 @@ type User struct {
 }
 
 // NewUser creates the user by running the New-ADUser powershell command
-func (u *User) NewUser(client *winrm.Client, execLocally bool, passCredentials bool, username string, password string) (string, error) {
+func (u *User) NewUser(client *winrm.Client, execLocally, passCredentials bool, username, password string) (string, error) {
 	if u.Username == "" {
 		return "", fmt.Errorf("user principal name required")
 	}
@@ -234,7 +234,7 @@ func (u *User) NewUser(client *winrm.Client, execLocally bool, passCredentials b
 }
 
 // ModifyUser updates the AD user's details based on what's changed in the resource.
-func (u *User) ModifyUser(d *schema.ResourceData, client *winrm.Client, execLocally bool, passCredentials bool, username string, password string) error {
+func (u *User) ModifyUser(d *schema.ResourceData, client *winrm.Client, execLocally, passCredentials bool, username, password string) error {
 	log.Printf("Modifying user: %q", u.PrincipalName)
 	strKeyMap := map[string]string{
 		"sam_account_name": "SamAccountName",
@@ -412,7 +412,7 @@ func (u *User) ModifyUser(d *schema.ResourceData, client *winrm.Client, execLoca
 }
 
 //DeleteUser deletes an AD user by calling Remove-ADUser
-func (u *User) DeleteUser(client *winrm.Client, execLocally bool, passCredentials bool, username string, password string) error {
+func (u *User) DeleteUser(client *winrm.Client, execLocally, passCredentials bool, username, password string) error {
 	cmd := fmt.Sprintf("Remove-ADUser -Identity %s -Confirm:$false", u.GUID)
 	_, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally, passCredentials, username, password)
 	if err != nil {
