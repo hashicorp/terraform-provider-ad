@@ -107,9 +107,9 @@ func (g *Group) ModifyGroup(d *schema.ResourceData, client *winrm.Client, execLo
 
 	if d.HasChange("container") {
 		cmd := fmt.Sprintf("Move-ADObject -Identity %q -TargetPath %q", g.GUID, d.Get("container").(string))
-		result, err := RunWinRMCommand(client, []string{cmd}, true, false, execLocally)
+		result, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally)
 		if err != nil {
-			return fmt.Errorf("winrm execution failure while moving gmsa object: %s", err)
+			return fmt.Errorf("winrm execution failure while moving group object: %s", err)
 		}
 		if result.ExitCode != 0 {
 			return fmt.Errorf("Move-ADObject exited with a non zero exit code (%d), stderr: %s", result.ExitCode, result.StdErr)
