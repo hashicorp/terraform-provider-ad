@@ -76,7 +76,6 @@ func resourceADGroupCreate(d *schema.ResourceData, meta interface{}) error {
 	defer meta.(ProviderConf).ReleaseWinRMClient(client)
 
 	guid, err := u.AddGroup(client, isLocal, isPassCredentialsEnabled, meta.(ProviderConf).Configuration.WinRMUsername, meta.(ProviderConf).Configuration.WinRMPassword)
-
 	if err != nil {
 		return err
 	}

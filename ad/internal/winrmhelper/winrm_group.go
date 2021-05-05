@@ -38,11 +38,7 @@ func (g *Group) AddGroup(client *winrm.Client, execLocally bool, passCredentials
 		cmds = append(cmds, fmt.Sprintf("-Description %q", g.Description))
 	}
 
-	var result *WinRMResult
-	var err error
-
-	result, err = RunWinRMCommand(client, cmds, true, false, execLocally, passCredentials, username, password)
-
+	result, err := RunWinRMCommand(client, cmds, true, false, execLocally, passCredentials, username, password)
 	if err != nil {
 		return "", err
 	}
@@ -158,11 +154,7 @@ func GetGroupFromResource(d *schema.ResourceData) *Group {
 // retrieved from the AD Controller.
 func GetGroupFromHost(client *winrm.Client, guid string, execLocally bool, passCredentials bool, username string, password string) (*Group, error) {
 	cmd := fmt.Sprintf("Get-ADGroup -identity %q -properties *", guid)
-
-        var result *WinRMResult
-        var err error
-
-        result, err = RunWinRMCommand(client, []string{cmd}, true, false, execLocally, passCredentials, username, password)
+        result, err := RunWinRMCommand(client, []string{cmd}, true, false, execLocally, passCredentials, username, password)
 
 	if err != nil {
 		return nil, err

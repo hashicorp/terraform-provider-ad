@@ -190,7 +190,6 @@ func dataSourceADUser() *schema.Resource {
 func dataSourceADUserRead(d *schema.ResourceData, meta interface{}) error {
 	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
 	isPassCredentialsEnabled := meta.(ProviderConf).isPassCredentialsEnabled()
-
 	userID := d.Get("user_id").(string)
 	client, err := meta.(ProviderConf).AcquireWinRMClient()
 	if err != nil {

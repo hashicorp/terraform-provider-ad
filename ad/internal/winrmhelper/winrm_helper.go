@@ -124,7 +124,7 @@ func (p *PowerShell) ExecutePScmd(args ...string) (stdout string, stderr string,
 	return
 }
 
-// RunWinRMCommandWithCreds will run a powershell command and return the stdout and stderr
+// RunWinRMCommand will run a powershell command and return the stdout and stderr
 // The output is converted to JSON if the json patameter is set to true.
 func RunWinRMCommand(conn *winrm.Client, cmds []string, json bool, forceArray bool, execLocally bool, passCredentials bool, username string, password string) (*WinRMResult, error) {
 	if passCredentials {
