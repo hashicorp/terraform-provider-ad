@@ -94,8 +94,8 @@ func (g *Group) ModifyGroup(d *schema.ResourceData, client *winrm.Client, execLo
 	}
 
 	if d.HasChange("name") {
-		cmds := []string{"Rename-ADObject -Identity %q -NewName %q", g.GUID, d.Get("name").(string)}
-		result, err := RunWinRMCommand(client, cmds, false, false, execLocally, passCredentials, username, password)
+		cmds := fmt.Sprintf("Rename-ADObject -Identity %q -NewName %q", g.GUID, d.Get("name").(string))
+		result, err := RunWinRMCommand(client, []string{cmds}, false, false, execLocally, passCredentials, username, password)
 		if err != nil {
 			return err
 		}
@@ -106,8 +106,8 @@ func (g *Group) ModifyGroup(d *schema.ResourceData, client *winrm.Client, execLo
 	}
 
 	if d.HasChange("container") {
-		cmds := []string{"Rename-ADObject -Identity %q -NewName %q", g.GUID, d.Get("name").(string)}
-		result, err := RunWinRMCommand(client, cmds, false, false, execLocally, passCredentials, username, password)
+		cmd := fmt.Sprintf("Move-ADObject -Identity %q -TargetPath %q", g.GUID, d.Get("container").(string))
+		result, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally, passCredentials, username, password)
 		if err != nil {
 			return err
 		}
