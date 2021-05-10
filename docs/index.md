@@ -62,10 +62,6 @@ provider "ad" {
 ```
 
  ## Example Usage
- 
- ```terraform
-
-## Example Usage
 
 ```terraform
 variable "hostname" { default = "ad.yourdomain.com" }
