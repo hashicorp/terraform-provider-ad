@@ -106,7 +106,6 @@ func (o *OrgUnit) Update(conn *winrm.Client, changes map[string]interface{}, exe
 	keyMap := map[string]string{
 		"display_name": "DisplayName",
 		"description":  "Description",
-		"path":         "Path",
 	}
 
 	for k, v := range changes {
@@ -122,6 +121,41 @@ func (o *OrgUnit) Update(conn *winrm.Client, changes map[string]interface{}, exe
 		}
 		if result.ExitCode != 0 {
 			return fmt.Errorf("Set-ADOrganizationalUnit exited with a non-zero exit code %d, stderr :%s", result.ExitCode, result.StdErr)
+		}
+	}
+
+	if path, ok := changes["path"]; ok {
+		var unprotected bool
+		if o.Protected == true {
+			cmd := fmt.Sprintf("Set-ADOrganizationalUnit -Identity %q -ProtectedFromAccidentalDeletion:$false", o.GUID)
+			result, err := RunWinRMCommand(conn, []string{cmd}, true, false, execLocally)
+			if err != nil {
+				return fmt.Errorf("winrm execution failure while unprotecting OU object: %s", err)
+			}
+			if result.ExitCode != 0 {
+				return fmt.Errorf("Set-ADOrganizationalUnit exited with a non zero exit code (%d), stderr: %s", result.ExitCode, result.StdErr)
+			}
+			unprotected = true
+		}
+
+		cmd := fmt.Sprintf("Move-ADObject -Identity %q -TargetPath %q", o.GUID, path.(string))
+		result, err := RunWinRMCommand(conn, []string{cmd}, true, false, execLocally)
+		if err != nil {
+			return fmt.Errorf("winrm execution failure while moving OU object: %s", err)
+		}
+		if result.ExitCode != 0 {
+			return fmt.Errorf("Move-ADObject exited with a non zero exit code (%d), stderr: %s", result.ExitCode, result.StdErr)
+		}
+
+		if unprotected == true {
+			cmd := fmt.Sprintf("Set-ADOrganizationalUnit -Identity %q -ProtectedFromAccidentalDeletion:$true", o.GUID)
+			result, err := RunWinRMCommand(conn, []string{cmd}, true, false, execLocally)
+			if err != nil {
+				return fmt.Errorf("winrm execution failure while protecting OU object: %s", err)
+			}
+			if result.ExitCode != 0 {
+				return fmt.Errorf("Set-ADOrganizationalUnit exited with a non zero exit code (%d), stderr: %s", result.ExitCode, result.StdErr)
+			}
 		}
 	}
 
