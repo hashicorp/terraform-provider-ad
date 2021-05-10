@@ -106,16 +106,14 @@ func (g *Group) ModifyGroup(d *schema.ResourceData, client *winrm.Client, execLo
 	}
 
 	if d.HasChange("container") {
-		cmds := []string{"Rename-ADObject -Identity %q -NewName %q", g.GUID, d.Get("name").(string)}
-		result, err := RunWinRMCommand(client, cmds, false, false, execLocally)
+		cmd := fmt.Sprintf("Move-ADObject -Identity %q -TargetPath %q", g.GUID, d.Get("container").(string))
+		result, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally)
 		if err != nil {
-			return err
+			return fmt.Errorf("winrm execution failure while moving group object: %s", err)
 		}
 		if result.ExitCode != 0 {
-			log.Printf("[DEBUG] stderr: %s\nstdout: %s", result.StdErr, result.Stdout)
-			return fmt.Errorf("command Rename-ADObject exited with a non-zero exit code %d, stderr: %s", result.ExitCode, result.StdErr)
+			return fmt.Errorf("Move-ADObject exited with a non zero exit code (%d), stderr: %s", result.ExitCode, result.StdErr)
 		}
-
 	}
 
 	return nil
