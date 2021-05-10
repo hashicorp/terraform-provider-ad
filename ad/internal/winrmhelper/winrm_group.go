@@ -94,8 +94,8 @@ func (g *Group) ModifyGroup(d *schema.ResourceData, client *winrm.Client, execLo
 	}
 
 	if d.HasChange("name") {
-		cmds := []string{"Rename-ADObject -Identity %q -NewName %q", g.GUID, d.Get("name").(string)}
-		result, err := RunWinRMCommand(client, cmds, false, false, execLocally)
+		cmds := fmt.Sprintf("Rename-ADObject -Identity %q -NewName %q", g.GUID, d.Get("name").(string))
+		result, err := RunWinRMCommand(client, []string{cmds}, false, false, execLocally)
 		if err != nil {
 			return err
 		}
