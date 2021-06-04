@@ -2,8 +2,8 @@ package winrmhelper
 
 import (
 	"bytes"
-	"encoding/xml"
 	"fmt"
+	"io"
 	"log"
 	"os/exec"
 	"reflect"
@@ -13,7 +13,8 @@ import (
 	"syscall"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/masterzen/winrm"
+	"github.com/hashicorp/terraform-provider-ad/ad/internal/config"
+	"github.com/packer-community/winrmcp/winrmcp"
 )
 
 // SID is a common structure by all "security principals". This means domains, users, computers, and groups.
@@ -22,73 +23,15 @@ type SID struct {
 	Value string `json:"Value"`
 }
 
-//WinRMResult holds the stdout, stderr and exit code of a powershell command
-type WinRMResult struct {
-	Stdout   string
-	StdErr   string
-	ExitCode int
-}
-
-type psString string
-
-func (s *psString) UnmarshalText(text []byte) error {
-	str := string(text[:])
-	str = strings.TrimSpace(str)
-	if str[0] == '+' && len(str) > 2 {
-		*s = psString(fmt.Sprintf("\n%s", str[2:]))
-	} else {
-		*s = psString(str)
-	}
-
-	return nil
-}
-
-// PSOutput is used to unmarshall CLIXML output
-// Right now we are only using this to extract error messages, but it can be extended
-// to unpack more elements if required.
-type PSOutput struct {
-	PSStrings []psString `xml:"S"`
-}
-
-func (s *PSOutput) stringSlice() []string {
-	out := make([]string, len(s.PSStrings))
-	for idx, v := range s.PSStrings {
-		out[idx] = string(v)
-	}
-	return out
-}
-
-// String() return a string containing the error message that was serialised in a CLIXML message
-func (p *PSOutput) String() string {
-	str := strings.Join(p.stringSlice(), "")
-	replacer := strings.NewReplacer("_x000D_", "", "_x000A_", "")
-	str = replacer.Replace(str)
-	return str
-}
-
-func decodeXMLCli(xmlDoc string) (string, error) {
-	// If stderr is formatted in CLIXML try to extract the error message
-	if strings.Contains(xmlDoc, "#< CLIXML") {
-		xmlDoc = strings.Replace(xmlDoc, "#< CLIXML", "", -1)
-		var v PSOutput
-		err := xml.Unmarshal([]byte(xmlDoc), &v)
-		if err != nil {
-			return "", fmt.Errorf("while unmarshalling CLIXML document: %s", err)
-		}
-		xmlDoc = strings.TrimSpace(v.String())
-	}
-	return xmlDoc, nil
-}
-
-// PowerShell struct
-type PowerShell struct {
+// LocalPSSession struct
+type LocalPSSession struct {
 	powerShell string
 }
 
-// NewPS create new local session
-func NewPS() *PowerShell {
+// NewLocalPSSession create new local session
+func NewLocalPSSession() *LocalPSSession {
 	ps, _ := exec.LookPath("powershell.exe")
-	return &PowerShell{
+	return &LocalPSSession{
 		powerShell: ps,
 	}
 }
@@ -96,9 +39,9 @@ func NewPS() *PowerShell {
 const defaultFailedCode = 1
 
 // ExecutePScmd will execute the powershell command using exec
-func (p *PowerShell) ExecutePScmd(args ...string) (stdout string, stderr string, exitCode int, err error) {
+func (l *LocalPSSession) ExecutePScmd(args ...string) (stdout string, stderr string, exitCode int, err error) {
 	var outbuf, errbuf bytes.Buffer
-	cmd := exec.Command(p.powerShell, args...)
+	cmd := exec.Command(l.powerShell, args...)
 	cmd.Stdout = &outbuf
 	cmd.Stderr = &errbuf
 
@@ -122,86 +65,6 @@ func (p *PowerShell) ExecutePScmd(args ...string) (stdout string, stderr string,
 		exitCode = ws.ExitStatus()
 	}
 	return
-}
-
-// RunWinRMCommandWithCreds will run a powershell command and return the stdout and stderr
-// The output is converted to JSON if the json patameter is set to true.
-func RunWinRMCommand(conn *winrm.Client, cmds []string, json, forceArray, execLocally, passCredentials bool, username, password string) (*WinRMResult, error) {
-	if passCredentials {
-		cmds = append(cmds, "-Credential $Credential")
-	}
-
-	if json {
-		cmds = append(cmds, "| ConvertTo-Json")
-	}
-
-	cmd_redacted := strings.Join(cmds, " ")
-	encodedCmdRedacted := winrm.Powershell(cmd_redacted)
-
-	if passCredentials {
-		cmd_username := fmt.Sprintf("$User = \"%s\"\n", username)
-		cmd_password := fmt.Sprintf("$Password = ConvertTo-SecureString -String \"%s\" -AsPlainText -Force\n", password)
-		cmds = append([]string{"$Credential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $User, $Password\n"}, cmds...)
-		cmds = append([]string{cmd_username}, cmds...)
-		cmds = append([]string{cmd_password}, cmds...)
-	}
-
-	cmd := strings.Join(cmds, " ")
-	encodedCmd := winrm.Powershell(cmd)
-
-	if passCredentials {
-		log.Printf("[DEBUG] Running command %s via powershell", cmd_redacted)
-		log.Printf("[DEBUG] Encoded command: %s", encodedCmdRedacted)
-	} else {
-		log.Printf("[DEBUG] Running command %s via powershell", cmd)
-		log.Printf("[DEBUG] Encoded command: %s", encodedCmd)
-	}
-
-	var (
-		stdout string
-		stderr string
-		res    int
-		err    error
-	)
-
-	if execLocally == false && conn != nil {
-		log.Printf("[DEBUG] Executing command on remote host")
-		stdout, stderr, res, err = conn.RunWithString(encodedCmd, "")
-		log.Printf("[DEBUG] Powershell command exited with code %d", res)
-	} else {
-		log.Printf("[DEBUG] Creating local shell")
-		localShell := NewPS()
-		log.Printf("[DEBUG] Executing command on local host")
-		stdout, stderr, res, err = localShell.ExecutePScmd(encodedCmd)
-	}
-
-	log.Printf("[DEBUG] Powershell command exited with code %d", res)
-	if res != 0 {
-		log.Printf("[DEBUG] Stdout: %s, Stderr: %s", stdout, stderr)
-	}
-
-	// Decode stderr here for the error to be human readable if we need to return early
-	stderr, xmlErr := decodeXMLCli(stderr)
-	if xmlErr != nil {
-		log.Printf("[DEBUG] stderr was not serialised as CLIXML, passing back as is")
-	}
-
-	if err != nil {
-		log.Printf("[DEBUG] run error : %s", err)
-		return nil, fmt.Errorf("powershell command failed with exit code %d\nstdout: %s\nstderr: %s\nerror: %s", res, stdout, stderr, err)
-	}
-
-	result := &WinRMResult{
-		Stdout:   strings.TrimSpace(stdout),
-		StdErr:   stderr,
-		ExitCode: res,
-	}
-
-	if json && forceArray && result.Stdout != "" && string(result.Stdout[0]) != "[" {
-		result.Stdout = fmt.Sprintf("[%s]", result.Stdout)
-	}
-
-	return result, nil
 }
 
 // SanitiseTFInput returns the value of a resource field after passing it through SanitiseString
@@ -232,11 +95,21 @@ func SanitiseString(key string) string {
 	return out
 }
 
-// SetMachineExtensionName will add the necessary GUIDs to the GPO's gPCMachineExtensionNames attribute.
+// SetMachineExtensionNames will add the necessary GUIDs to the GPO's gPCMachineExtensionNames attribute.
 // These are required for the security settings part of a GPO to work.
-func SetMachineExtensionNames(client *winrm.Client, gpoDN, value string, execLocally, passCredentials bool, username, password string) error {
+func SetMachineExtensionNames(conf *config.ProviderConf, gpoDN, value string) error {
 	cmd := fmt.Sprintf(`Set-ADObject -Identity "%s" -Replace @{gPCMachineExtensionNames="%s"}`, gpoDN, value)
-	result, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally, passCredentials, username, password)
+	psOpts := CreatePSCommandOpts{
+		JSONOutput:      false,
+		ForceArray:      false,
+		ExecLocally:     conf.IsConnectionTypeLocal(),
+		PassCredentials: conf.IsPassCredentialsEnabled(),
+		Username:        conf.Settings.WinRMUsername,
+		Password:        conf.Settings.WinRMPassword,
+		Server:          conf.Settings.DomainName,
+	}
+	psCmd := NewPSCommand([]string{cmd}, psOpts)
+	result, err := psCmd.Run(conf)
 	if err != nil {
 		return fmt.Errorf("error while setting machine extension names for GPO %q: %s", gpoDN, err)
 	}
@@ -262,7 +135,8 @@ func GetString(v interface{}) string {
 	return fmt.Sprintf(`"%s"`, out)
 }
 
-// custom attributes can be single valued or multi valued. Multi-value attribute values are represented by a json
+// SortInnerSlice is used to sort multivalued custom attributes.
+// Custom attributes can be single valued or multi valued. Multi-value attribute values are represented by a json
 // array that gets converted to a list. It's not guaranteed that the order of the values returned by windows
 // will match the order set by the user in the config, so we just check the members of the custom attributes map
 // and if a slice is found then it's sorted before we compare it.
@@ -280,4 +154,72 @@ func SortInnerSlice(m map[string]interface{}) map[string]interface{} {
 		}
 	}
 	return m
+}
+
+func UploadFiletoSYSVOL(conf *config.ProviderConf, cpClient *winrmcp.Winrmcp, buf io.Reader, destPath string) error {
+	tmpPathCmd := NewPSCommand([]string{"$randompath=[System.IO.Path]::GetRandomFileName(); echo $env:TMP\\$randompath"}, CreatePSCommandOpts{
+		ForceArray:      false,
+		JSONOutput:      false,
+		ExecLocally:     conf.IsConnectionTypeLocal(),
+		PassCredentials: false,
+		SkipCredPrefix:  true,
+		SkipCredSuffix:  true,
+	})
+	tmpPathResult, err := tmpPathCmd.Run(conf)
+	if err != nil {
+		return fmt.Errorf("while renaming GPO: %s", err)
+	} else if tmpPathResult != nil && tmpPathResult.ExitCode != 0 {
+		return fmt.Errorf("while renaming GPO stderr: %s", tmpPathResult.StdErr)
+	}
+	tmpPath := tmpPathResult.Stdout
+
+	err = cpClient.Write(tmpPath, buf)
+	if err != nil {
+		return fmt.Errorf("error while writing ini file to %q: %s", destPath, err)
+	}
+
+	toks := strings.Split(destPath, `\`)
+	x := toks[:len(toks)-1]
+	destDir := strings.Join(x, `\`)
+	mdCmd := fmt.Sprintf(`$check=Test-Path "%s"; if (!$check)  {md "%s"}`, destDir, destDir)
+	domainName := conf.Settings.DomainName
+	if conf.Settings.KrbRealm == domainName {
+		domainName = "$env:computername"
+	}
+	mdPSComamnd := NewPSCommand([]string{mdCmd}, CreatePSCommandOpts{
+		ExecLocally:     conf.IsConnectionTypeLocal(),
+		JSONOutput:      false,
+		ForceArray:      false,
+		PassCredentials: conf.IsPassCredentialsEnabled(),
+		InvokeCommand:   conf.IsPassCredentialsEnabled(),
+		Username:        conf.Settings.WinRMUsername,
+		Password:        conf.Settings.WinRMPassword,
+		Server:          domainName,
+	})
+	mdOutput, err := mdPSComamnd.Run(conf)
+	if err != nil {
+		return fmt.Errorf("while renaming GPO: %s", err)
+	} else if mdOutput != nil && mdOutput.ExitCode != 0 {
+		return fmt.Errorf("while renaming GPO stderr: %s", mdOutput.StdErr)
+	}
+
+	cpCmd := fmt.Sprintf(`Copy-Item "%s" "%s"; Remove-Item "%s"`, tmpPath, destPath, tmpPath)
+	cpPSComamnd := NewPSCommand([]string{cpCmd}, CreatePSCommandOpts{
+		ExecLocally:     conf.IsConnectionTypeLocal(),
+		JSONOutput:      false,
+		ForceArray:      false,
+		PassCredentials: conf.IsPassCredentialsEnabled(),
+		InvokeCommand:   conf.IsPassCredentialsEnabled(),
+		Username:        conf.Settings.WinRMUsername,
+		Password:        conf.Settings.WinRMPassword,
+		Server:          domainName,
+	})
+	cpOutput, err := cpPSComamnd.Run(conf)
+	if err != nil {
+		return fmt.Errorf("while renaming GPO: %s", err)
+	} else if cpOutput != nil && cpOutput.ExitCode != 0 {
+		return fmt.Errorf("while renaming GPO stderr: %s", cpOutput.StdErr)
+	}
+
+	return nil
 }

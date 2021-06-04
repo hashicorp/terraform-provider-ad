@@ -1,12 +1,16 @@
-package ad
+package config
 
 import (
 	"crypto/tls"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"log"
 	"net"
 	"net/http"
+	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/jcmturner/gokrb5/v8/iana/etypeID"
@@ -20,8 +24,8 @@ import (
 	"github.com/packer-community/winrmcp/winrmcp"
 )
 
-// ProviderConfig holds all the information necessary to configure the provider
-type ProviderConfig struct {
+// Settings holds all the information necessary to configure the provider
+type Settings struct {
 	WinRMUsername        string
 	WinRMPassword        string
 	WinRMHost            string
@@ -33,10 +37,11 @@ type ProviderConfig struct {
 	KrbSpn               string
 	WinRMUseNTLM         bool
 	WinRMPassCredentials bool
+	DomainName           string
 }
 
 // NewConfig returns a new Config struct populated with Resource Data.
-func NewConfig(d *schema.ResourceData) ProviderConfig {
+func NewConfig(d *schema.ResourceData) (*Settings, error) {
 	// winRM
 	winRMUsername := d.Get("winrm_username").(string)
 	winRMPassword := d.Get("winrm_password").(string)
@@ -50,7 +55,8 @@ func NewConfig(d *schema.ResourceData) ProviderConfig {
 	winRMUseNTLM := d.Get("winrm_use_ntlm").(bool)
 	winRMPassCredentials := d.Get("winrm_pass_credentials").(bool)
 
-	cfg := ProviderConfig{
+	cfg := &Settings{
+		DomainName:           krbRealm,
 		WinRMHost:            winRMHost,
 		WinRMPort:            winRMPort,
 		WinRMProto:           winRMProto,
@@ -64,31 +70,31 @@ func NewConfig(d *schema.ResourceData) ProviderConfig {
 		WinRMPassCredentials: winRMPassCredentials,
 	}
 
-	return cfg
+	return cfg, nil
 }
 
 // GetWinRMConnection returns a WinRM connection
-func GetWinRMConnection(config ProviderConfig) (*winrm.Client, error) {
+func GetWinRMConnection(settings *Settings) (*winrm.Client, error) {
 	useHTTPS := false
-	if strings.ToLower(config.WinRMProto) == "https" {
+	if strings.ToLower(settings.WinRMProto) == "https" {
 		useHTTPS = true
 	}
 
-	endpoint := winrm.NewEndpoint(config.WinRMHost, config.WinRMPort, useHTTPS,
-		config.WinRMInsecure, nil, nil, nil, 0)
+	endpoint := winrm.NewEndpoint(settings.WinRMHost, settings.WinRMPort, useHTTPS,
+		settings.WinRMInsecure, nil, nil, nil, 0)
 
 	var winrmClient *winrm.Client
 	var err error
-	if config.KrbRealm != "" {
+	if settings.KrbRealm != "" {
 		params := winrm.DefaultParameters
-		params.TransportDecorator = NewKerberosTransporter(config)
+		params.TransportDecorator = NewKerberosTransporter(settings)
 		winrmClient, err = winrm.NewClientWithParameters(endpoint, "", "", params)
 	} else {
 		params := winrm.DefaultParameters
-		if config.WinRMUseNTLM {
+		if settings.WinRMUseNTLM {
 			params.TransportDecorator = func() winrm.Transporter { return &winrm.ClientNTLM{} }
 		}
-		winrmClient, err = winrm.NewClientWithParameters(endpoint, config.WinRMUsername, config.WinRMPassword, params)
+		winrmClient, err = winrm.NewClientWithParameters(endpoint, settings.WinRMUsername, settings.WinRMPassword, params)
 	}
 
 	if err != nil {
@@ -99,24 +105,24 @@ func GetWinRMConnection(config ProviderConfig) (*winrm.Client, error) {
 }
 
 // GetWinRMCPConnection sets up a winrmcp client that can be used to upload files to the DC.
-func GetWinRMCPConnection(config ProviderConfig) (*winrmcp.Winrmcp, error) {
+func GetWinRMCPConnection(settings *Settings) (*winrmcp.Winrmcp, error) {
 	useHTTPS := false
-	if config.WinRMProto == "https" {
+	if settings.WinRMProto == "https" {
 		useHTTPS = true
 	}
-	addr := fmt.Sprintf("%s:%d", config.WinRMHost, config.WinRMPort)
+	addr := fmt.Sprintf("%s:%d", settings.WinRMHost, settings.WinRMPort)
 	cfg := winrmcp.Config{
 		Auth: winrmcp.Auth{
-			User:     config.WinRMUsername,
-			Password: config.WinRMPassword,
+			User:     settings.WinRMUsername,
+			Password: settings.WinRMPassword,
 		},
 		Https:                 useHTTPS,
-		Insecure:              config.WinRMInsecure,
+		Insecure:              settings.WinRMInsecure,
 		MaxOperationsPerShell: 15,
 	}
 
-	if config.KrbRealm != "" {
-		cfg.TransportDecorator = NewKerberosTransporter(config)
+	if settings.KrbRealm != "" {
+		cfg.TransportDecorator = NewKerberosTransporter(settings)
 	}
 
 	return winrmcp.New(addr, &cfg)
@@ -134,17 +140,17 @@ type KerberosTransporter struct {
 	transport *http.Transport
 }
 
-func NewKerberosTransporter(config ProviderConfig) func() winrm.Transporter {
+func NewKerberosTransporter(settings *Settings) func() winrm.Transporter {
 	return func() winrm.Transporter {
 		return &KerberosTransporter{
-			Username: config.WinRMUsername,
-			Password: config.WinRMPassword,
-			Domain:   config.KrbRealm,
-			Hostname: config.WinRMHost,
-			Port:     config.WinRMPort,
-			Proto:    config.WinRMProto,
-			KrbConf:  config.KrbConfig,
-			SPN:      config.KrbSpn,
+			Username: settings.WinRMUsername,
+			Password: settings.WinRMPassword,
+			Domain:   settings.KrbRealm,
+			Hostname: settings.WinRMHost,
+			Port:     settings.WinRMPort,
+			Proto:    settings.WinRMProto,
+			KrbConf:  settings.KrbConfig,
+			SPN:      settings.KrbSpn,
 		}
 	}
 }
@@ -250,12 +256,111 @@ func (c *KerberosTransporter) Post(_ *winrm.Client, request *soap.SoapMessage) (
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return "", fmt.Errorf("http error while making kerberos authenticated winRM request: %s", err)
+		var bodyMsg string
+		respBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			bodyMsg = fmt.Sprintf("Also there was an error while retrieving the response's body: %s", err)
+		} else {
+			bodyMsg = fmt.Sprintf("response body:\n%s", string(respBody))
+		}
+		return "", fmt.Errorf("http error while making kerberos authenticated winRM request: %d - %s. %s ", resp.StatusCode, resp.Status, bodyMsg)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}
+
 	return string(body), err
+}
+
+// ProviderConf holds structures that are useful to the provider at runtime.
+type ProviderConf struct {
+	Settings       *Settings
+	winRMClients   []*winrm.Client
+	winRMCPClients []*winrmcp.Winrmcp
+	mx             *sync.Mutex
+}
+
+func NewProviderConf(settings *Settings) *ProviderConf {
+	pcfg := &ProviderConf{
+		Settings:       settings,
+		winRMClients:   make([]*winrm.Client, 0),
+		winRMCPClients: make([]*winrmcp.Winrmcp, 0),
+		mx:             &sync.Mutex{},
+	}
+	return pcfg
+}
+
+// AcquireWinRMClient get a thread safe WinRM client from the pool. Create a new one if the pool is empty
+func (pcfg *ProviderConf) AcquireWinRMClient() (winRMClient *winrm.Client, err error) {
+	pcfg.mx.Lock()
+	defer pcfg.mx.Unlock()
+	if len(pcfg.winRMClients) == 0 {
+		winRMClient, err = GetWinRMConnection(pcfg.Settings)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		winRMClient = pcfg.winRMClients[0]
+		pcfg.winRMClients = pcfg.winRMClients[1:]
+	}
+	return winRMClient, nil
+}
+
+// ReleaseWinRMClient returns a thread safe WinRM client after usage to the pool.
+func (pcfg *ProviderConf) ReleaseWinRMClient(winRMClient *winrm.Client) {
+	pcfg.mx.Lock()
+	defer pcfg.mx.Unlock()
+	pcfg.winRMClients = append(pcfg.winRMClients, winRMClient)
+}
+
+// AcquireWinRMCPClient get a thread safe WinRM client from the pool. Create a new one if the pool is empty
+func (pcfg *ProviderConf) AcquireWinRMCPClient() (winRMCPClient *winrmcp.Winrmcp, err error) {
+	pcfg.mx.Lock()
+	defer pcfg.mx.Unlock()
+	if len(pcfg.winRMCPClients) == 0 {
+		winRMCPClient, err = GetWinRMCPConnection(pcfg.Settings)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		winRMCPClient = pcfg.winRMCPClients[0]
+		pcfg.winRMCPClients = pcfg.winRMCPClients[1:]
+	}
+	return winRMCPClient, nil
+}
+
+// ReleaseWinRMCPClient returns a thread safe WinRM client after usage to the pool.
+func (pcfg *ProviderConf) ReleaseWinRMCPClient(winRMCPClient *winrmcp.Winrmcp) {
+	pcfg.mx.Lock()
+	defer pcfg.mx.Unlock()
+	pcfg.winRMCPClients = append(pcfg.winRMCPClients, winRMCPClient)
+}
+
+// IsConnectionTypeLocal check if connection is local
+func (pcfg *ProviderConf) IsConnectionTypeLocal() bool {
+	log.Printf("[DEBUG] Checking if connection should be local")
+	isLocal := false
+	if runtime.GOOS == "windows" {
+		if pcfg.Settings.WinRMHost == "" && pcfg.Settings.WinRMUsername == "" && pcfg.Settings.WinRMPassword == "" {
+			log.Printf("[DEBUG] Matching criteria for local execution")
+			isLocal = true
+		}
+	}
+	log.Printf("[DEBUG] Local connection ? %t", isLocal)
+	return isLocal
+}
+
+// IsPassCredentialsEnabled check if credentials should be passed
+// requires that https be enabled
+func (pcfg *ProviderConf) IsPassCredentialsEnabled() bool {
+	log.Printf("[DEBUG] Checking to see if credentials should be passed")
+	isPassCredentialsEnabled := false
+	if pcfg.Settings.WinRMProto == "https" && pcfg.Settings.WinRMPassCredentials {
+		log.Printf("[DEBUG] Matching criteria for passing credenitals")
+		isPassCredentialsEnabled = true
+	}
+	log.Printf("[DEBUG] Pass Credentials ? %t", isPassCredentialsEnabled)
+	return isPassCredentialsEnabled
 }

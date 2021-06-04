@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hashicorp/terraform-provider-ad/ad/internal/config"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/masterzen/winrm"
 )
 
 type GroupMembership struct {
@@ -53,7 +54,9 @@ func unmarshalGroupMembership(input []byte) ([]*GroupMember, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	if len(gm) > 0 && gm[0].GUID == "" {
+		return nil, fmt.Errorf("invalid data while unmarshalling group membership data, json doc was: %s", string(input))
+	}
 	return gm, nil
 }
 
@@ -66,10 +69,19 @@ func getMembershipList(g []*GroupMember) string {
 	return strings.Join(out, ",")
 }
 
-func (g *GroupMembership) getGroupMembers(client *winrm.Client, execLocally, passCredentials bool, username, password string) ([]*GroupMember, error) {
+func (g *GroupMembership) getGroupMembers(conf *config.ProviderConf) ([]*GroupMember, error) {
 	cmd := fmt.Sprintf("Get-ADGroupMember -Identity %q", g.GroupGUID)
-
-	result, err := RunWinRMCommand(client, []string{cmd}, true, true, execLocally, passCredentials, username, password)
+	psOpts := CreatePSCommandOpts{
+		JSONOutput:      true,
+		ForceArray:      true,
+		ExecLocally:     conf.IsConnectionTypeLocal(),
+		PassCredentials: conf.IsPassCredentialsEnabled(),
+		Username:        conf.Settings.WinRMUsername,
+		Password:        conf.Settings.WinRMPassword,
+		Server:          conf.Settings.DomainName,
+	}
+	psCmd := NewPSCommand([]string{cmd}, psOpts)
+	result, err := psCmd.Run(conf)
 	if err != nil {
 		return nil, fmt.Errorf("while running Get-ADGroupMember: %s", err)
 	} else if result.ExitCode != 0 {
@@ -88,15 +100,25 @@ func (g *GroupMembership) getGroupMembers(client *winrm.Client, execLocally, pas
 	return gm, nil
 }
 
-func (g *GroupMembership) bulkGroupMembersOp(client *winrm.Client, operation string, members []*GroupMember, execLocally, passCredentials bool, username, password string) error {
+func (g *GroupMembership) bulkGroupMembersOp(conf *config.ProviderConf, operation string, members []*GroupMember) error {
 	if len(members) == 0 {
 		return nil
 	}
 
 	memberList := getMembershipList(members)
 	cmd := fmt.Sprintf("%s -Identity %q %s -Confirm:$false", operation, g.GroupGUID, memberList)
+	psOpts := CreatePSCommandOpts{
+		JSONOutput:      false,
+		ForceArray:      false,
+		ExecLocally:     conf.IsConnectionTypeLocal(),
+		PassCredentials: conf.IsPassCredentialsEnabled(),
+		Username:        conf.Settings.WinRMUsername,
+		Password:        conf.Settings.WinRMPassword,
+		Server:          conf.Settings.DomainName,
+	}
+	psCmd := NewPSCommand([]string{cmd}, psOpts)
+	result, err := psCmd.Run(conf)
 
-	result, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally, passCredentials, username, password)
 	if err != nil {
 		return fmt.Errorf("while running %s: %s", operation, err)
 	} else if result.ExitCode != 0 {
@@ -106,27 +128,27 @@ func (g *GroupMembership) bulkGroupMembersOp(client *winrm.Client, operation str
 	return nil
 }
 
-func (g *GroupMembership) addGroupMembers(client *winrm.Client, members []*GroupMember, execLocally, passCredentials bool, username, password string) error {
-	return g.bulkGroupMembersOp(client, "Add-ADGroupMember", members, execLocally, passCredentials, username, password)
+func (g *GroupMembership) addGroupMembers(conf *config.ProviderConf, members []*GroupMember) error {
+	return g.bulkGroupMembersOp(conf, "Add-ADGroupMember", members)
 }
 
-func (g *GroupMembership) removeGroupMembers(client *winrm.Client, members []*GroupMember, execLocally, passCredentials bool, username, password string) error {
-	return g.bulkGroupMembersOp(client, "Remove-ADGroupMember", members, execLocally, passCredentials, username, password)
+func (g *GroupMembership) removeGroupMembers(conf *config.ProviderConf, members []*GroupMember) error {
+	return g.bulkGroupMembersOp(conf, "Remove-ADGroupMember", members)
 }
 
-func (g *GroupMembership) Update(client *winrm.Client, expected []*GroupMember, execLocally, passCredentials bool, username, password string) error {
-	existing, err := g.getGroupMembers(client, execLocally, passCredentials, username, password)
+func (g *GroupMembership) Update(conf *config.ProviderConf, expected []*GroupMember) error {
+	existing, err := g.getGroupMembers(conf)
 	if err != nil {
 		return err
 	}
 
 	toAdd, toRemove := diffGroupMemberLists(expected, existing)
-	err = g.addGroupMembers(client, toAdd, execLocally, passCredentials, username, password)
+	err = g.addGroupMembers(conf, toAdd)
 	if err != nil {
 		return err
 	}
 
-	err = g.removeGroupMembers(client, toRemove, execLocally, passCredentials, username, password)
+	err = g.removeGroupMembers(conf, toRemove)
 	if err != nil {
 		return err
 	}
@@ -134,14 +156,24 @@ func (g *GroupMembership) Update(client *winrm.Client, expected []*GroupMember, 
 	return nil
 }
 
-func (g *GroupMembership) Create(client *winrm.Client, execLocally, passCredentials bool, username, password string) error {
+func (g *GroupMembership) Create(conf *config.ProviderConf) error {
 	if len(g.GroupMembers) == 0 {
 		return nil
 	}
 
 	memberList := getMembershipList(g.GroupMembers)
-	cmd := []string{fmt.Sprintf("Add-ADGroupMember -Identity %q -Members %s", g.GroupGUID, memberList)}
-	result, err := RunWinRMCommand(client, cmd, false, false, execLocally, passCredentials, username, password)
+	cmds := []string{fmt.Sprintf("Add-ADGroupMember -Identity %q -Members %s", g.GroupGUID, memberList)}
+	psOpts := CreatePSCommandOpts{
+		JSONOutput:      false,
+		ForceArray:      false,
+		ExecLocally:     conf.IsConnectionTypeLocal(),
+		PassCredentials: conf.IsPassCredentialsEnabled(),
+		Username:        conf.Settings.WinRMUsername,
+		Password:        conf.Settings.WinRMPassword,
+		Server:          conf.Settings.DomainName,
+	}
+	psCmd := NewPSCommand(cmds, psOpts)
+	result, err := psCmd.Run(conf)
 	if err != nil {
 		return fmt.Errorf("while running Add-ADGroupMember: %s", err)
 	} else if result.ExitCode != 0 {
@@ -151,9 +183,31 @@ func (g *GroupMembership) Create(client *winrm.Client, execLocally, passCredenti
 	return nil
 }
 
-func (g *GroupMembership) Delete(client *winrm.Client, execLocally, passCredentials bool, username, password string) error {
-	cmd := fmt.Sprintf("Remove-ADGroupMember %q -Members (Get-ADGroupMember %q) -Confirm:$false", g.GroupGUID, g.GroupGUID)
-	result, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally, passCredentials, username, password)
+func (g *GroupMembership) Delete(conf *config.ProviderConf) error {
+	subCmdOpt := CreatePSCommandOpts{
+		JSONOutput:      false,
+		ForceArray:      false,
+		ExecLocally:     conf.IsConnectionTypeLocal(),
+		PassCredentials: conf.IsPassCredentialsEnabled(),
+		Username:        conf.Settings.WinRMUsername,
+		Password:        conf.Settings.WinRMPassword,
+		Server:          conf.Settings.DomainName,
+		SkipCredPrefix:  true,
+	}
+	subcmd := NewPSCommand([]string{fmt.Sprintf("Get-AdGroupMember %q", g.GroupGUID)}, subCmdOpt)
+	cmd := fmt.Sprintf("Remove-ADGroupMember %q -Members (%s) -Confirm:$false", g.GroupGUID, subcmd.String())
+
+	psOpts := CreatePSCommandOpts{
+		JSONOutput:      false,
+		ForceArray:      false,
+		ExecLocally:     conf.IsConnectionTypeLocal(),
+		PassCredentials: conf.IsPassCredentialsEnabled(),
+		Username:        conf.Settings.WinRMUsername,
+		Password:        conf.Settings.WinRMPassword,
+		Server:          conf.Settings.DomainName,
+	}
+	psCmd := NewPSCommand([]string{cmd}, psOpts)
+	result, err := psCmd.Run(conf)
 	if err != nil {
 		return fmt.Errorf("while running Remove-ADGroupMember: %s", err)
 	} else if result.ExitCode != 0 && !strings.Contains(result.StdErr, "InvalidData") {
@@ -162,12 +216,12 @@ func (g *GroupMembership) Delete(client *winrm.Client, execLocally, passCredenti
 	return nil
 }
 
-func NewGroupMembershipFromHost(client *winrm.Client, groupID string, execLocally, passCredentials bool, username, password string) (*GroupMembership, error) {
+func NewGroupMembershipFromHost(conf *config.ProviderConf, groupID string) (*GroupMembership, error) {
 	result := &GroupMembership{
 		GroupGUID: groupID,
 	}
 
-	gm, err := result.getGroupMembers(client, execLocally, passCredentials, username, password)
+	gm, err := result.getGroupMembers(conf)
 	if err != nil {
 		return nil, err
 	}

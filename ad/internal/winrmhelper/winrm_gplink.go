@@ -8,8 +8,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/hashicorp/terraform-provider-ad/ad/internal/config"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/masterzen/winrm"
 )
 
 //GPLink represents an AD Object that links a GPO and another AD object such as a group,
@@ -23,7 +24,7 @@ type GPLink struct {
 }
 
 //NewGPLink creates a link between a GPO and an AD object
-func (g *GPLink) NewGPLink(client *winrm.Client, execLocally, passCredentials bool, username, password string) (string, error) {
+func (g *GPLink) NewGPLink(conf *config.ProviderConf) (string, error) {
 	log.Printf("[DEBUG] Creating new user")
 	enforced := "No"
 	if g.Enforced {
@@ -40,8 +41,22 @@ func (g *GPLink) NewGPLink(client *winrm.Client, execLocally, passCredentials bo
 	if g.Order > 0 {
 		cmds = append(cmds, fmt.Sprintf("-Order %d", g.Order))
 	}
-
-	result, err := RunWinRMCommand(client, cmds, true, false, execLocally, passCredentials, username, password)
+	domainName := conf.Settings.DomainName
+	if conf.Settings.KrbRealm == domainName {
+		domainName = "$env:computername"
+	}
+	psOpts := CreatePSCommandOpts{
+		JSONOutput:      true,
+		ForceArray:      false,
+		ExecLocally:     conf.IsConnectionTypeLocal(),
+		PassCredentials: conf.IsPassCredentialsEnabled(),
+		Username:        conf.Settings.WinRMUsername,
+		Password:        conf.Settings.WinRMPassword,
+		Server:          domainName,
+		InvokeCommand:   conf.IsPassCredentialsEnabled(),
+	}
+	psCmd := NewPSCommand(cmds, psOpts)
+	result, err := psCmd.Run(conf)
 	if err != nil {
 		return "", err
 	}
@@ -59,7 +74,7 @@ func (g *GPLink) NewGPLink(client *winrm.Client, execLocally, passCredentials bo
 		return "", fmt.Errorf("error while unmarshalling gplink json document: %s", err)
 	}
 
-	ou, err := NewOrgUnitFromHost(client, gplink.Target, "", "", execLocally, passCredentials, username, password)
+	ou, err := NewOrgUnitFromHost(conf, gplink.Target, "", "")
 	if err != nil {
 		return "", fmt.Errorf("failed to retrieve details for OU %q: %s", gplink.Target, err)
 	}
@@ -71,7 +86,7 @@ func (g *GPLink) NewGPLink(client *winrm.Client, execLocally, passCredentials bo
 }
 
 //ModifyGPLink changes a GPO link
-func (g *GPLink) ModifyGPLink(client *winrm.Client, changes map[string]interface{}, execLocally, passCredentials bool, username, password string) error {
+func (g *GPLink) ModifyGPLink(conf *config.ProviderConf, changes map[string]interface{}) error {
 	cmds := []string{fmt.Sprintf("Set-GPLink -guid %q -target %q", g.GPOGuid, g.Target)}
 	keyMap := map[string]string{
 		"enforced": "Enforced",
@@ -95,7 +110,22 @@ func (g *GPLink) ModifyGPLink(client *winrm.Client, changes map[string]interface
 	if len(cmds) == 1 {
 		return nil
 	}
-	result, err := RunWinRMCommand(client, cmds, false, false, execLocally, passCredentials, username, password)
+	domainName := conf.Settings.DomainName
+	if conf.Settings.KrbRealm == domainName {
+		domainName = "$env:computername"
+	}
+	psOpts := CreatePSCommandOpts{
+		JSONOutput:      false,
+		ForceArray:      false,
+		ExecLocally:     conf.IsConnectionTypeLocal(),
+		PassCredentials: conf.IsPassCredentialsEnabled(),
+		Username:        conf.Settings.WinRMUsername,
+		Password:        conf.Settings.WinRMPassword,
+		Server:          domainName,
+		InvokeCommand:   conf.IsPassCredentialsEnabled(),
+	}
+	psCmd := NewPSCommand(cmds, psOpts)
+	result, err := psCmd.Run(conf)
 	if err != nil {
 		return fmt.Errorf("error while running Set-GPLink: %s", err)
 	}
@@ -108,15 +138,33 @@ func (g *GPLink) ModifyGPLink(client *winrm.Client, changes map[string]interface
 }
 
 //RemoveGPLink deletes a link between a GPO and an AD object
-func (g *GPLink) RemoveGPLink(client *winrm.Client, execLocally, passCredentials bool, username, password string) error {
+func (g *GPLink) RemoveGPLink(conf *config.ProviderConf) error {
 	cmd := fmt.Sprintf("Remove-GPlink -Guid %q -Target %q", g.GPOGuid, g.Target)
-	_, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally, passCredentials, username, password)
+	domainName := conf.Settings.DomainName
+	if conf.Settings.KrbRealm == domainName {
+		domainName = "$env:computername"
+	}
+	psOpts := CreatePSCommandOpts{
+		JSONOutput:      false,
+		ForceArray:      false,
+		ExecLocally:     conf.IsConnectionTypeLocal(),
+		PassCredentials: conf.IsPassCredentialsEnabled(),
+		Username:        conf.Settings.WinRMUsername,
+		Password:        conf.Settings.WinRMPassword,
+		Server:          domainName,
+		InvokeCommand:   conf.IsPassCredentialsEnabled(),
+	}
+	psCmd := NewPSCommand([]string{cmd}, psOpts)
+	result, err := psCmd.Run(conf)
 	if err != nil {
-		// Check if the resource is already deleted
-		if strings.Contains(err.Error(), "GpoLinkNotFound") || strings.Contains(err.Error(), "GpoWithIdNotFound") || strings.Contains(err.Error(), "There is no such object on the server") {
+		return fmt.Errorf("while removing GPLink: %s", err)
+	} else if result.ExitCode != 0 {
+		stderr := result.StdErr
+		if strings.Contains(stderr, "GpoLinkNotFound") || strings.Contains(stderr, "GpoWithIdNotFound") || strings.Contains(stderr, "There is no such object on the server") {
+			// Check if the resource is already deleted
 			return nil
 		}
-		return err
+		return fmt.Errorf("while removing GPLink: %s", stderr)
 	}
 	return nil
 }
@@ -136,9 +184,19 @@ func GetGPLinkFromResource(d *schema.ResourceData) *GPLink {
 
 //GetGPLinkFromHost returns a GPLink struct populated with data retrieved from the
 //Domain Controller
-func GetGPLinkFromHost(client *winrm.Client, gpoGUID, containerGUID string, execLocally, passCredentials bool, username, password string) (*GPLink, error) {
+func GetGPLinkFromHost(conf *config.ProviderConf, gpoGUID, containerGUID string) (*GPLink, error) {
 	cmds := []string{fmt.Sprintf("Get-ADObject -filter {ObjectGUID -eq %q} -properties gplink", containerGUID)}
-	result, err := RunWinRMCommand(client, cmds, true, false, execLocally, passCredentials, username, password)
+	psOpts := CreatePSCommandOpts{
+		JSONOutput:      true,
+		ForceArray:      false,
+		ExecLocally:     conf.IsConnectionTypeLocal(),
+		PassCredentials: conf.IsPassCredentialsEnabled(),
+		Username:        conf.Settings.WinRMUsername,
+		Password:        conf.Settings.WinRMPassword,
+		Server:          conf.Settings.DomainName,
+	}
+	psCmd := NewPSCommand(cmds, psOpts)
+	result, err := psCmd.Run(conf)
 	if err != nil {
 		return nil, fmt.Errorf("while running Get-ADObject: %s", err)
 	}
@@ -213,6 +271,9 @@ func unmarshallNewGPLink(input []byte) (*GPLink, error) {
 	if err != nil {
 		log.Printf("[DEBUG] Failed to unmarshall json document with error %q, document was: %s", err, string(input))
 		return nil, fmt.Errorf("failed while unmarshalling json response: %s", err)
+	}
+	if gplink.Target == "" {
+		return nil, fmt.Errorf("invalid data while unmarshalling GPLink data, json doc was: %s", string(input))
 	}
 	return gplink, nil
 }

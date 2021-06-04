@@ -3,6 +3,8 @@ package ad
 import (
 	"strings"
 
+	"github.com/hashicorp/terraform-provider-ad/ad/internal/config"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/terraform-provider-ad/ad/internal/winrmhelper"
@@ -54,16 +56,8 @@ func resourceADGPO() *schema.Resource {
 }
 
 func resourceADGPOCreate(d *schema.ResourceData, meta interface{}) error {
-	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
-	isPassCredentialsEnabled := meta.(ProviderConf).isPassCredentialsEnabled()
 	g := winrmhelper.GetGPOFromResource(d)
-	client, err := meta.(ProviderConf).AcquireWinRMClient()
-	if err != nil {
-		return err
-	}
-	defer meta.(ProviderConf).ReleaseWinRMClient(client)
-
-	guid, err := g.NewGPO(client, isLocal, isPassCredentialsEnabled, meta.(ProviderConf).Configuration.WinRMUsername, meta.(ProviderConf).Configuration.WinRMPassword)
+	guid, err := g.NewGPO(meta.(*config.ProviderConf))
 	if err != nil {
 		return err
 	}
@@ -75,15 +69,7 @@ func resourceADGPORead(d *schema.ResourceData, meta interface{}) error {
 	if d.Id() == "" {
 		return nil
 	}
-	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
-	isPassCredentialsEnabled := meta.(ProviderConf).isPassCredentialsEnabled()
-	client, err := meta.(ProviderConf).AcquireWinRMClient()
-	if err != nil {
-		return err
-	}
-	defer meta.(ProviderConf).ReleaseWinRMClient(client)
-
-	g, err := winrmhelper.GetGPOFromHost(client, "", d.Id(), isLocal, isPassCredentialsEnabled, meta.(ProviderConf).Configuration.WinRMUsername, meta.(ProviderConf).Configuration.WinRMPassword)
+	g, err := winrmhelper.GetGPOFromHost(meta.(*config.ProviderConf), "", d.Id())
 	if err != nil {
 		if strings.Contains(err.Error(), "GpoWithNameNotFound") || strings.Contains(err.Error(), "GpoWithIdNotFound") {
 			d.SetId("")
@@ -100,16 +86,8 @@ func resourceADGPORead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceADGPOUpdate(d *schema.ResourceData, meta interface{}) error {
-	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
-	isPassCredentialsEnabled := meta.(ProviderConf).isPassCredentialsEnabled()
-	client, err := meta.(ProviderConf).AcquireWinRMClient()
-	if err != nil {
-		return err
-	}
-	defer meta.(ProviderConf).ReleaseWinRMClient(client)
-
 	g := winrmhelper.GetGPOFromResource(d)
-	_, err = g.UpdateGPO(client, d, isLocal, isPassCredentialsEnabled, meta.(ProviderConf).Configuration.WinRMUsername, meta.(ProviderConf).Configuration.WinRMPassword)
+	_, err := g.UpdateGPO(meta.(*config.ProviderConf), d)
 	if err != nil {
 		return err
 	}
@@ -117,18 +95,10 @@ func resourceADGPOUpdate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceADGPODelete(d *schema.ResourceData, meta interface{}) error {
-	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
-	isPassCredentialsEnabled := meta.(ProviderConf).isPassCredentialsEnabled()
-	client, err := meta.(ProviderConf).AcquireWinRMClient()
-	if err != nil {
-		return err
-	}
-	defer meta.(ProviderConf).ReleaseWinRMClient(client)
-
 	g := winrmhelper.GetGPOFromResource(d)
-	err = g.DeleteGPO(client, isLocal, isPassCredentialsEnabled, meta.(ProviderConf).Configuration.WinRMUsername, meta.(ProviderConf).Configuration.WinRMPassword)
+	err := g.DeleteGPO(meta.(*config.ProviderConf))
 	if err != nil {
 		return err
 	}
-	return resourceADGPORead(d, meta)
+	return nil
 }

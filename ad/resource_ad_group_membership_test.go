@@ -5,13 +5,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/hashicorp/terraform-provider-ad/ad/internal/config"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/hashicorp/terraform-provider-ad/ad/internal/winrmhelper"
 )
 
 func TestAccResourceADGroupMembership_basic(t *testing.T) {
-
 	envVars := []string{
 		"TF_VAR_ad_group_name",
 		"TF_VAR_ad_group_sam",
@@ -88,13 +89,9 @@ func testAccResourceADGroupMembershipExists(resourceName string, expected bool, 
 		if !ok {
 			return fmt.Errorf("%s resource not found", resourceName)
 		}
-		client, err := testAccProvider.Meta().(ProviderConf).AcquireWinRMClient()
-		if err != nil {
-			return err
-		}
-		defer testAccProvider.Meta().(ProviderConf).ReleaseWinRMClient(client)
+
 		toks := strings.Split(rs.Primary.ID, "_")
-		gm, err := winrmhelper.NewGroupMembershipFromHost(client, toks[0], false)
+		gm, err := winrmhelper.NewGroupMembershipFromHost(testAccProvider.Meta().(*config.ProviderConf), toks[0])
 		if err != nil {
 			if strings.Contains(err.Error(), "ADIdentityNotFoundException") && !expected {
 				return nil

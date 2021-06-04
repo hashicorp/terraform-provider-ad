@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/hashicorp/terraform-provider-ad/ad/internal/config"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/structure"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -355,17 +357,10 @@ func testAccResourceADUserConfigUAC(enabled, expires string) string {
 
 func retrieveADUserFromRunningState(name string, s *terraform.State, attributeList []string) (*winrmhelper.User, error) {
 	rs, ok := s.RootModule().Resources[name]
-
 	if !ok {
 		return nil, fmt.Errorf("%s key not found in state", name)
 	}
-	client, err := testAccProvider.Meta().(ProviderConf).AcquireWinRMClient()
-	if err != nil {
-		return nil, err
-	}
-	defer testAccProvider.Meta().(ProviderConf).ReleaseWinRMClient(client)
-
-	u, err := winrmhelper.GetUserFromHost(client, rs.Primary.ID, attributeList, false)
+	u, err := winrmhelper.GetUserFromHost(testAccProvider.Meta().(*config.ProviderConf), rs.Primary.ID, attributeList)
 
 	return u, err
 

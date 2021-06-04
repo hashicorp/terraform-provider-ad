@@ -6,8 +6,9 @@ import (
 	"log"
 	"strings"
 
+	"github.com/hashicorp/terraform-provider-ad/ad/internal/config"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/masterzen/winrm"
 )
 
 // Computer struct represents an AD Computer account object
@@ -35,9 +36,24 @@ func NewComputerFromResource(d *schema.ResourceData) *Computer {
 
 // NewComputerFromHost return a new Machine struct populated from data we get
 // from the domain controller
-func NewComputerFromHost(conn *winrm.Client, identity string, execLocally, passCredentials bool, username, password string) (*Computer, error) {
+func NewComputerFromHost(conf *config.ProviderConf, identity string) (*Computer, error) {
 	cmd := fmt.Sprintf("Get-ADComputer -Identity %q -Properties *", identity)
-	result, err := RunWinRMCommand(conn, []string{cmd}, true, false, execLocally, passCredentials, username, password)
+	conn, err := conf.AcquireWinRMClient()
+	if err != nil {
+		return nil, fmt.Errorf("while acquiring winrm client: %s", err)
+	}
+	defer conf.ReleaseWinRMClient(conn)
+	psOpts := CreatePSCommandOpts{
+		JSONOutput:      true,
+		ForceArray:      false,
+		ExecLocally:     conf.IsConnectionTypeLocal(),
+		PassCredentials: conf.IsPassCredentialsEnabled(),
+		Username:        conf.Settings.WinRMUsername,
+		Password:        conf.Settings.WinRMPassword,
+		Server:          conf.Settings.DomainName,
+	}
+	psCmd := NewPSCommand([]string{cmd}, psOpts)
+	result, err := psCmd.Run(conf)
 	if err != nil {
 		return nil, fmt.Errorf("winrm execution failure in NewComputerFromHost: %s", err)
 	}
@@ -55,7 +71,7 @@ func NewComputerFromHost(conn *winrm.Client, identity string, execLocally, passC
 }
 
 // Create creates a new Computer object in the AD tree
-func (m *Computer) Create(conn *winrm.Client, execLocally, passCredentials bool, username, password string) (string, error) {
+func (m *Computer) Create(conf *config.ProviderConf) (string, error) {
 	if m.Name == "" {
 		return "", fmt.Errorf("Computer.Create: missing name variable")
 	}
@@ -73,7 +89,17 @@ func (m *Computer) Create(conn *winrm.Client, execLocally, passCredentials bool,
 		cmd = fmt.Sprintf("%s -Description %q", cmd, m.Description)
 	}
 
-	result, err := RunWinRMCommand(conn, []string{cmd}, true, false, execLocally, passCredentials, username, password)
+	psOpts := CreatePSCommandOpts{
+		JSONOutput:      true,
+		ForceArray:      false,
+		ExecLocally:     conf.IsConnectionTypeLocal(),
+		PassCredentials: conf.IsPassCredentialsEnabled(),
+		Username:        conf.Settings.WinRMUsername,
+		Password:        conf.Settings.WinRMPassword,
+		Server:          conf.Settings.DomainName,
+	}
+	psCmd := NewPSCommand([]string{cmd}, psOpts)
+	result, err := psCmd.Run(conf)
 	if err != nil {
 		return "", fmt.Errorf("winrm execution failure while creating computer object: %s", err)
 	}
@@ -90,14 +116,29 @@ func (m *Computer) Create(conn *winrm.Client, execLocally, passCredentials bool,
 }
 
 // Update updates an existing Computer objects in the AD tree
-func (m *Computer) Update(conn *winrm.Client, changes map[string]interface{}, execLocally, passCredentials bool, username, password string) error {
+func (m *Computer) Update(conf *config.ProviderConf, changes map[string]interface{}) error {
 	if m.GUID == "" {
 		return fmt.Errorf("cannot update computer object with name %q, guid is not set", m.Name)
 	}
 
 	if path, ok := changes["container"]; ok {
 		cmd := fmt.Sprintf("Move-AdObject -Identity %q -TargetPath %q", m.GUID, path.(string))
-		result, err := RunWinRMCommand(conn, []string{cmd}, true, false, execLocally, passCredentials, username, password)
+		conn, err := conf.AcquireWinRMClient()
+		if err != nil {
+			return fmt.Errorf("while acquiring winrm client: %s", err)
+		}
+		defer conf.ReleaseWinRMClient(conn)
+		psOpts := CreatePSCommandOpts{
+			JSONOutput:      true,
+			ForceArray:      false,
+			ExecLocally:     conf.IsConnectionTypeLocal(),
+			PassCredentials: conf.IsPassCredentialsEnabled(),
+			Username:        conf.Settings.WinRMUsername,
+			Password:        conf.Settings.WinRMPassword,
+			Server:          conf.Settings.DomainName,
+		}
+		psCmd := NewPSCommand([]string{cmd}, psOpts)
+		result, err := psCmd.Run(conf)
 		if err != nil {
 			return fmt.Errorf("winrm execution failure while moving computer object: %s", err)
 		}
@@ -113,7 +154,22 @@ func (m *Computer) Update(conn *winrm.Client, changes map[string]interface{}, ex
 			description = fmt.Sprintf("%q", description)
 		}
 		cmd := fmt.Sprintf("Set-ADComputer -Identity %q -Description %s", m.GUID, description)
-		result, err := RunWinRMCommand(conn, []string{cmd}, true, false, execLocally, passCredentials, username, password)
+		conn, err := conf.AcquireWinRMClient()
+		if err != nil {
+			return fmt.Errorf("while acquiring winrm client: %s", err)
+		}
+		defer conf.ReleaseWinRMClient(conn)
+		psOpts := CreatePSCommandOpts{
+			JSONOutput:      true,
+			ForceArray:      false,
+			ExecLocally:     conf.IsConnectionTypeLocal(),
+			PassCredentials: conf.IsPassCredentialsEnabled(),
+			Username:        conf.Settings.WinRMUsername,
+			Password:        conf.Settings.WinRMPassword,
+			Server:          conf.Settings.DomainName,
+		}
+		psCmd := NewPSCommand([]string{cmd}, psOpts)
+		result, err := psCmd.Run(conf)
 		if err != nil {
 			return fmt.Errorf("winrm execution failure while modifying computer description: %s", err)
 		}
@@ -126,9 +182,24 @@ func (m *Computer) Update(conn *winrm.Client, changes map[string]interface{}, ex
 }
 
 // Delete deletes an existing Computer objects from the AD tree
-func (m *Computer) Delete(conn *winrm.Client, execLocally, passCredentials bool, username, password string) error {
+func (m *Computer) Delete(conf *config.ProviderConf) error {
 	cmd := fmt.Sprintf("Remove-ADComputer -confirm:$false -Identity %q", m.GUID)
-	result, err := RunWinRMCommand(conn, []string{cmd}, false, false, execLocally, passCredentials, username, password)
+	conn, err := conf.AcquireWinRMClient()
+	if err != nil {
+		return fmt.Errorf("while acquiring winrm client: %s", err)
+	}
+	defer conf.ReleaseWinRMClient(conn)
+	psOpts := CreatePSCommandOpts{
+		JSONOutput:      true,
+		ForceArray:      false,
+		ExecLocally:     conf.IsConnectionTypeLocal(),
+		PassCredentials: conf.IsPassCredentialsEnabled(),
+		Username:        conf.Settings.WinRMUsername,
+		Password:        conf.Settings.WinRMPassword,
+		Server:          conf.Settings.DomainName,
+	}
+	psCmd := NewPSCommand([]string{cmd}, psOpts)
+	result, err := psCmd.Run(conf)
 	if err != nil {
 		return fmt.Errorf("winrm execution failure while removing computer object: %s", err)
 	}
@@ -144,6 +215,9 @@ func unmarshallComputer(input []byte) (*Computer, error) {
 	if err != nil {
 		log.Printf("[DEBUG] Failed to unmarshall an ADComputer json document with error %q, document was %s", err, string(input))
 		return nil, fmt.Errorf("failed while unmarshalling ADComputer json document: %s", err)
+	}
+	if computer.GUID == "" {
+		return nil, fmt.Errorf("invalid data while unmarshalling Computer data, json doc was: %s", string(input))
 	}
 	return &computer, nil
 }

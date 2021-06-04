@@ -6,8 +6,9 @@ import (
 	"log"
 	"strings"
 
+	"github.com/hashicorp/terraform-provider-ad/ad/internal/config"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/masterzen/winrm"
 )
 
 // Group represents an AD Group
@@ -26,7 +27,7 @@ type Group struct {
 }
 
 // AddGroup creates a new group
-func (g *Group) AddGroup(client *winrm.Client, execLocally, passCredentials bool, username, password string) (string, error) {
+func (g *Group) AddGroup(conf *config.ProviderConf) (string, error) {
 	log.Printf("[DEBUG] Adding group with name %q", g.Name)
 	cmds := []string{fmt.Sprintf("New-ADGroup -Passthru -Name %q -GroupScope %q -GroupCategory %q -Path %q", g.Name, g.Scope, g.Category, g.Container)}
 
@@ -37,8 +38,17 @@ func (g *Group) AddGroup(client *winrm.Client, execLocally, passCredentials bool
 	if g.Description != "" {
 		cmds = append(cmds, fmt.Sprintf("-Description %q", g.Description))
 	}
-
-	result, err := RunWinRMCommand(client, cmds, true, false, execLocally, passCredentials, username, password)
+	psOpts := CreatePSCommandOpts{
+		JSONOutput:      true,
+		ForceArray:      false,
+		ExecLocally:     conf.IsConnectionTypeLocal(),
+		PassCredentials: conf.IsPassCredentialsEnabled(),
+		Username:        conf.Settings.WinRMUsername,
+		Password:        conf.Settings.WinRMPassword,
+		Server:          conf.Settings.DomainName,
+	}
+	psCmd := NewPSCommand(cmds, psOpts)
+	result, err := psCmd.Run(conf)
 	if err != nil {
 		return "", err
 	}
@@ -60,7 +70,7 @@ func (g *Group) AddGroup(client *winrm.Client, execLocally, passCredentials bool
 }
 
 // ModifyGroup updates an existing group
-func (g *Group) ModifyGroup(d *schema.ResourceData, client *winrm.Client, execLocally, passCredentials bool, username, password string) error {
+func (g *Group) ModifyGroup(d *schema.ResourceData, conf *config.ProviderConf) error {
 	KeyMap := map[string]string{
 		"sam_account_name": "SamAccountName",
 		"scope":            "GroupScope",
@@ -83,7 +93,17 @@ func (g *Group) ModifyGroup(d *schema.ResourceData, client *winrm.Client, execLo
 	}
 
 	if len(cmds) > 1 {
-		result, err := RunWinRMCommand(client, cmds, false, false, execLocally, passCredentials, username, password)
+		psOpts := CreatePSCommandOpts{
+			JSONOutput:      false,
+			ForceArray:      false,
+			ExecLocally:     conf.IsConnectionTypeLocal(),
+			PassCredentials: conf.IsPassCredentialsEnabled(),
+			Username:        conf.Settings.WinRMUsername,
+			Password:        conf.Settings.WinRMPassword,
+			Server:          conf.Settings.DomainName,
+		}
+		psCmd := NewPSCommand(cmds, psOpts)
+		result, err := psCmd.Run(conf)
 		if err != nil {
 			return err
 		}
@@ -94,8 +114,18 @@ func (g *Group) ModifyGroup(d *schema.ResourceData, client *winrm.Client, execLo
 	}
 
 	if d.HasChange("name") {
-		cmds := fmt.Sprintf("Rename-ADObject -Identity %q -NewName %q", g.GUID, d.Get("name").(string))
-		result, err := RunWinRMCommand(client, []string{cmds}, false, false, execLocally, passCredentials, username, password)
+		cmd := fmt.Sprintf("Rename-ADObject -Identity %q -NewName %q", g.GUID, d.Get("name").(string))
+		psOpts := CreatePSCommandOpts{
+			JSONOutput:      false,
+			ForceArray:      false,
+			ExecLocally:     conf.IsConnectionTypeLocal(),
+			PassCredentials: conf.IsPassCredentialsEnabled(),
+			Username:        conf.Settings.WinRMUsername,
+			Password:        conf.Settings.WinRMPassword,
+			Server:          conf.Settings.DomainName,
+		}
+		psCmd := NewPSCommand([]string{cmd}, psOpts)
+		result, err := psCmd.Run(conf)
 		if err != nil {
 			return err
 		}
@@ -107,7 +137,17 @@ func (g *Group) ModifyGroup(d *schema.ResourceData, client *winrm.Client, execLo
 
 	if d.HasChange("container") {
 		cmd := fmt.Sprintf("Move-ADObject -Identity %q -TargetPath %q", g.GUID, d.Get("container").(string))
-		result, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally, passCredentials, username, password)
+		psOpts := CreatePSCommandOpts{
+			JSONOutput:      false,
+			ForceArray:      false,
+			ExecLocally:     conf.IsConnectionTypeLocal(),
+			PassCredentials: conf.IsPassCredentialsEnabled(),
+			Username:        conf.Settings.WinRMUsername,
+			Password:        conf.Settings.WinRMPassword,
+			Server:          conf.Settings.DomainName,
+		}
+		psCmd := NewPSCommand([]string{cmd}, psOpts)
+		result, err := psCmd.Run(conf)
 		if err != nil {
 			return fmt.Errorf("winrm execution failure while moving group object: %s", err)
 		}
@@ -120,15 +160,27 @@ func (g *Group) ModifyGroup(d *schema.ResourceData, client *winrm.Client, execLo
 }
 
 // DeleteGroup removes a group
-func (g *Group) DeleteGroup(client *winrm.Client, execLocally, passCredentials bool, username, password string) error {
+func (g *Group) DeleteGroup(conf *config.ProviderConf) error {
 	cmd := fmt.Sprintf("Remove-ADGroup -Identity %s -Confirm:$false", g.GUID)
-	_, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally, passCredentials, username, password)
+	psOpts := CreatePSCommandOpts{
+		JSONOutput:      false,
+		ForceArray:      false,
+		ExecLocally:     conf.IsConnectionTypeLocal(),
+		PassCredentials: conf.IsPassCredentialsEnabled(),
+		Username:        conf.Settings.WinRMUsername,
+		Password:        conf.Settings.WinRMPassword,
+		Server:          conf.Settings.DomainName,
+	}
+	psCmd := NewPSCommand([]string{cmd}, psOpts)
+	result, err := psCmd.Run(conf)
 	if err != nil {
 		// Check if the resource is already deleted
 		if strings.Contains(err.Error(), "ADIdentityNotFoundException") {
 			return nil
 		}
 		return err
+	} else if result.ExitCode != 0 {
+		return fmt.Errorf("while removing group: stderr: %s", result.StdErr)
 	}
 	return nil
 }
@@ -150,9 +202,20 @@ func GetGroupFromResource(d *schema.ResourceData) *Group {
 
 // GetGroupFromHost returns a Group struct based on data
 // retrieved from the AD Controller.
-func GetGroupFromHost(client *winrm.Client, guid string, execLocally, passCredentials bool, username, password string) (*Group, error) {
+func GetGroupFromHost(conf *config.ProviderConf, guid string) (*Group, error) {
 	cmd := fmt.Sprintf("Get-ADGroup -identity %q -properties *", guid)
-	result, err := RunWinRMCommand(client, []string{cmd}, true, false, execLocally, passCredentials, username, password)
+	psOpts := CreatePSCommandOpts{
+		JSONOutput:      true,
+		ForceArray:      false,
+		ExecLocally:     conf.IsConnectionTypeLocal(),
+		PassCredentials: conf.IsPassCredentialsEnabled(),
+		Username:        conf.Settings.WinRMUsername,
+		Password:        conf.Settings.WinRMPassword,
+		Server:          conf.Settings.DomainName,
+	}
+	psCmd := NewPSCommand([]string{cmd}, psOpts)
+	result, err := psCmd.Run(conf)
+
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +243,9 @@ func unmarshallGroup(input []byte) (*Group, error) {
 		log.Printf("[DEBUG] Failed to unmarshall json document with error %q, document was: %s", err, string(input))
 		return nil, fmt.Errorf("failed while unmarshalling json response: %s", err)
 	}
-
+	if g.GUID == "" {
+		return nil, fmt.Errorf("invalid data while unmarshalling Group data, json doc was: %s", string(input))
+	}
 	scopes := []string{"domainlocal", "global", "universal"}
 	categories := []string{"distribution", "security"}
 

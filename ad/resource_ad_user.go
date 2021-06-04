@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/hashicorp/terraform-provider-ad/ad/internal/config"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/structure"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -251,19 +253,12 @@ func suppressJsonDiff(k, old, new string, d *schema.ResourceData) bool {
 }
 
 func resourceADUserCreate(d *schema.ResourceData, meta interface{}) error {
-	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
-	isPassCredentialsEnabled := meta.(ProviderConf).isPassCredentialsEnabled()
 	u, err := winrmhelper.GetUserFromResource(d)
 	if err != nil {
 		return fmt.Errorf("while building a User struct from resource data: %s", err)
 	}
-	client, err := meta.(ProviderConf).AcquireWinRMClient()
-	if err != nil {
-		return err
-	}
-	defer meta.(ProviderConf).ReleaseWinRMClient(client)
 
-	guid, err := u.NewUser(client, isLocal, isPassCredentialsEnabled, meta.(ProviderConf).Configuration.WinRMUsername, meta.(ProviderConf).Configuration.WinRMPassword)
+	guid, err := u.NewUser(meta.(*config.ProviderConf))
 	if err != nil {
 		return err
 	}
@@ -286,21 +281,13 @@ func resourceADUserCreate(d *schema.ResourceData, meta interface{}) error {
 
 func resourceADUserRead(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("Reading ad_user resource for user with guid: %q", d.Id())
-	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
-	isPassCredentialsEnabled := meta.(ProviderConf).isPassCredentialsEnabled()
-	client, err := meta.(ProviderConf).AcquireWinRMClient()
-	if err != nil {
-		return err
-	}
-	defer meta.(ProviderConf).ReleaseWinRMClient(client)
-
 	// get attribute keys from json blob
 	caKeys, err := extractCustAttrKeys(d)
 	if err != nil {
 		return err
 	}
 
-	u, err := winrmhelper.GetUserFromHost(client, d.Id(), caKeys, isLocal, isPassCredentialsEnabled, meta.(ProviderConf).Configuration.WinRMUsername, meta.(ProviderConf).Configuration.WinRMPassword)
+	u, err := winrmhelper.GetUserFromHost(meta.(*config.ProviderConf), d.Id(), caKeys)
 	if err != nil {
 		if strings.Contains(err.Error(), "ADIdentityNotFoundException") {
 			d.SetId("")
@@ -362,20 +349,12 @@ func resourceADUserRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceADUserUpdate(d *schema.ResourceData, meta interface{}) error {
-	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
-	isPassCredentialsEnabled := meta.(ProviderConf).isPassCredentialsEnabled()
 	u, err := winrmhelper.GetUserFromResource(d)
 	if err != nil {
 		return err
 	}
 
-	client, err := meta.(ProviderConf).AcquireWinRMClient()
-	if err != nil {
-		return err
-	}
-	defer meta.(ProviderConf).ReleaseWinRMClient(client)
-
-	err = u.ModifyUser(d, client, isLocal, isPassCredentialsEnabled, meta.(ProviderConf).Configuration.WinRMUsername, meta.(ProviderConf).Configuration.WinRMPassword)
+	err = u.ModifyUser(d, meta.(*config.ProviderConf))
 	if err != nil {
 		return err
 	}
@@ -383,26 +362,18 @@ func resourceADUserUpdate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceADUserDelete(d *schema.ResourceData, meta interface{}) error {
-	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
-	isPassCredentialsEnabled := meta.(ProviderConf).isPassCredentialsEnabled()
-	client, err := meta.(ProviderConf).AcquireWinRMClient()
-	if err != nil {
-		return err
-	}
-	defer meta.(ProviderConf).ReleaseWinRMClient(client)
-
-	u, err := winrmhelper.GetUserFromHost(client, d.Id(), nil, isLocal, isPassCredentialsEnabled, meta.(ProviderConf).Configuration.WinRMUsername, meta.(ProviderConf).Configuration.WinRMPassword)
+	u, err := winrmhelper.GetUserFromHost(meta.(*config.ProviderConf), d.Id(), nil)
 	if err != nil {
 		if strings.Contains(err.Error(), "ADIdentityNotFoundException") {
 			return nil
 		}
 		return fmt.Errorf("while retrieving user data from host: %s", err)
 	}
-	err = u.DeleteUser(client, isLocal, isPassCredentialsEnabled, meta.(ProviderConf).Configuration.WinRMUsername, meta.(ProviderConf).Configuration.WinRMPassword)
+	err = u.DeleteUser(meta.(*config.ProviderConf))
 	if err != nil {
 		return fmt.Errorf("while deleting user: %s", err)
 	}
-	return resourceADUserRead(d, meta)
+	return nil
 }
 
 func extractCustAttrKeys(d *schema.ResourceData) ([]string, error) {

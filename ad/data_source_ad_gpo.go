@@ -3,6 +3,8 @@ package ad
 import (
 	"strings"
 
+	"github.com/hashicorp/terraform-provider-ad/ad/internal/config"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-provider-ad/ad/internal/winrmhelper"
 )
@@ -32,18 +34,9 @@ func dataSourceADGPO() *schema.Resource {
 }
 
 func dataSourceADGPORead(d *schema.ResourceData, meta interface{}) error {
-	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
-	isPassCredentialsEnabled := meta.(ProviderConf).isPassCredentialsEnabled()
 	name := winrmhelper.SanitiseTFInput(d, "name")
 	guid := winrmhelper.SanitiseTFInput(d, "guid")
-
-	client, err := meta.(ProviderConf).AcquireWinRMClient()
-	if err != nil {
-		return err
-	}
-	defer meta.(ProviderConf).ReleaseWinRMClient(client)
-
-	gpo, err := winrmhelper.GetGPOFromHost(client, name, guid, isLocal, isPassCredentialsEnabled, meta.(ProviderConf).Configuration.WinRMUsername, meta.(ProviderConf).Configuration.WinRMPassword)
+	gpo, err := winrmhelper.GetGPOFromHost(meta.(*config.ProviderConf), name, guid)
 	if err != nil {
 		if strings.Contains(err.Error(), "GpoWithNameNotFound") || strings.Contains(err.Error(), "GpoWithIdNotFound") {
 			d.SetId("")
