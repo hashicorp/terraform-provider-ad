@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hashicorp/terraform-provider-ad/ad/internal/config"
+
 	"github.com/hashicorp/go-uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-provider-ad/ad/internal/winrmhelper"
@@ -38,16 +40,9 @@ func resourceADGroupMembership() *schema.Resource {
 }
 
 func resourceADGroupMembershipRead(d *schema.ResourceData, meta interface{}) error {
-	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
-	client, err := meta.(ProviderConf).AcquireWinRMClient()
-	if err != nil {
-		return err
-	}
-	defer meta.(ProviderConf).ReleaseWinRMClient(client)
-
 	toks := strings.Split(d.Id(), "_")
 
-	gm, err := winrmhelper.NewGroupMembershipFromHost(client, toks[0], isLocal)
+	gm, err := winrmhelper.NewGroupMembershipFromHost(meta.(*config.ProviderConf), toks[0])
 	if err != nil {
 		return err
 	}
@@ -62,19 +57,12 @@ func resourceADGroupMembershipRead(d *schema.ResourceData, meta interface{}) err
 }
 
 func resourceADGroupMembershipCreate(d *schema.ResourceData, meta interface{}) error {
-	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
-	client, err := meta.(ProviderConf).AcquireWinRMClient()
-	if err != nil {
-		return err
-	}
-	defer meta.(ProviderConf).ReleaseWinRMClient(client)
-
 	gm, err := winrmhelper.NewGroupMembershipFromState(d)
 	if err != nil {
 		return err
 	}
 
-	err = gm.Create(client, isLocal)
+	err = gm.Create(meta.(*config.ProviderConf))
 	if err != nil {
 		return err
 	}
@@ -91,19 +79,12 @@ func resourceADGroupMembershipCreate(d *schema.ResourceData, meta interface{}) e
 }
 
 func resourceADGroupMembershipUpdate(d *schema.ResourceData, meta interface{}) error {
-	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
-	client, err := meta.(ProviderConf).AcquireWinRMClient()
-	if err != nil {
-		return err
-	}
-	defer meta.(ProviderConf).ReleaseWinRMClient(client)
-
 	gm, err := winrmhelper.NewGroupMembershipFromState(d)
 	if err != nil {
 		return err
 	}
 
-	err = gm.Update(client, gm.GroupMembers, isLocal)
+	err = gm.Update(meta.(*config.ProviderConf), gm.GroupMembers)
 	if err != nil {
 		return err
 	}
@@ -112,19 +93,12 @@ func resourceADGroupMembershipUpdate(d *schema.ResourceData, meta interface{}) e
 }
 
 func resourceADGroupMembershipDelete(d *schema.ResourceData, meta interface{}) error {
-	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
-	client, err := meta.(ProviderConf).AcquireWinRMClient()
-	if err != nil {
-		return err
-	}
-	defer meta.(ProviderConf).ReleaseWinRMClient(client)
-
 	gm, err := winrmhelper.NewGroupMembershipFromState(d)
 	if err != nil {
 		return err
 	}
 
-	err = gm.Delete(client, isLocal)
+	err = gm.Delete(meta.(*config.ProviderConf))
 	if err != nil {
 		return err
 	}

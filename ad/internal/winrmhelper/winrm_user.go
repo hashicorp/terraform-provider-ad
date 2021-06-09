@@ -7,10 +7,11 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/hashicorp/terraform-provider-ad/ad/internal/config"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/structure"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/masterzen/winrm"
 )
 
 // User represents an AD User
@@ -62,7 +63,7 @@ type User struct {
 }
 
 // NewUser creates the user by running the New-ADUser powershell command
-func (u *User) NewUser(client *winrm.Client, execLocally bool) (string, error) {
+func (u *User) NewUser(conf *config.ProviderConf) (string, error) {
 	if u.Username == "" {
 		return "", fmt.Errorf("user principal name required")
 	}
@@ -211,9 +212,19 @@ func (u *User) NewUser(client *winrm.Client, execLocally bool) (string, error) {
 			return "", err
 		}
 		cmds = append(cmds, fmt.Sprintf("-OtherAttributes %s", attrs))
-
 	}
-	result, err := RunWinRMCommand(client, cmds, true, false, execLocally)
+
+	psOpts := CreatePSCommandOpts{
+		JSONOutput:      true,
+		ForceArray:      false,
+		ExecLocally:     conf.IsConnectionTypeLocal(),
+		PassCredentials: conf.IsPassCredentialsEnabled(),
+		Username:        conf.Settings.WinRMUsername,
+		Password:        conf.Settings.WinRMPassword,
+		Server:          conf.Settings.DomainName,
+	}
+	psCmd := NewPSCommand(cmds, psOpts)
+	result, err := psCmd.Run(conf)
 	if err != nil {
 		return "", err
 	}
@@ -234,7 +245,7 @@ func (u *User) NewUser(client *winrm.Client, execLocally bool) (string, error) {
 }
 
 // ModifyUser updates the AD user's details based on what's changed in the resource.
-func (u *User) ModifyUser(d *schema.ResourceData, client *winrm.Client, execLocally bool) error {
+func (u *User) ModifyUser(d *schema.ResourceData, conf *config.ProviderConf) error {
 	log.Printf("Modifying user: %q", u.PrincipalName)
 	strKeyMap := map[string]string{
 		"sam_account_name": "SamAccountName",
@@ -374,7 +385,18 @@ func (u *User) ModifyUser(d *schema.ResourceData, client *winrm.Client, execLoca
 	}
 
 	if len(cmds) > 1 {
-		result, err := RunWinRMCommand(client, cmds, false, false, execLocally)
+		psOpts := CreatePSCommandOpts{
+			JSONOutput:      false,
+			ForceArray:      false,
+			ExecLocally:     conf.IsConnectionTypeLocal(),
+			PassCredentials: conf.IsPassCredentialsEnabled(),
+			Username:        conf.Settings.WinRMUsername,
+			Password:        conf.Settings.WinRMPassword,
+			Server:          conf.Settings.DomainName,
+		}
+		psCmd := NewPSCommand(cmds, psOpts)
+		result, err := psCmd.Run(conf)
+
 		if err != nil {
 			return err
 		}
@@ -386,7 +408,17 @@ func (u *User) ModifyUser(d *schema.ResourceData, client *winrm.Client, execLoca
 
 	if d.HasChange("initial_password") {
 		cmd := fmt.Sprintf("Set-ADAccountPassword -Identity %q -Reset -NewPassword (ConvertTo-SecureString -AsPlainText %q -Force)", u.GUID, u.Password)
-		result, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally)
+		psOpts := CreatePSCommandOpts{
+			JSONOutput:      false,
+			ForceArray:      false,
+			ExecLocally:     conf.IsConnectionTypeLocal(),
+			PassCredentials: conf.IsPassCredentialsEnabled(),
+			Username:        conf.Settings.WinRMUsername,
+			Password:        conf.Settings.WinRMPassword,
+			Server:          conf.Settings.DomainName,
+		}
+		psCmd := NewPSCommand([]string{cmd}, psOpts)
+		result, err := psCmd.Run(conf)
 		if err != nil {
 			return err
 		}
@@ -399,7 +431,17 @@ func (u *User) ModifyUser(d *schema.ResourceData, client *winrm.Client, execLoca
 	if d.HasChange("container") {
 		path := d.Get("container").(string)
 		cmd := fmt.Sprintf("Move-AdObject -Identity %q -TargetPath %q", u.GUID, path)
-		result, err := RunWinRMCommand(client, []string{cmd}, true, false, execLocally)
+		psOpts := CreatePSCommandOpts{
+			JSONOutput:      true,
+			ForceArray:      false,
+			ExecLocally:     conf.IsConnectionTypeLocal(),
+			PassCredentials: conf.IsPassCredentialsEnabled(),
+			Username:        conf.Settings.WinRMUsername,
+			Password:        conf.Settings.WinRMPassword,
+			Server:          conf.Settings.DomainName,
+		}
+		psCmd := NewPSCommand([]string{cmd}, psOpts)
+		result, err := psCmd.Run(conf)
 		if err != nil {
 			return fmt.Errorf("winrm execution failure while moving user object: %s", err)
 		}
@@ -412,9 +454,19 @@ func (u *User) ModifyUser(d *schema.ResourceData, client *winrm.Client, execLoca
 }
 
 //DeleteUser deletes an AD user by calling Remove-ADUser
-func (u *User) DeleteUser(client *winrm.Client, execLocally bool) error {
+func (u *User) DeleteUser(conf *config.ProviderConf) error {
 	cmd := fmt.Sprintf("Remove-ADUser -Identity %s -Confirm:$false", u.GUID)
-	_, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally)
+	psOpts := CreatePSCommandOpts{
+		JSONOutput:      false,
+		ForceArray:      false,
+		ExecLocally:     conf.IsConnectionTypeLocal(),
+		PassCredentials: conf.IsPassCredentialsEnabled(),
+		Username:        conf.Settings.WinRMUsername,
+		Password:        conf.Settings.WinRMPassword,
+		Server:          conf.Settings.DomainName,
+	}
+	psCmd := NewPSCommand([]string{cmd}, psOpts)
+	_, err := psCmd.Run(conf)
 	if err != nil {
 		// Check if the resource is already deleted
 		if strings.Contains(err.Error(), "ADIdentityNotFoundException") {
@@ -512,9 +564,19 @@ func GetUserFromResource(d *schema.ResourceData) (*User, error) {
 
 // GetUserFromHost returns a User struct based on data
 // retrieved from the AD Domain Controller.
-func GetUserFromHost(client *winrm.Client, guid string, customAttributes []string, execLocally bool) (*User, error) {
+func GetUserFromHost(conf *config.ProviderConf, guid string, customAttributes []string) (*User, error) {
 	cmd := fmt.Sprintf("Get-ADUser -identity %q -properties *", guid)
-	result, err := RunWinRMCommand(client, []string{cmd}, true, false, execLocally)
+	psOpts := CreatePSCommandOpts{
+		JSONOutput:      true,
+		ForceArray:      false,
+		ExecLocally:     conf.IsConnectionTypeLocal(),
+		PassCredentials: conf.IsPassCredentialsEnabled(),
+		Username:        conf.Settings.WinRMUsername,
+		Password:        conf.Settings.WinRMPassword,
+		Server:          conf.Settings.DomainName,
+	}
+	psCmd := NewPSCommand([]string{cmd}, psOpts)
+	result, err := psCmd.Run(conf)
 	if err != nil {
 		return nil, err
 	}
@@ -541,7 +603,9 @@ func unmarshallUser(input []byte, customAttributes []string) (*User, error) {
 		log.Printf("[DEBUG] Failed to unmarshall json document with error %q, document was: %s", err, string(input))
 		return nil, fmt.Errorf("failed while unmarshalling json response: %s", err)
 	}
-
+	if user.GUID == "" {
+		return nil, fmt.Errorf("invalid data while unmarshalling User data, json doc was: %s", string(input))
+	}
 	if user.PrincipalName != "" {
 		tokens := strings.Split(user.PrincipalName, "@")
 		user.Username = tokens[0]

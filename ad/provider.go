@@ -2,14 +2,12 @@ package ad
 
 import (
 	"fmt"
-	"log"
 	"runtime"
 	"strings"
-	"sync"
+
+	"github.com/hashicorp/terraform-provider-ad/ad/internal/config"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/masterzen/winrm"
-	"github.com/packer-community/winrmcp/winrmcp"
 )
 
 // Provider exports the provider schema
@@ -94,6 +92,12 @@ func Provider() *schema.Provider {
 				DefaultFunc: schema.EnvDefaultFunc("AD_WINRM_USE_NTLM", false),
 				Description: "Use NTLM authentication. (default: false, environment variable: AD_WINRM_USE_NTLM)",
 			},
+			"winrm_pass_credentials": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				DefaultFunc: schema.EnvDefaultFunc("AD_WINRM_PASS_CREDENTIALS", false),
+				Description: "Pass credentials in WinRM session to create a System.Management.Automation.PSCredential. (default: false, environment variable: AD_WINRM_PASS_CREDENTIALS)",
+			},
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"ad_user":     dataSourceADUser(),
@@ -116,88 +120,12 @@ func Provider() *schema.Provider {
 	}
 }
 
-// ProviderConf holds structures that are useful to the provider at runtime.
-type ProviderConf struct {
-	Configuration  *ProviderConfig
-	winRMClients   []*winrm.Client
-	winRMCPClients []*winrmcp.Winrmcp
-	mx             *sync.Mutex
-}
-
-// AcquireWinRMClient get a thread safe WinRM client from the pool. Create a new one if the pool is empty
-func (pcfg ProviderConf) AcquireWinRMClient() (winRMClient *winrm.Client, err error) {
-	pcfg.mx.Lock()
-	defer pcfg.mx.Unlock()
-	if len(pcfg.winRMClients) == 0 {
-		winRMClient, err = GetWinRMConnection(*pcfg.Configuration)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		winRMClient = pcfg.winRMClients[0]
-		pcfg.winRMClients = pcfg.winRMClients[1:]
-	}
-	return winRMClient, nil
-}
-
-// ReleaseWinRMClient returns a thread safe WinRM client after usage to the pool.
-func (pcfg ProviderConf) ReleaseWinRMClient(winRMClient *winrm.Client) {
-	pcfg.mx.Lock()
-	defer pcfg.mx.Unlock()
-	pcfg.winRMClients = append(pcfg.winRMClients, winRMClient)
-}
-
-// AcquireWinRMCPClient get a thread safe WinRM client from the pool. Create a new one if the pool is empty
-func (pcfg ProviderConf) AcquireWinRMCPClient() (winRMCPClient *winrmcp.Winrmcp, err error) {
-	pcfg.mx.Lock()
-	defer pcfg.mx.Unlock()
-	if len(pcfg.winRMClients) == 0 {
-		winRMCPClient, err = GetWinRMCPConnection(*pcfg.Configuration)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		winRMCPClient = pcfg.winRMCPClients[0]
-		pcfg.winRMCPClients = pcfg.winRMCPClients[1:]
-	}
-	return winRMCPClient, nil
-}
-
-// ReleaseWinRMCPClient returns a thread safe WinRM client after usage to the pool.
-func (pcfg ProviderConf) ReleaseWinRMCPClient(winRMCPClient *winrmcp.Winrmcp) {
-	pcfg.mx.Lock()
-	defer pcfg.mx.Unlock()
-	pcfg.winRMCPClients = append(pcfg.winRMCPClients, winRMCPClient)
-}
-
-// isConnectionTypeLocal check if connection is local
-func (pcfg ProviderConf) isConnectionTypeLocal() bool {
-	pcfg.mx.Lock()
-	defer pcfg.mx.Unlock()
-
-	log.Printf("[DEBUG] Checking if connection should be local")
-	isLocal := false
-	if runtime.GOOS == "windows" {
-		if pcfg.Configuration.WinRMHost == "" && pcfg.Configuration.WinRMUsername == "" && pcfg.Configuration.WinRMPassword == "" {
-			log.Printf("[DEBUG] Matching criteria for local execution")
-			isLocal = true
-		}
-	}
-	log.Printf("[DEBUG] Local connection ? %t", isLocal)
-	return isLocal
-}
-
 func initProviderConfig(d *schema.ResourceData) (interface{}, error) {
-
-	cfg := NewConfig(d)
-
-	pcfg := ProviderConf{
-		Configuration:  &cfg,
-		winRMClients:   make([]*winrm.Client, 0),
-		winRMCPClients: make([]*winrmcp.Winrmcp, 0),
-		mx:             &sync.Mutex{},
+	cfg, err := config.NewConfig(d)
+	if err != nil {
+		return nil, err
 	}
-
+	pcfg := config.NewProviderConf(cfg)
 	return pcfg, nil
 }
 

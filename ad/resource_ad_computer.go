@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hashicorp/terraform-provider-ad/ad/internal/config"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-provider-ad/ad/internal/winrmhelper"
 )
@@ -66,15 +68,7 @@ func resourceADComputerRead(d *schema.ResourceData, meta interface{}) error {
 		return nil
 	}
 
-	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
-
-	client, err := meta.(ProviderConf).AcquireWinRMClient()
-	if err != nil {
-		return err
-	}
-	defer meta.(ProviderConf).ReleaseWinRMClient(client)
-
-	computer, err := winrmhelper.NewComputerFromHost(client, d.Id(), isLocal)
+	computer, err := winrmhelper.NewComputerFromHost(meta.(*config.ProviderConf), d.Id())
 	if err != nil {
 		if strings.Contains(err.Error(), "ObjectNotFound") {
 			// Resource no longer exists
@@ -95,16 +89,8 @@ func resourceADComputerRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceADComputerCreate(d *schema.ResourceData, meta interface{}) error {
-	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
-	client, err := meta.(ProviderConf).AcquireWinRMClient()
-	if err != nil {
-		return err
-	}
-	defer meta.(ProviderConf).ReleaseWinRMClient(client)
-
 	computer := winrmhelper.NewComputerFromResource(d)
-
-	guid, err := computer.Create(client, isLocal)
+	guid, err := computer.Create(meta.(*config.ProviderConf))
 	if err != nil {
 		return fmt.Errorf("error while creating new computer object: %s", err)
 	}
@@ -113,13 +99,6 @@ func resourceADComputerCreate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceADComputerUpdate(d *schema.ResourceData, meta interface{}) error {
-	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
-	client, err := meta.(ProviderConf).AcquireWinRMClient()
-	if err != nil {
-		return err
-	}
-	defer meta.(ProviderConf).ReleaseWinRMClient(client)
-
 	computer := winrmhelper.NewComputerFromResource(d)
 	keys := []string{"container", "description"}
 	changes := make(map[string]interface{})
@@ -129,7 +108,7 @@ func resourceADComputerUpdate(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	err = computer.Update(client, changes, isLocal)
+	err := computer.Update(meta.(*config.ProviderConf), changes)
 	if err != nil {
 		return fmt.Errorf("error while updating computer with id %q: %s", d.Id(), err)
 	}
@@ -140,18 +119,11 @@ func resourceADComputerDelete(d *schema.ResourceData, meta interface{}) error {
 	if d.Id() == "" {
 		return nil
 	}
-	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
-	client, err := meta.(ProviderConf).AcquireWinRMClient()
-	if err != nil {
-		return err
-	}
-	defer meta.(ProviderConf).ReleaseWinRMClient(client)
-
 	computer := winrmhelper.NewComputerFromResource(d)
-	err = computer.Delete(client, isLocal)
+	err := computer.Delete(meta.(*config.ProviderConf))
 	if err != nil {
 		return fmt.Errorf("error while deleting a computer object with id %q: %s", d.Id(), err)
 	}
 
-	return resourceADComputerRead(d, meta)
+	return nil
 }

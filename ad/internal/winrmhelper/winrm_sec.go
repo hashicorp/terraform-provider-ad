@@ -6,9 +6,10 @@ import (
 	"log"
 	"strings"
 
+	"github.com/hashicorp/terraform-provider-ad/ad/internal/config"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-provider-ad/ad/internal/gposec"
-	"github.com/masterzen/winrm"
 	"github.com/packer-community/winrmcp/winrmcp"
 	"gopkg.in/ini.v1"
 )
@@ -41,12 +42,27 @@ func GetSecIniFromResource(d *schema.ResourceData, schemaKeys map[string]*schema
 
 // GetSecIniContents returns a byte array with the contents of the INF file
 // encoded in UTF-8 (since we get the ouput via stdout).
-func GetSecIniContents(client *winrm.Client, gpo *GPO, execLocally bool) ([]byte, error) {
+func GetSecIniContents(conf *config.ProviderConf, gpo *GPO) ([]byte, error) {
 	gptPath := fmt.Sprintf("%s\\Machine\\Microsoft\\Windows NT\\SecEdit\\GptTmpl.inf", gpo.basePath)
 	log.Printf("[DEBUG] Getting security settings inf from %s", gptPath)
 
 	cmd := fmt.Sprintf(`Get-Content "%s"`, gptPath)
-	result, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally)
+	domainName := conf.Settings.DomainName
+	if conf.Settings.KrbRealm == domainName {
+		domainName = "$env:computername"
+	}
+	psOpts := CreatePSCommandOpts{
+		JSONOutput:      false,
+		ForceArray:      false,
+		ExecLocally:     conf.IsConnectionTypeLocal(),
+		PassCredentials: conf.IsPassCredentialsEnabled(),
+		Username:        conf.Settings.WinRMUsername,
+		Password:        conf.Settings.WinRMPassword,
+		Server:          domainName,
+		InvokeCommand:   conf.IsPassCredentialsEnabled(),
+	}
+	psCmd := NewPSCommand([]string{cmd}, psOpts)
+	result, err := psCmd.Run(conf)
 	if err != nil {
 		return nil, fmt.Errorf("error while retrieving contents of %q: %s", gptPath, err)
 	}
@@ -59,9 +75,8 @@ func GetSecIniContents(client *winrm.Client, gpo *GPO, execLocally bool) ([]byte
 }
 
 // GetSecIniFromHost returns a struct representing the data retrieved from the host.
-func GetSecIniFromHost(client *winrm.Client, gpo *GPO, execLocally bool) (*gposec.SecuritySettings, error) {
-
-	iniBytes, err := GetSecIniContents(client, gpo, execLocally)
+func GetSecIniFromHost(conf *config.ProviderConf, gpo *GPO) (*gposec.SecuritySettings, error) {
+	iniBytes, err := GetSecIniContents(conf, gpo)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +89,7 @@ func GetSecIniFromHost(client *winrm.Client, gpo *GPO, execLocally bool) (*gpose
 
 // UploadSecIni uploads the security settings ini to the correct folder of a GPO and updates
 // the GPO's gpt.ini by incrementing the computer version by 1.
-func UploadSecIni(conn *winrm.Client, cpConn *winrmcp.Winrmcp, gpo *GPO, iniFile *ini.File, execLocally bool) error {
+func UploadSecIni(conf *config.ProviderConf, cpClient *winrmcp.Winrmcp, gpo *GPO, iniFile *ini.File) error {
 	ini.LineBreak = "\r\n"
 	buf := bytes.NewBuffer([]byte{})
 	iniLocation := fmt.Sprintf("%s\\Machine\\Microsoft\\Windows NT\\SecEdit\\GptTmpl.inf", gpo.basePath)
@@ -82,13 +97,13 @@ func UploadSecIni(conn *winrm.Client, cpConn *winrmcp.Winrmcp, gpo *GPO, iniFile
 	if err != nil {
 		return fmt.Errorf("error while loading security INF file to buffer, error: %s ", err)
 	}
-	err = cpConn.Write(iniLocation, buf)
+	err = UploadFiletoSYSVOL(conf, cpClient, buf, iniLocation)
 	if err != nil {
-		return fmt.Errorf("error while writing ini file to %q: %s", iniLocation, err)
+		return err
 	}
-	cVer := gpo.computerVersion + 1
 
-	err = gpo.SetGPOVersions(conn, cpConn, gpo.userVersion, cVer, execLocally)
+	cVer := gpo.computerVersion + 1
+	err = gpo.SetGPOVersions(conf, cpClient, gpo.userVersion, cVer)
 	if err != nil {
 		return err
 	}
@@ -97,12 +112,27 @@ func UploadSecIni(conn *winrm.Client, cpConn *winrmcp.Winrmcp, gpo *GPO, iniFile
 
 // RemoveSecIni removes the ini file from the host and updates the GPO's  gpt.ini by incrementing the
 // computer version by 1.
-func RemoveSecIni(conn *winrm.Client, cpConn *winrmcp.Winrmcp, gpo *GPO, execLocally bool) error {
+func RemoveSecIni(conf *config.ProviderConf, cpConn *winrmcp.Winrmcp, gpo *GPO) error {
 	gptPath := fmt.Sprintf("%s\\Machine\\Microsoft\\Windows NT\\SecEdit\\GptTmpl.inf", gpo.basePath)
 	log.Printf("[DEBUG] Getting security settings inf from %s", gptPath)
 
 	cmd := fmt.Sprintf(`Remove-Item "%s"`, gptPath)
-	result, err := RunWinRMCommand(conn, []string{cmd}, false, false, execLocally)
+	domainName := conf.Settings.DomainName
+	if conf.Settings.KrbRealm == domainName {
+		domainName = "$env:computername"
+	}
+	psOpts := CreatePSCommandOpts{
+		JSONOutput:      false,
+		ForceArray:      false,
+		ExecLocally:     conf.IsConnectionTypeLocal(),
+		PassCredentials: conf.IsPassCredentialsEnabled(),
+		Username:        conf.Settings.WinRMUsername,
+		Password:        conf.Settings.WinRMPassword,
+		Server:          domainName,
+		InvokeCommand:   conf.IsPassCredentialsEnabled(),
+	}
+	psCmd := NewPSCommand([]string{cmd}, psOpts)
+	result, err := psCmd.Run(conf)
 	if err != nil {
 		return fmt.Errorf("error while retrieving contents of %q: %s", gptPath, err)
 	}
@@ -114,7 +144,7 @@ func RemoveSecIni(conn *winrm.Client, cpConn *winrmcp.Winrmcp, gpo *GPO, execLoc
 	}
 
 	cVer := gpo.computerVersion + 1
-	err = gpo.SetGPOVersions(conn, cpConn, gpo.userVersion, cVer, execLocally)
+	err = gpo.SetGPOVersions(conf, cpConn, gpo.userVersion, cVer)
 	if err != nil {
 		return err
 	}

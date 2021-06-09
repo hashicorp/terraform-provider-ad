@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/hashicorp/terraform-provider-ad/ad/internal/config"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/hashicorp/terraform-provider-ad/ad/internal/winrmhelper"
@@ -139,16 +141,17 @@ func testAccResourceADGroupConfigBasic(scope, gtype string) string {
 func testAccResourceADGroupExists(name, groupSAM string, expected bool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[name]
-
+		conf := testAccProvider.Meta().(*config.ProviderConf)
 		if !ok {
 			return fmt.Errorf("%s key not found on the server", name)
 		}
-		client, err := testAccProvider.Meta().(ProviderConf).AcquireWinRMClient()
+		client, err := conf.AcquireWinRMClient()
 		if err != nil {
 			return err
 		}
-		defer testAccProvider.Meta().(ProviderConf).ReleaseWinRMClient(client)
-		u, err := winrmhelper.GetGroupFromHost(client, rs.Primary.ID, false)
+		defer conf.ReleaseWinRMClient(client)
+
+		u, err := winrmhelper.GetGroupFromHost(conf, rs.Primary.ID)
 		if err != nil {
 			if strings.Contains(err.Error(), "ADIdentityNotFoundException") && !expected {
 				return nil

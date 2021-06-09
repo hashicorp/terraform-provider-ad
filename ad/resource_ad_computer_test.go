@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/hashicorp/terraform-provider-ad/ad/internal/config"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/hashicorp/terraform-provider-ad/ad/internal/winrmhelper"
@@ -151,14 +153,8 @@ func testAccResourceADComputerExists(resource, name string, expected bool) resou
 			return fmt.Errorf("%s key not found in state", resource)
 		}
 
-		client, err := testAccProvider.Meta().(ProviderConf).AcquireWinRMClient()
-		if err != nil {
-			return err
-		}
-		defer testAccProvider.Meta().(ProviderConf).ReleaseWinRMClient(client)
-
 		guid := rs.Primary.ID
-		computer, err := winrmhelper.NewComputerFromHost(client, guid, false)
+		computer, err := winrmhelper.NewComputerFromHost(testAccProvider.Meta().(*config.ProviderConf), guid)
 		if err != nil {
 			if strings.Contains(err.Error(), "ObjectNotFound") && !expected {
 				return nil
@@ -180,14 +176,8 @@ func testAccResourceADComputerDescriptionExists(resource, description string, ex
 			return fmt.Errorf("%s key not found in state", resource)
 		}
 
-		client, err := testAccProvider.Meta().(ProviderConf).AcquireWinRMClient()
-		if err != nil {
-			return err
-		}
-		defer testAccProvider.Meta().(ProviderConf).ReleaseWinRMClient(client)
-
 		guid := rs.Primary.ID
-		computer, err := winrmhelper.NewComputerFromHost(client, guid, false)
+		computer, err := winrmhelper.NewComputerFromHost(testAccProvider.Meta().(*config.ProviderConf), guid)
 		if err != nil {
 			if strings.Contains(err.Error(), "ObjectNotFound") && !expected {
 				return nil

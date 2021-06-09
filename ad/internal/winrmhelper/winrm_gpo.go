@@ -10,8 +10,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/terraform-provider-ad/ad/internal/config"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/masterzen/winrm"
 	"github.com/packer-community/winrmcp/winrmcp"
 	"gopkg.in/ini.v1"
 )
@@ -62,11 +63,14 @@ func unmarshallGPO(input []byte) (*GPO, error) {
 		return nil, fmt.Errorf("unknown GPO status %d", gpo.NumericStatus)
 	}
 	gpo.Status = status
+	if gpo.ID == "" {
+		return nil, fmt.Errorf("invalid data while unmarshalling GPO, json doc was: %s", string(input))
+	}
 	return &gpo, nil
 }
 
 // GetGPOFromHost returns a GPO structure populated by data from the DC server
-func GetGPOFromHost(conn *winrm.Client, name, guid string, execLocally bool) (*GPO, error) {
+func GetGPOFromHost(conf *config.ProviderConf, name, guid string) (*GPO, error) {
 	start := time.Now().Unix()
 	var cmd string
 	if name != "" {
@@ -74,7 +78,22 @@ func GetGPOFromHost(conn *winrm.Client, name, guid string, execLocally bool) (*G
 	} else if guid != "" {
 		cmd = getGPOCmdByGUID(guid)
 	}
-	result, err := RunWinRMCommand(conn, []string{cmd}, true, false, execLocally)
+	domainName := conf.Settings.DomainName
+	if conf.Settings.KrbRealm == domainName {
+		domainName = "$env:computername"
+	}
+	psOpts := CreatePSCommandOpts{
+		JSONOutput:      true,
+		ForceArray:      false,
+		ExecLocally:     conf.IsConnectionTypeLocal(),
+		PassCredentials: conf.IsPassCredentialsEnabled(),
+		Username:        conf.Settings.WinRMUsername,
+		Password:        conf.Settings.WinRMPassword,
+		Server:          domainName,
+		InvokeCommand:   conf.IsPassCredentialsEnabled(),
+	}
+	psCmd := NewPSCommand([]string{cmd}, psOpts)
+	result, err := psCmd.Run(conf)
 	if err != nil {
 		return nil, err
 	}
@@ -86,18 +105,18 @@ func GetGPOFromHost(conn *winrm.Client, name, guid string, execLocally bool) (*G
 		return nil, err
 	}
 
-	basePath, err := gpo.loadGPOBasePath(conn, execLocally)
+	basePath, err := gpo.getGPOFilePath(conf)
 	if err != nil {
 		return nil, err
 	}
 	gpo.basePath = basePath
 
-	err = gpo.loadGPTIni(conn, execLocally)
+	err = gpo.loadGPTIni(conf)
 	if err != nil {
 		return nil, err
 	}
 
-	err = gpo.loadGPOVersions(conn, basePath)
+	err = gpo.loadGPOVersions()
 	if err != nil {
 		return nil, err
 	}
@@ -120,28 +139,61 @@ func GetGPOFromResource(d *schema.ResourceData) *GPO {
 }
 
 // Rename renames a GPO to the given name
-func (g *GPO) Rename(client *winrm.Client, target string, execLocally bool) error {
+func (g *GPO) Rename(conf *config.ProviderConf, target string) error {
 	if g.ID == "" {
 		return fmt.Errorf("gpo guid required")
 	}
 	cmds := []string{}
-	cmds = append(cmds, fmt.Sprintf("Rename-GPO -Guid %s -TargetName %s", g.ID, g.Name))
+	cmds = append(cmds, fmt.Sprintf("Rename-GPO -Guid %s -TargetName %s", g.ID, target))
 
 	if g.Domain != "" {
 		cmds = append(cmds, fmt.Sprintf("-Domain %s", g.Domain))
 	}
-	cmd := strings.Join(cmds, " ")
-	_, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally)
+
+	domainName := conf.Settings.DomainName
+	if conf.Settings.KrbRealm == domainName {
+		domainName = "$env:computername"
+	}
+	psOpts := CreatePSCommandOpts{
+		JSONOutput:      false,
+		ForceArray:      false,
+		ExecLocally:     conf.IsConnectionTypeLocal(),
+		PassCredentials: conf.IsPassCredentialsEnabled(),
+		Username:        conf.Settings.WinRMUsername,
+		Password:        conf.Settings.WinRMPassword,
+		Server:          domainName,
+		InvokeCommand:   conf.IsPassCredentialsEnabled(),
+	}
+	psCmd := NewPSCommand(cmds, psOpts)
+	result, err := psCmd.Run(conf)
 	if err != nil {
-		return err
+		return fmt.Errorf("while renaming GPO: %s", err)
+	} else if result != nil && result.ExitCode != 0 {
+		return fmt.Errorf("while renaming GPO stderr: %s", result.StdErr)
 	}
 	return nil
 }
 
 //ChangeStatus Changes the status of a GPO
-func (g *GPO) ChangeStatus(client *winrm.Client, status string, execLocally bool) error {
+func (g *GPO) ChangeStatus(conf *config.ProviderConf, status string) error {
 	cmd := fmt.Sprintf(`(%s).GpoStatus = "%s"`, getGPOCmdByGUID(g.ID), status)
-	result, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally)
+
+	domainName := conf.Settings.DomainName
+	if conf.Settings.KrbRealm == domainName {
+		domainName = "$env:computername"
+	}
+	psOpts := CreatePSCommandOpts{
+		JSONOutput:      false,
+		ForceArray:      false,
+		ExecLocally:     conf.IsConnectionTypeLocal(),
+		PassCredentials: conf.IsPassCredentialsEnabled(),
+		Username:        conf.Settings.WinRMUsername,
+		Password:        conf.Settings.WinRMPassword,
+		Server:          domainName,
+		InvokeCommand:   conf.IsPassCredentialsEnabled(),
+	}
+	psCmd := NewPSCommand([]string{cmd}, psOpts)
+	result, err := psCmd.Run(conf)
 	if err != nil {
 		return err
 	}
@@ -154,7 +206,7 @@ func (g *GPO) ChangeStatus(client *winrm.Client, status string, execLocally bool
 }
 
 // NewGPO uses Powershell over WinRM to create a script
-func (g *GPO) NewGPO(client *winrm.Client, execLocally bool) (string, error) {
+func (g *GPO) NewGPO(conf *config.ProviderConf) (string, error) {
 
 	if g.Name == "" {
 		return "", fmt.Errorf("gpo name required")
@@ -170,7 +222,22 @@ func (g *GPO) NewGPO(client *winrm.Client, execLocally bool) (string, error) {
 		cmds = append(cmds, fmt.Sprintf("-Comment %q", g.Description))
 	}
 
-	result, err := RunWinRMCommand(client, cmds, true, false, execLocally)
+	domainName := conf.Settings.DomainName
+	if conf.Settings.KrbRealm == domainName {
+		domainName = "$env:computername"
+	}
+	psOpts := CreatePSCommandOpts{
+		JSONOutput:      true,
+		ForceArray:      false,
+		ExecLocally:     conf.IsConnectionTypeLocal(),
+		PassCredentials: conf.IsPassCredentialsEnabled(),
+		Username:        conf.Settings.WinRMUsername,
+		Password:        conf.Settings.WinRMPassword,
+		Server:          domainName,
+		InvokeCommand:   conf.IsPassCredentialsEnabled(),
+	}
+	psCmd := NewPSCommand(cmds, psOpts)
+	result, err := psCmd.Run(conf)
 	if err != nil {
 		return "", err
 	}
@@ -189,9 +256,24 @@ func (g *GPO) NewGPO(client *winrm.Client, execLocally bool) (string, error) {
 }
 
 // DeleteGPO delete the GPO container
-func (g *GPO) DeleteGPO(client *winrm.Client, execLocally bool) error {
+func (g *GPO) DeleteGPO(conf *config.ProviderConf) error {
 	cmd := fmt.Sprintf("Remove-GPO -Name %s -Domain %s", g.Name, g.Domain)
-	_, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally)
+	domainName := conf.Settings.DomainName
+	if conf.Settings.KrbRealm == domainName {
+		domainName = "$env:computername"
+	}
+	psOpts := CreatePSCommandOpts{
+		JSONOutput:      false,
+		ForceArray:      false,
+		ExecLocally:     conf.IsConnectionTypeLocal(),
+		PassCredentials: conf.IsPassCredentialsEnabled(),
+		Username:        conf.Settings.WinRMUsername,
+		Password:        conf.Settings.WinRMPassword,
+		Server:          domainName,
+		InvokeCommand:   conf.IsPassCredentialsEnabled(),
+	}
+	psCmd := NewPSCommand([]string{cmd}, psOpts)
+	_, err := psCmd.Run(conf)
 	if err != nil {
 		// Check if the resource is already deleted
 		if strings.Contains(err.Error(), "GpoWithNameNotFound") {
@@ -203,16 +285,16 @@ func (g *GPO) DeleteGPO(client *winrm.Client, execLocally bool) error {
 }
 
 // UpdateGPO updates the GPO container
-func (g *GPO) UpdateGPO(client *winrm.Client, d *schema.ResourceData, execLocally bool) (string, error) {
+func (g *GPO) UpdateGPO(config *config.ProviderConf, d *schema.ResourceData) (string, error) {
 	if d.HasChange("name") {
-		err := g.Rename(client, SanitiseTFInput(d, "name"), execLocally)
+		err := g.Rename(config, SanitiseTFInput(d, "name"))
 		if err != nil {
 			return "", err
 		}
 	}
 
 	if d.HasChange("status") {
-		err := g.ChangeStatus(client, SanitiseTFInput(d, "status"), execLocally)
+		err := g.ChangeStatus(config, SanitiseTFInput(d, "status"))
 		if err != nil {
 			return "", err
 		}
@@ -223,9 +305,24 @@ func (g *GPO) UpdateGPO(client *winrm.Client, d *schema.ResourceData, execLocall
 // getGPOFilePath retrieves the AD Object of a GPO via powershell and returns the gPCFileSysPath
 // property. This property points at the UNC that the GPO stores its configuration. We use the output
 // of this function as well as GetsysVolPath to construct the GPO path on the DC's filesystem.
-func (g *GPO) getGPOFilePath(client *winrm.Client, execLocally bool) (string, error) {
+func (g *GPO) getGPOFilePath(conf *config.ProviderConf) (string, error) {
 	cmd := fmt.Sprintf("(Get-ADObject  -LDAPFilter '(&(objectClass=groupPolicyContainer)(cn={%s}))' -Properties gPCFilesysPath).gPCFilesysPath", g.ID)
-	result, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally)
+	domainName := conf.Settings.DomainName
+	if conf.Settings.KrbRealm == domainName {
+		domainName = "$env:computername"
+	}
+	psOpts := CreatePSCommandOpts{
+		JSONOutput:      false,
+		ForceArray:      false,
+		ExecLocally:     conf.IsConnectionTypeLocal(),
+		PassCredentials: conf.IsPassCredentialsEnabled(),
+		Username:        conf.Settings.WinRMUsername,
+		Password:        conf.Settings.WinRMPassword,
+		Server:          domainName,
+		InvokeCommand:   conf.IsPassCredentialsEnabled(),
+	}
+	psCmd := NewPSCommand([]string{cmd}, psOpts)
+	result, err := psCmd.Run(conf)
 	if err != nil {
 		return "", fmt.Errorf("error while retrieving GPO with %q path: %s", g.ID, err)
 	}
@@ -237,9 +334,24 @@ func (g *GPO) getGPOFilePath(client *winrm.Client, execLocally bool) (string, er
 
 //getSysVolPath returns the local path for the SYSVOL share on a Domain Controller. The combination of this
 // and the value we get from getGPOFilePath is used to construct the GPO path on the DC's filesystem.
-func getSysVolPath(client *winrm.Client, execLocally bool) (string, error) {
+func getSysVolPath(conf *config.ProviderConf) (string, error) {
 	cmd := "(Get-SmbShare sysvol).path"
-	result, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally)
+	domainName := conf.Settings.DomainName
+	if conf.Settings.KrbRealm == domainName {
+		domainName = "$env:computername"
+	}
+	psOpts := CreatePSCommandOpts{
+		JSONOutput:      false,
+		ForceArray:      false,
+		ExecLocally:     conf.IsConnectionTypeLocal(),
+		PassCredentials: conf.IsPassCredentialsEnabled(),
+		Username:        conf.Settings.WinRMUsername,
+		Password:        conf.Settings.WinRMPassword,
+		Server:          domainName,
+		InvokeCommand:   conf.IsPassCredentialsEnabled(),
+	}
+	psCmd := NewPSCommand([]string{cmd}, psOpts)
+	result, err := psCmd.Run(conf)
 	if err != nil {
 		return "", fmt.Errorf("error while retrieving SYSVOL path")
 	}
@@ -249,26 +361,8 @@ func getSysVolPath(client *winrm.Client, execLocally bool) (string, error) {
 	return result.Stdout, nil
 }
 
-// GetGPOBasePath returns the base path of a GPO on the DC. All GPO related files go
-// in that location.
-func (g *GPO) loadGPOBasePath(client *winrm.Client, execLocally bool) (string, error) {
-	gpoPath, err := g.getGPOFilePath(client, execLocally)
-	if err != nil {
-		return "", err
-	}
-	// gpoPath is a UNC. The first bit is the hostname and the second the share name
-	// We are interested for the rest
-	gPath := strings.Join(strings.Split(gpoPath, "\\")[4:], "\\")
-	sysvolPath, err := getSysVolPath(client, execLocally)
-	if err != nil {
-		return "", err
-	}
-	gpoFinalPath := fmt.Sprintf("%s\\%s", sysvolPath, gPath)
-	return gpoFinalPath, err
-}
-
 // GetGPOVersions returns the GPO versions for user and machine
-func (g *GPO) loadGPOVersions(client *winrm.Client, gpoPath string) error {
+func (g *GPO) loadGPOVersions() error {
 	gpoVersionString, err := g.gptIni.Section("General").GetKey("Version")
 	if err != nil {
 		return fmt.Errorf("error while reading version for GPO: %q", g.ID)
@@ -285,9 +379,38 @@ func (g *GPO) loadGPOVersions(client *winrm.Client, gpoPath string) error {
 }
 
 // SetADGPOVersions updates AD with the given versions for a GPO
-func (g *GPO) SetADGPOVersions(client *winrm.Client, gpoVersion uint32, execLocally bool) error {
-	cmd := fmt.Sprintf("$o=(Get-ADObject  -LDAPFilter '(&(objectClass=groupPolicyContainer)(cn={%s}))' -Properties *);$o.VersionNumber=%d;Set-AdObject -Instance $o", g.ID, gpoVersion)
-	result, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally)
+func (g *GPO) SetADGPOVersions(conf *config.ProviderConf, gpoVersion uint32) error {
+
+	psOpts := CreatePSCommandOpts{
+		JSONOutput:      false,
+		ForceArray:      false,
+		ExecLocally:     conf.IsConnectionTypeLocal(),
+		PassCredentials: conf.IsPassCredentialsEnabled(),
+		Username:        conf.Settings.WinRMUsername,
+		Password:        conf.Settings.WinRMPassword,
+		Server:          conf.Settings.DomainName,
+		SkipCredPrefix:  true,
+	}
+
+	tmpCmd := fmt.Sprintf("Get-ADObject  -LDAPFilter '(&(objectClass=groupPolicyContainer)(cn={%s}))' -Properties *", g.ID)
+	cmds := []string{
+		fmt.Sprintf("$o=(%s)", NewPSCommand([]string{tmpCmd}, psOpts).String()),
+		NewPSCommand([]string{fmt.Sprintf("$o.VersionNumber=%d;Set-AdObject -Instance $o", gpoVersion)}, psOpts).String(),
+	}
+
+	cmd := strings.Join(cmds, ";")
+	psOpts = CreatePSCommandOpts{
+		JSONOutput:      false,
+		ForceArray:      false,
+		ExecLocally:     conf.IsConnectionTypeLocal(),
+		PassCredentials: conf.IsPassCredentialsEnabled(),
+		Username:        conf.Settings.WinRMUsername,
+		Password:        conf.Settings.WinRMPassword,
+		Server:          "",
+		SkipCredSuffix:  true,
+	}
+	psCmd := NewPSCommand([]string{cmd}, psOpts)
+	result, err := psCmd.Run(conf)
 	if err != nil {
 		return fmt.Errorf("error while setting new version in AD for GPO %q: %s", g.ID, err)
 	}
@@ -298,12 +421,12 @@ func (g *GPO) SetADGPOVersions(client *winrm.Client, gpoVersion uint32, execLoca
 }
 
 // SetINIGPOVersions update gpt.ini with the new version
-func (g *GPO) SetINIGPOVersions(client *winrm.Client, cpConn *winrmcp.Winrmcp, gpoVersion uint32) error {
+func (g *GPO) SetINIGPOVersions(conf *config.ProviderConf, cpConn *winrmcp.Winrmcp, gpoVersion uint32) error {
 	gpoVersionString, err := g.gptIni.Section("General").GetKey("Version")
-	gpoVersionString.SetValue(strconv.Itoa(int(gpoVersion)))
 	if err != nil {
 		return fmt.Errorf("error while setting new GPT version to %d", gpoVersion)
 	}
+	gpoVersionString.SetValue(strconv.Itoa(int(gpoVersion)))
 
 	buf := bytes.NewBuffer([]byte{})
 	_, err = g.gptIni.WriteTo(buf)
@@ -312,7 +435,7 @@ func (g *GPO) SetINIGPOVersions(client *winrm.Client, cpConn *winrmcp.Winrmcp, g
 	}
 
 	gptPath := fmt.Sprintf("%s\\gpt.ini", g.basePath)
-	err = cpConn.Write(gptPath, buf)
+	err = UploadFiletoSYSVOL(conf, cpConn, buf, gptPath)
 	if err != nil {
 		return fmt.Errorf("error while writing ini file to %q: %s", gptPath, err)
 	}
@@ -321,29 +444,44 @@ func (g *GPO) SetINIGPOVersions(client *winrm.Client, cpConn *winrmcp.Winrmcp, g
 }
 
 // SetGPOVersions updates gpt.ini on the DC with the given values for user and computer version of a GPO.
-func (g *GPO) SetGPOVersions(client *winrm.Client, cpConn *winrmcp.Winrmcp, userVersion, computerVersion uint16, execLocally bool) error {
+func (g *GPO) SetGPOVersions(conf *config.ProviderConf, cpConn *winrmcp.Winrmcp, userVersion, computerVersion uint16) error {
 	outBuf := make([]byte, 4)
 	binary.LittleEndian.PutUint16(outBuf[:2], computerVersion)
 	binary.LittleEndian.PutUint16(outBuf[2:], userVersion)
 	newVersion := binary.LittleEndian.Uint32(outBuf)
 
-	err := g.SetINIGPOVersions(client, cpConn, newVersion)
+	err := g.SetINIGPOVersions(conf, cpConn, newVersion)
 	if err != nil {
 		return err
 	}
 
-	err = g.SetADGPOVersions(client, newVersion, execLocally)
+	err = g.SetADGPOVersions(conf, newVersion)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (g *GPO) loadGPTIni(client *winrm.Client, execLocally bool) error {
+func (g *GPO) loadGPTIni(conf *config.ProviderConf) error {
 	gptPath := fmt.Sprintf("%s\\gpt.ini", g.basePath)
 	log.Printf("[DEBUG] Getting GPT ini from %s", gptPath)
 	cmd := fmt.Sprintf(`Get-Content "%s"`, gptPath)
-	result, err := RunWinRMCommand(client, []string{cmd}, false, false, execLocally)
+	domainName := conf.Settings.DomainName
+	if conf.Settings.KrbRealm == domainName {
+		domainName = "$env:computername"
+	}
+	psOpts := CreatePSCommandOpts{
+		JSONOutput:      false,
+		ForceArray:      false,
+		ExecLocally:     conf.IsConnectionTypeLocal(),
+		PassCredentials: conf.IsPassCredentialsEnabled(),
+		Username:        conf.Settings.WinRMUsername,
+		Password:        conf.Settings.WinRMPassword,
+		Server:          domainName,
+		InvokeCommand:   conf.IsPassCredentialsEnabled(),
+	}
+	psCmd := NewPSCommand([]string{cmd}, psOpts)
+	result, err := psCmd.Run(conf)
 	if err != nil {
 		return fmt.Errorf("error while retrieving contents of %q: %s", gptPath, err)
 	}

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/hashicorp/terraform-provider-ad/ad/internal/config"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-provider-ad/ad/internal/winrmhelper"
 )
@@ -43,13 +45,6 @@ func dataSourceADOU() *schema.Resource {
 }
 
 func dataSourceADOURead(d *schema.ResourceData, meta interface{}) error {
-	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
-	client, err := meta.(ProviderConf).AcquireWinRMClient()
-	if err != nil {
-		return err
-	}
-	defer meta.(ProviderConf).ReleaseWinRMClient(client)
-
 	name := winrmhelper.SanitiseTFInput(d, "name")
 	path := winrmhelper.SanitiseTFInput(d, "path")
 	dn := winrmhelper.SanitiseTFInput(d, "dn")
@@ -58,7 +53,7 @@ func dataSourceADOURead(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("invalid inputs, dn or a combination of path and name are required")
 	}
 
-	ou, err := winrmhelper.NewOrgUnitFromHost(client, dn, name, path, isLocal)
+	ou, err := winrmhelper.NewOrgUnitFromHost(meta.(*config.ProviderConf), dn, name, path)
 	if err != nil {
 		return err
 	}

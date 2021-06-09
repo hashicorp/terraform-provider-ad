@@ -6,8 +6,9 @@ import (
 	"log"
 	"strings"
 
+	"github.com/hashicorp/terraform-provider-ad/ad/internal/config"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/masterzen/winrm"
 )
 
 // OrgUnit is a structure used to represent an AD OrganizationalUnit object
@@ -36,7 +37,7 @@ func NewOrgUnitFromResource(d *schema.ResourceData) *OrgUnit {
 
 // NewOrgUnitFromHost returns a new OrgUnit struct populated from data we get from
 // the domain controller
-func NewOrgUnitFromHost(conn *winrm.Client, guid, name, path string, execLocally bool) (*OrgUnit, error) {
+func NewOrgUnitFromHost(conf *config.ProviderConf, guid, name, path string) (*OrgUnit, error) {
 	var cmd string
 	if guid != "" {
 		cmd = fmt.Sprintf("Get-ADObject -Properties * -Identity %q", guid)
@@ -45,8 +46,17 @@ func NewOrgUnitFromHost(conn *winrm.Client, guid, name, path string, execLocally
 	} else {
 		return nil, fmt.Errorf("invalid inputs, dn or a combination of path and name are required")
 	}
-
-	result, err := RunWinRMCommand(conn, []string{cmd}, true, false, execLocally)
+	psOpts := CreatePSCommandOpts{
+		JSONOutput:      true,
+		ForceArray:      false,
+		ExecLocally:     conf.IsConnectionTypeLocal(),
+		PassCredentials: conf.IsPassCredentialsEnabled(),
+		Username:        conf.Settings.WinRMUsername,
+		Password:        conf.Settings.WinRMPassword,
+		Server:          conf.Settings.DomainName,
+	}
+	psCmd := NewPSCommand([]string{cmd}, psOpts)
+	result, err := psCmd.Run(conf)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +73,7 @@ func NewOrgUnitFromHost(conn *winrm.Client, guid, name, path string, execLocally
 }
 
 // Create creates a new OU in the AD tree
-func (o *OrgUnit) Create(conn *winrm.Client, execLocally bool) (string, error) {
+func (o *OrgUnit) Create(conf *config.ProviderConf) (string, error) {
 
 	cmd := "New-ADOrganizationalUnit -Passthru"
 	if o.Name == "" {
@@ -80,8 +90,17 @@ func (o *OrgUnit) Create(conn *winrm.Client, execLocally bool) (string, error) {
 	}
 
 	cmd = fmt.Sprintf("%s -ProtectedFromAccidentalDeletion:$%t", cmd, o.Protected)
-
-	result, err := RunWinRMCommand(conn, []string{cmd}, true, false, execLocally)
+	psOpts := CreatePSCommandOpts{
+		JSONOutput:      true,
+		ForceArray:      false,
+		ExecLocally:     conf.IsConnectionTypeLocal(),
+		PassCredentials: conf.IsPassCredentialsEnabled(),
+		Username:        conf.Settings.WinRMUsername,
+		Password:        conf.Settings.WinRMPassword,
+		Server:          conf.Settings.DomainName,
+	}
+	psCmd := NewPSCommand([]string{cmd}, psOpts)
+	result, err := psCmd.Run(conf)
 	if err != nil {
 		return "", err
 	}
@@ -97,7 +116,7 @@ func (o *OrgUnit) Create(conn *winrm.Client, execLocally bool) (string, error) {
 }
 
 // Update updates an existing OU in the AD tree
-func (o *OrgUnit) Update(conn *winrm.Client, changes map[string]interface{}, execLocally bool) error {
+func (o *OrgUnit) Update(conf *config.ProviderConf, changes map[string]interface{}) error {
 	if o.DistinguishedName == "" {
 		return fmt.Errorf("Cannot update OU with name %q, distiguished name is empty", o.Name)
 	}
@@ -115,7 +134,17 @@ func (o *OrgUnit) Update(conn *winrm.Client, changes map[string]interface{}, exe
 	}
 
 	if cmd != "Set-ADOrganizationalUnit -Identity" {
-		result, err := RunWinRMCommand(conn, []string{cmd}, true, false, execLocally)
+		psOpts := CreatePSCommandOpts{
+			JSONOutput:      true,
+			ForceArray:      false,
+			ExecLocally:     conf.IsConnectionTypeLocal(),
+			PassCredentials: conf.IsPassCredentialsEnabled(),
+			Username:        conf.Settings.WinRMUsername,
+			Password:        conf.Settings.WinRMPassword,
+			Server:          conf.Settings.DomainName,
+		}
+		psCmd := NewPSCommand([]string{cmd}, psOpts)
+		result, err := psCmd.Run(conf)
 		if err != nil {
 			return err
 		}
@@ -128,7 +157,17 @@ func (o *OrgUnit) Update(conn *winrm.Client, changes map[string]interface{}, exe
 		var unprotected bool
 		if o.Protected == true {
 			cmd := fmt.Sprintf("Set-ADOrganizationalUnit -Identity %q -ProtectedFromAccidentalDeletion:$false", o.GUID)
-			result, err := RunWinRMCommand(conn, []string{cmd}, true, false, execLocally)
+			psOpts := CreatePSCommandOpts{
+				JSONOutput:      true,
+				ForceArray:      false,
+				ExecLocally:     conf.IsConnectionTypeLocal(),
+				PassCredentials: conf.IsPassCredentialsEnabled(),
+				Username:        conf.Settings.WinRMUsername,
+				Password:        conf.Settings.WinRMPassword,
+				Server:          conf.Settings.DomainName,
+			}
+			psCmd := NewPSCommand([]string{cmd}, psOpts)
+			result, err := psCmd.Run(conf)
 			if err != nil {
 				return fmt.Errorf("winrm execution failure while unprotecting OU object: %s", err)
 			}
@@ -139,7 +178,17 @@ func (o *OrgUnit) Update(conn *winrm.Client, changes map[string]interface{}, exe
 		}
 
 		cmd := fmt.Sprintf("Move-ADObject -Identity %q -TargetPath %q", o.GUID, path.(string))
-		result, err := RunWinRMCommand(conn, []string{cmd}, true, false, execLocally)
+		psOpts := CreatePSCommandOpts{
+			JSONOutput:      true,
+			ForceArray:      false,
+			ExecLocally:     conf.IsConnectionTypeLocal(),
+			PassCredentials: conf.IsPassCredentialsEnabled(),
+			Username:        conf.Settings.WinRMUsername,
+			Password:        conf.Settings.WinRMPassword,
+			Server:          conf.Settings.DomainName,
+		}
+		psCmd := NewPSCommand([]string{cmd}, psOpts)
+		result, err := psCmd.Run(conf)
 		if err != nil {
 			return fmt.Errorf("winrm execution failure while moving OU object: %s", err)
 		}
@@ -149,7 +198,17 @@ func (o *OrgUnit) Update(conn *winrm.Client, changes map[string]interface{}, exe
 
 		if unprotected == true {
 			cmd := fmt.Sprintf("Set-ADOrganizationalUnit -Identity %q -ProtectedFromAccidentalDeletion:$true", o.GUID)
-			result, err := RunWinRMCommand(conn, []string{cmd}, true, false, execLocally)
+			psOpts := CreatePSCommandOpts{
+				JSONOutput:      true,
+				ForceArray:      false,
+				ExecLocally:     conf.IsConnectionTypeLocal(),
+				PassCredentials: conf.IsPassCredentialsEnabled(),
+				Username:        conf.Settings.WinRMUsername,
+				Password:        conf.Settings.WinRMPassword,
+				Server:          conf.Settings.DomainName,
+			}
+			psCmd := NewPSCommand([]string{cmd}, psOpts)
+			result, err := psCmd.Run(conf)
 			if err != nil {
 				return fmt.Errorf("winrm execution failure while protecting OU object: %s", err)
 			}
@@ -161,7 +220,17 @@ func (o *OrgUnit) Update(conn *winrm.Client, changes map[string]interface{}, exe
 
 	if protected, ok := changes["protected"]; ok {
 		cmd = fmt.Sprintf("Set-ADObject -Identity %s -ProtectedFromAccidentalDeletion:$%t", o.GUID, protected.(bool))
-		result, err := RunWinRMCommand(conn, []string{cmd}, true, false, execLocally)
+		psOpts := CreatePSCommandOpts{
+			JSONOutput:      true,
+			ForceArray:      false,
+			ExecLocally:     conf.IsConnectionTypeLocal(),
+			PassCredentials: conf.IsPassCredentialsEnabled(),
+			Username:        conf.Settings.WinRMUsername,
+			Password:        conf.Settings.WinRMPassword,
+			Server:          conf.Settings.DomainName,
+		}
+		psCmd := NewPSCommand([]string{cmd}, psOpts)
+		result, err := psCmd.Run(conf)
 		if err != nil {
 			return err
 		}
@@ -172,25 +241,67 @@ func (o *OrgUnit) Update(conn *winrm.Client, changes map[string]interface{}, exe
 
 	if name, ok := changes["name"]; ok {
 		cmd = fmt.Sprintf("Rename-ADObject -Identity %q %q ", o.GUID, name.(string))
-		result, err := RunWinRMCommand(conn, []string{cmd}, true, false, execLocally)
+		psOpts := CreatePSCommandOpts{
+			JSONOutput:      true,
+			ForceArray:      false,
+			ExecLocally:     conf.IsConnectionTypeLocal(),
+			PassCredentials: conf.IsPassCredentialsEnabled(),
+			Username:        conf.Settings.WinRMUsername,
+			Password:        conf.Settings.WinRMPassword,
+			Server:          conf.Settings.DomainName,
+		}
+		psCmd := NewPSCommand([]string{cmd}, psOpts)
+		result, err := psCmd.Run(conf)
 		if err != nil {
 			return err
 		}
 		if result.ExitCode != 0 {
 			return fmt.Errorf("Set-ADObject exited with a non-zero exit code (%d) while renaming OU, stderr :%s", result.ExitCode, result.StdErr)
 		}
-
 	}
 	return nil
 }
 
 // Delete deletes an existing OU from an AD tree
-func (o *OrgUnit) Delete(conn *winrm.Client, execLocally bool) error {
+func (o *OrgUnit) Delete(conf *config.ProviderConf) error {
 	if o.DistinguishedName == "" {
 		return fmt.Errorf("Cannot remove OU with name %q, distiguished name is empty", o.Name)
 	}
-	cmd := fmt.Sprintf("Get-ADObject -Properties * -Identity %q | Set-ADObject -ProtectedFromAccidentalDeletion:$false -Passthru | Remove-ADOrganizationalUnit -confirm:$false", o.DistinguishedName)
-	result, err := RunWinRMCommand(conn, []string{cmd}, true, false, execLocally)
+	var cmds []string
+	subCmds := []string{
+		fmt.Sprintf("Get-ADObject -Properties * -Identity %q", o.DistinguishedName),
+		"Set-ADObject -ProtectedFromAccidentalDeletion:$false -Passthru",
+		"Remove-ADOrganizationalUnit -confirm:$false",
+	}
+
+	psOpts := CreatePSCommandOpts{
+		JSONOutput:      false,
+		ForceArray:      false,
+		ExecLocally:     conf.IsConnectionTypeLocal(),
+		PassCredentials: conf.IsPassCredentialsEnabled(),
+		Username:        conf.Settings.WinRMUsername,
+		Password:        conf.Settings.WinRMPassword,
+		Server:          conf.Settings.DomainName,
+		SkipCredPrefix:  true,
+	}
+
+	for _, subCmd := range subCmds {
+		cmds = append(cmds, NewPSCommand([]string{subCmd}, psOpts).String())
+	}
+
+	cmd := strings.Join(cmds, "|")
+	psOpts = CreatePSCommandOpts{
+		JSONOutput:      true,
+		ForceArray:      false,
+		ExecLocally:     conf.IsConnectionTypeLocal(),
+		PassCredentials: conf.IsPassCredentialsEnabled(),
+		Username:        conf.Settings.WinRMUsername,
+		Password:        conf.Settings.WinRMPassword,
+		SkipCredSuffix:  true,
+		Server:          "",
+	}
+	psCmd := NewPSCommand([]string{cmd}, psOpts)
+	result, err := psCmd.Run(conf)
 	if err != nil {
 		return err
 	}
@@ -206,6 +317,9 @@ func unmarshallOU(input []byte) (*OrgUnit, error) {
 	if err != nil {
 		log.Printf("[ERROR] Failed to unmarshall json document with error %q, document was: %s", err, string(input))
 		return nil, fmt.Errorf("failed while unmarshalling json response: %s", err)
+	}
+	if ou.GUID == "" {
+		return nil, fmt.Errorf("invalid data while unmarshalling OU data, json doc was: %s", string(input))
 	}
 	return &ou, nil
 

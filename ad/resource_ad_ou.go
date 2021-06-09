@@ -3,6 +3,8 @@ package ad
 import (
 	"strings"
 
+	"github.com/hashicorp/terraform-provider-ad/ad/internal/config"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-provider-ad/ad/internal/winrmhelper"
 )
@@ -58,15 +60,8 @@ func resourceADOURead(d *schema.ResourceData, meta interface{}) error {
 	if d.Id() == "" {
 		return nil
 	}
-	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
 
-	client, err := meta.(ProviderConf).AcquireWinRMClient()
-	if err != nil {
-		return err
-	}
-	defer meta.(ProviderConf).ReleaseWinRMClient(client)
-
-	ou, err := winrmhelper.NewOrgUnitFromHost(client, d.Id(), "", "", isLocal)
+	ou, err := winrmhelper.NewOrgUnitFromHost(meta.(*config.ProviderConf), d.Id(), "", "")
 	if err != nil {
 		if strings.Contains(err.Error(), "ObjectNotFound") {
 			// Resource no longer exists
@@ -87,15 +82,8 @@ func resourceADOURead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceADOUCreate(d *schema.ResourceData, meta interface{}) error {
-	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
-	client, err := meta.(ProviderConf).AcquireWinRMClient()
-	if err != nil {
-		return err
-	}
-	defer meta.(ProviderConf).ReleaseWinRMClient(client)
-
 	ou := winrmhelper.NewOrgUnitFromResource(d)
-	guid, err := ou.Create(client, isLocal)
+	guid, err := ou.Create(meta.(*config.ProviderConf))
 	if err != nil {
 		return err
 	}
@@ -105,13 +93,6 @@ func resourceADOUCreate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceADOUUpdate(d *schema.ResourceData, meta interface{}) error {
-	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
-	client, err := meta.(ProviderConf).AcquireWinRMClient()
-	if err != nil {
-		return err
-	}
-	defer meta.(ProviderConf).ReleaseWinRMClient(client)
-
 	ou := winrmhelper.NewOrgUnitFromResource(d)
 
 	keys := []string{"description", "name", "path", "protected"}
@@ -122,7 +103,7 @@ func resourceADOUUpdate(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	err = ou.Update(client, changes, isLocal)
+	err := ou.Update(meta.(*config.ProviderConf), changes)
 	if err != nil {
 		return err
 	}
@@ -130,15 +111,8 @@ func resourceADOUUpdate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceADOUDelete(d *schema.ResourceData, meta interface{}) error {
-	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
-	client, err := meta.(ProviderConf).AcquireWinRMClient()
-	if err != nil {
-		return err
-	}
-	defer meta.(ProviderConf).ReleaseWinRMClient(client)
-
 	ou := winrmhelper.NewOrgUnitFromResource(d)
-	err = ou.Delete(client, isLocal)
+	err := ou.Delete(meta.(*config.ProviderConf))
 	if err != nil {
 		return err
 	}

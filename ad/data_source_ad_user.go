@@ -3,6 +3,8 @@ package ad
 import (
 	"fmt"
 
+	"github.com/hashicorp/terraform-provider-ad/ad/internal/config"
+
 	"github.com/hashicorp/terraform-provider-ad/ad/internal/winrmhelper"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -188,15 +190,8 @@ func dataSourceADUser() *schema.Resource {
 }
 
 func dataSourceADUserRead(d *schema.ResourceData, meta interface{}) error {
-	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
 	userID := d.Get("user_id").(string)
-	client, err := meta.(ProviderConf).AcquireWinRMClient()
-	if err != nil {
-		return err
-	}
-	defer meta.(ProviderConf).ReleaseWinRMClient(client)
-
-	u, err := winrmhelper.GetUserFromHost(client, userID, nil, isLocal)
+	u, err := winrmhelper.GetUserFromHost(meta.(*config.ProviderConf), userID, nil)
 	if err != nil {
 		return err
 	}

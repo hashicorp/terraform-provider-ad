@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/hashicorp/terraform-provider-ad/ad/internal/config"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/hashicorp/terraform-provider-ad/ad/internal/winrmhelper"
@@ -76,13 +78,8 @@ func testAccResourceADOUExists(resource, name string, expected bool) resource.Te
 		if !ok {
 			return fmt.Errorf("%s key not found in state", resource)
 		}
-		client, err := testAccProvider.Meta().(ProviderConf).AcquireWinRMClient()
-		if err != nil {
-			return err
-		}
-		defer testAccProvider.Meta().(ProviderConf).ReleaseWinRMClient(client)
 		guid := rs.Primary.ID
-		ou, err := winrmhelper.NewOrgUnitFromHost(client, guid, "", "", false)
+		ou, err := winrmhelper.NewOrgUnitFromHost(testAccProvider.Meta().(*config.ProviderConf), guid, "", "")
 		if err != nil {
 			if strings.Contains(err.Error(), "ObjectNotFound") && !expected {
 				return nil

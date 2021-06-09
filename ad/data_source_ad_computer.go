@@ -3,6 +3,8 @@ package ad
 import (
 	"fmt"
 
+	"github.com/hashicorp/terraform-provider-ad/ad/internal/config"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-provider-ad/ad/internal/winrmhelper"
 )
@@ -37,13 +39,6 @@ func dataSourceADComputer() *schema.Resource {
 }
 
 func dataSourceADComputerRead(d *schema.ResourceData, meta interface{}) error {
-	isLocal := meta.(ProviderConf).isConnectionTypeLocal()
-	client, err := meta.(ProviderConf).AcquireWinRMClient()
-	if err != nil {
-		return err
-	}
-	defer meta.(ProviderConf).ReleaseWinRMClient(client)
-
 	dn := winrmhelper.SanitiseTFInput(d, "dn")
 	guid := winrmhelper.SanitiseTFInput(d, "guid")
 
@@ -56,7 +51,7 @@ func dataSourceADComputerRead(d *schema.ResourceData, meta interface{}) error {
 		identity = dn
 	}
 
-	computer, err := winrmhelper.NewComputerFromHost(client, identity, isLocal)
+	computer, err := winrmhelper.NewComputerFromHost(meta.(*config.ProviderConf), identity)
 	if err != nil {
 		return err
 	}

@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/hashicorp/terraform-provider-ad/ad/internal/config"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/hashicorp/terraform-provider-ad/ad/internal/winrmhelper"
@@ -78,12 +80,13 @@ func testAccResourceADGPOExists(resourceName, name string, expected bool) resour
 			return fmt.Errorf("%s key not found in state", resourceName)
 		}
 		guid := rs.Primary.ID
-		client, err := testAccProvider.Meta().(ProviderConf).AcquireWinRMClient()
+		client, err := testAccProvider.Meta().(*config.ProviderConf).AcquireWinRMClient()
 		if err != nil {
 			return err
 		}
-		defer testAccProvider.Meta().(ProviderConf).ReleaseWinRMClient(client)
-		gpo, err := winrmhelper.GetGPOFromHost(client, "", guid, false)
+		defer testAccProvider.Meta().(*config.ProviderConf).ReleaseWinRMClient(client)
+
+		gpo, err := winrmhelper.GetGPOFromHost(testAccProvider.Meta().(*config.ProviderConf), "", guid)
 		if err != nil {
 			// Check that the err is really because the GPO was not found
 			// and not because of other issues

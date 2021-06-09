@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/hashicorp/terraform-provider-ad/ad/internal/config"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/hashicorp/terraform-provider-ad/ad/internal/winrmhelper"
@@ -165,16 +167,12 @@ func testAccResourceADGPLinkExists(resourceName string, order int, enforced, ena
 			return fmt.Errorf("%s key not found in state", resourceName)
 		}
 		id := rs.Primary.ID
-		client, err := testAccProvider.Meta().(ProviderConf).AcquireWinRMClient()
-		if err != nil {
-			return err
-		}
-		defer testAccProvider.Meta().(ProviderConf).ReleaseWinRMClient(client)
+
 		idParts := strings.SplitN(id, "_", 2)
 		if len(idParts) != 2 {
 			return fmt.Errorf("malformed ID for GPLink resource with ID %q", id)
 		}
-		gplink, err := winrmhelper.GetGPLinkFromHost(client, idParts[0], idParts[1], false)
+		gplink, err := winrmhelper.GetGPLinkFromHost(testAccProvider.Meta().(*config.ProviderConf), idParts[0], idParts[1])
 		if err != nil {
 			// Check that the err is really because the GPO was not found
 			// and not because of other issues

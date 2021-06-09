@@ -5,6 +5,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/hashicorp/terraform-provider-ad/ad/internal/config"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/hashicorp/terraform-provider-ad/ad/internal/winrmhelper"
@@ -47,12 +49,8 @@ func testAccResourceADGPOSecurityExists(resourceName string, desired bool) resou
 			return fmt.Errorf("resource ID %q does not match <guid>_securitysettings", rs.Primary.ID)
 		}
 		guid := toks[0]
-		client, err := testAccProvider.Meta().(ProviderConf).AcquireWinRMClient()
-		if err != nil {
-			return err
-		}
-		defer testAccProvider.Meta().(ProviderConf).ReleaseWinRMClient(client)
-		gpo, err := winrmhelper.GetGPOFromHost(client, "", guid, false)
+
+		gpo, err := winrmhelper.GetGPOFromHost(testAccProvider.Meta().(*config.ProviderConf), "", guid)
 		if err != nil {
 			// if the GPO got destroyed first then the rest of the entities depending on it
 			// are also destroyed.
@@ -61,8 +59,7 @@ func testAccResourceADGPOSecurityExists(resourceName string, desired bool) resou
 			}
 			return err
 		}
-
-		_, err = winrmhelper.GetSecIniFromHost(client, gpo, false)
+		_, err = winrmhelper.GetSecIniFromHost(testAccProvider.Meta().(*config.ProviderConf), gpo)
 		if err != nil {
 			if !desired && strings.Contains(err.Error(), "NotFound") {
 				return nil
