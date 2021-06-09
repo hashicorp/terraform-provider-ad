@@ -1,3 +1,18 @@
+## 0.4.3 (Unreleased)
+
+FEATURES:
+ * **Provider**: Support for "Double Hop" authentication ([#117](https://github.com/hashicorp/terraform-provider-ad/pull/117)) 
+
+IMPROVEMENTS:
+* **Data Source**: `ad_computer`: Introduce `computer_id` field. ([#118](https://github.com/hashicorp/terraform-provider-ad/pull/118)) 
+* **Data Source**: `ad_ou`: Introduce `ou_id` field. ([#118](https://github.com/hashicorp/terraform-provider-ad/pull/118)) 
+
+BUGFIXES:
+* **Docs**: Fixed formatting issues ([#100](https://github.com/hashicorp/terraform-provider-ad/pull/100))
+* **Resource**: `ad_group` Fix issue when moving group ([#109](https://github.com/hashicorp/terraform-provider-ad/pull/109)) 
+* **Resource**: `ad_group` Fix issue when moving group ([#112](https://github.com/hashicorp/terraform-provider-ad/pull/112)) 
+* **Resource**: `ad_ou` Fix issue when moving OU ([#105](https://github.com/hashicorp/terraform-provider-ad/pull/105)) 
+
 ## 0.4.2 (April 21, 2021)
 
 BUGFIXES:
