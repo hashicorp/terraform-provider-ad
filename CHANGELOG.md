@@ -1,4 +1,4 @@
-## 0.4.3 (Unreleased)
+## 0.4.3 (June 10, 2021)
 
 FEATURES:
  * **Provider**: Support for "Double Hop" authentication ([#117](https://github.com/hashicorp/terraform-provider-ad/pull/117)) 
