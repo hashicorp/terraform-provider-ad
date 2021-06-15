@@ -192,13 +192,12 @@ func (g *Gmsa) ModifyGmsa(d *schema.ResourceData, client *winrm.Client, execLoca
 			if s == "" {
 				continue
 			}
-			sp = append(sp, s.(string))
+			sp = append(sp, fmt.Sprintf("%q", s.(string)))
 		}
-		cmds := []string{fmt.Sprintf("Set-ADServiceAccount -Identity %q -ServicePrincipalNames $null", g.GUID)}
 		if len(sp) > 0 {
 			spnlist := strings.Join(sp, ",")
 			log.Printf("[DEBUG] SPN list: %s", spnlist)
-			cmds = append(cmds, fmt.Sprintf("; Set-ADServiceAccount -Identity %q -ServicePrincipalNames @{Add=%q}", g.GUID, spnlist))
+			cmds = []string{fmt.Sprintf("Set-ADServiceAccount -Identity %q -ServicePrincipalNames @{Replace=%s}", g.GUID, spnlist)}
 		}
 
 		result, err := RunWinRMCommand(client, cmds, false, false, execLocally)
@@ -221,11 +220,10 @@ func (g *Gmsa) ModifyGmsa(d *schema.ResourceData, client *winrm.Client, execLoca
 			del = append(del, fmt.Sprintf("%q", d.(string)))
 		}
 
-		cmds := []string{fmt.Sprintf("Set-ADServiceAccount -Identity %q -PrincipalsAllowedToDelegateToAccount $null", g.GUID)}
 		if len(del) > 0 {
 			princ_del := strings.Join(del, ",")
 			log.Printf("[DEBUG] Principal list: %s", princ_del)
-			cmds = append(cmds, fmt.Sprintf(" ; Set-ADServiceAccount -Identity %q -PrincipalsAllowedToDelegateToAccount %s", g.GUID, princ_del))
+			cmds = []string{fmt.Sprintf("Set-ADServiceAccount -Identity %q -PrincipalsAllowedToDelegateToAccount %s", g.GUID, princ_del)}
 		}
 		result, err := RunWinRMCommand(client, cmds, false, false, execLocally)
 		if err != nil {
@@ -246,11 +244,11 @@ func (g *Gmsa) ModifyGmsa(d *schema.ResourceData, client *winrm.Client, execLoca
 			}
 			pass = append(pass, fmt.Sprintf("%q", p.(string)))
 		}
-		cmds := []string{fmt.Sprintf("Set-ADServiceAccount -Identity %q -PrincipalsAllowedToRetrieveManagedPassword $null", g.GUID)}
+
 		if len(pass) > 0 {
 			princ_pass := strings.Join(pass, ",")
 			log.Printf("[DEBUG] Principal list: %s", princ_pass)
-			cmds = append(cmds, fmt.Sprintf(" ; Set-ADServiceAccount -Identity %q -PrincipalsAllowedToRetrieveManagedPassword %s", g.GUID, princ_pass))
+			cmds = []string{fmt.Sprintf("Set-ADServiceAccount -Identity %q -PrincipalsAllowedToRetrieveManagedPassword %s", g.GUID, princ_pass)}
 		}
 		result, err := RunWinRMCommand(client, cmds, false, false, execLocally)
 		if err != nil {
@@ -325,7 +323,7 @@ func GetGmsaFromResource(d *schema.ResourceData) *Gmsa {
 		DNSHostName:                   SanitiseTFInput(d, "dns_host_name"),
 		Enabled:                       d.Get("enabled").(bool),
 		Expiration:                    SanitiseTFInput(d, "expiration"),
-		GUID:                          d.Id(),
+		GUID:                          SanitiseTFInput(d, "guid"),
 		HomePage:                      SanitiseTFInput(d, "home_page"),
 		ManagedPasswordIntervalInDays: d.Get("managed_password_interval_in_days").(int),
 		Name:                          SanitiseTFInput(d, "name"),
