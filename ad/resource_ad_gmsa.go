@@ -125,6 +125,11 @@ func resourceADGmsa() *schema.Resource {
 				Default:     false,
 				Description: "If set to true, the Gmsa account is trusted for Kerberos delegation. A service that runs under an account that is trusted for Kerberos delegation can assume the identity of a client requesting the service. This parameter sets the TrustedForDelegation property of an account object.",
 			},
+			"guid": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The GUID of the gmsa object.",
+			},
 			"sid": {
 				Type:        schema.TypeString,
 				Computed:    true,
@@ -181,6 +186,7 @@ func resourceADGmsaRead(d *schema.ResourceData, meta interface{}) error {
 	_ = d.Set("dns_host_name", g.DNSHostName)
 	_ = d.Set("enabled", g.Enabled)
 	_ = d.Set("expiration", g.Expiration)
+	_ = d.Set("guid", g.GUID)
 	_ = d.Set("home_page", g.HomePage)
 	_ = d.Set("KerberosEncryptionType", g.KerberosEncryptionType)
 	_ = d.Set("managed_password_interval_in_days", g.ManagedPasswordIntervalInDays)
