@@ -101,6 +101,7 @@ func Provider() *schema.Provider {
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"ad_user":     dataSourceADUser(),
+			"ad_gmsa":     dataSourceADGmsa(),
 			"ad_group":    dataSourceADGroup(),
 			"ad_gpo":      dataSourceADGPO(),
 			"ad_computer": dataSourceADComputer(),
@@ -108,6 +109,7 @@ func Provider() *schema.Provider {
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"ad_user":             resourceADUser(),
+			"ad_gmsa":             resourceADGmsa(),
 			"ad_group":            resourceADGroup(),
 			"ad_group_membership": resourceADGroupMembership(),
 			"ad_gpo":              resourceADGPO(),
