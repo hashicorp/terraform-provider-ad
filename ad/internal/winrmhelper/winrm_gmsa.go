@@ -85,7 +85,7 @@ func (g *Gmsa) NewGmsa(client *winrm.Client, execLocally bool) (string, error) {
 	}
 
 	if len(g.KerberosEncryptionType) > 0 {
-		cmds = append(cmds, fmt.Sprintf("-KerberosEncryptionType %q", strings.Join(g.KerberosEncryptionType, ",")))
+		cmds = append(cmds, fmt.Sprintf("-KerberosEncryptionType '%s'", strings.Join(g.KerberosEncryptionType, `','`)))
 	}
 
 	if g.ManagedPasswordIntervalInDays != 0 {
@@ -93,11 +93,11 @@ func (g *Gmsa) NewGmsa(client *winrm.Client, execLocally bool) (string, error) {
 	}
 
 	if len(g.PrincipalsAllowedToDelegateToAccount) > 0 {
-		cmds = append(cmds, fmt.Sprintf("-PrincipalsAllowedToDelegateToAccount %q", strings.Join(g.PrincipalsAllowedToDelegateToAccount, ",")))
+		cmds = append(cmds, fmt.Sprintf("-PrincipalsAllowedToDelegateToAccount '%s'", strings.Join(g.PrincipalsAllowedToDelegateToAccount, `','`)))
 	}
 
 	if len(g.PrincipalsAllowedToRetrieveManagedPassword) > 0 {
-		cmds = append(cmds, fmt.Sprintf("-PrincipalsAllowedToRetrieveManagedPassword %q", strings.Join(g.PrincipalsAllowedToRetrieveManagedPassword, ",")))
+		cmds = append(cmds, fmt.Sprintf("-PrincipalsAllowedToRetrieveManagedPassword '%s'", strings.Join(g.PrincipalsAllowedToRetrieveManagedPassword, `','`)))
 	}
 
 	if g.SAMAccountName != "" {
@@ -107,7 +107,7 @@ func (g *Gmsa) NewGmsa(client *winrm.Client, execLocally bool) (string, error) {
 	}
 
 	if len(g.ServicePrincipalNames) > 0 {
-		cmds = append(cmds, fmt.Sprintf("-ServicePrincipalNames %q", strings.Join(g.ServicePrincipalNames, ",")))
+		cmds = append(cmds, fmt.Sprintf("-ServicePrincipalNames '%s'", strings.Join(g.ServicePrincipalNames, `','`)))
 	}
 
 	cmds = append(cmds, fmt.Sprintf("-TrustedForDelegation $%t", g.TrustedForDelegation))
