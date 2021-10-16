@@ -62,6 +62,11 @@ func resourceADGroup() *schema.Resource {
 				Computed:    true,
 				Description: "The SID of the group object.",
 			},
+			"dn": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The distinguished name of the group object.",
+			},
 		},
 	}
 }
@@ -95,6 +100,7 @@ func resourceADGroupRead(d *schema.ResourceData, meta interface{}) error {
 	_ = d.Set("category", g.Category)
 	_ = d.Set("container", g.Container)
 	_ = d.Set("description", g.Description)
+	_ = d.Set("dn", g.DistinguishedName)
 	_ = d.Set("sid", g.SID.Value)
 
 	return nil
