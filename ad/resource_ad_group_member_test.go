@@ -2,9 +2,9 @@ package ad
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"testing"
-	"os"
 
 	"github.com/hashicorp/terraform-provider-ad/ad/internal/config"
 
@@ -100,7 +100,7 @@ func testAccResourceADGroupMemberExists(resourceName string, expected bool, memb
 			return err
 		}
 
-     	if expected && gm.GroupMembers[0].Name!=member {
+		if expected && gm.GroupMembers[0].Name != member {
 			return fmt.Errorf("actual member (%s) does not match the expected member (%s)", gm.GroupMembers[0].Name, member)
 		}
 
