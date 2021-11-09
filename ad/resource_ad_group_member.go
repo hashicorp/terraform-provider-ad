@@ -42,7 +42,7 @@ func composeGroupMemberID(groupID, memberID string) string {
 }
 
 func parseGroupMemberID(groupMemberID string) (groupID, memberID string, err error) {
-	ids := strings.Split(groupID, "_")
+	ids := strings.Split(groupMemberID, "_")
 
 	if len(ids) != 2 {
 		err = fmt.Errorf("invalid groupMemberID: %s", groupMemberID)
