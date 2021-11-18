@@ -388,7 +388,7 @@ func (g *GPO) SetADGPOVersions(conf *config.ProviderConf, gpoVersion uint32) err
 		PassCredentials: conf.IsPassCredentialsEnabled(),
 		Username:        conf.Settings.WinRMUsername,
 		Password:        conf.Settings.WinRMPassword,
-		Server:          conf.Settings.DomainName,
+		Server:          conf.IdentifyDomainController(),
 		SkipCredPrefix:  true,
 	}
 

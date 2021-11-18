@@ -50,7 +50,7 @@ func NewComputerFromHost(conf *config.ProviderConf, identity string) (*Computer,
 		PassCredentials: conf.IsPassCredentialsEnabled(),
 		Username:        conf.Settings.WinRMUsername,
 		Password:        conf.Settings.WinRMPassword,
-		Server:          conf.Settings.DomainName,
+		Server:          conf.IdentifyDomainController(),
 	}
 	psCmd := NewPSCommand([]string{cmd}, psOpts)
 	result, err := psCmd.Run(conf)
@@ -96,7 +96,7 @@ func (m *Computer) Create(conf *config.ProviderConf) (string, error) {
 		PassCredentials: conf.IsPassCredentialsEnabled(),
 		Username:        conf.Settings.WinRMUsername,
 		Password:        conf.Settings.WinRMPassword,
-		Server:          conf.Settings.DomainName,
+		Server:          conf.IdentifyDomainController(),
 	}
 	psCmd := NewPSCommand([]string{cmd}, psOpts)
 	result, err := psCmd.Run(conf)
@@ -135,7 +135,7 @@ func (m *Computer) Update(conf *config.ProviderConf, changes map[string]interfac
 			PassCredentials: conf.IsPassCredentialsEnabled(),
 			Username:        conf.Settings.WinRMUsername,
 			Password:        conf.Settings.WinRMPassword,
-			Server:          conf.Settings.DomainName,
+			Server:          conf.IdentifyDomainController(),
 		}
 		psCmd := NewPSCommand([]string{cmd}, psOpts)
 		result, err := psCmd.Run(conf)
@@ -166,7 +166,7 @@ func (m *Computer) Update(conf *config.ProviderConf, changes map[string]interfac
 			PassCredentials: conf.IsPassCredentialsEnabled(),
 			Username:        conf.Settings.WinRMUsername,
 			Password:        conf.Settings.WinRMPassword,
-			Server:          conf.Settings.DomainName,
+			Server:          conf.IdentifyDomainController(),
 		}
 		psCmd := NewPSCommand([]string{cmd}, psOpts)
 		result, err := psCmd.Run(conf)
@@ -196,7 +196,7 @@ func (m *Computer) Delete(conf *config.ProviderConf) error {
 		PassCredentials: conf.IsPassCredentialsEnabled(),
 		Username:        conf.Settings.WinRMUsername,
 		Password:        conf.Settings.WinRMPassword,
-		Server:          conf.Settings.DomainName,
+		Server:          conf.IdentifyDomainController(),
 	}
 	psCmd := NewPSCommand([]string{cmd}, psOpts)
 	result, err := psCmd.Run(conf)
