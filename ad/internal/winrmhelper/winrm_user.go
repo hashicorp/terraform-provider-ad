@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"reflect"
 	"strings"
 
 	"github.com/hashicorp/terraform-provider-ad/ad/internal/config"
@@ -311,77 +310,11 @@ func (u *User) ModifyUser(d *schema.ResourceData, conf *config.ProviderConf) err
 
 	if d.HasChange("custom_attributes") {
 		oldValue, newValue := d.GetChange("custom_attributes")
-		newMap, err := structure.ExpandJsonFromString(newValue.(string))
+		otherAttributes, err := GetChangesForCustomAttributes(oldValue, newValue)
 		if err != nil {
 			return err
 		}
-
-		newSortedMap := SortInnerSlice(newMap)
-		toClear := []string{}
-		toReplace := []string{}
-		toAdd := []string{}
-
-		var oldSortedMap map[string]interface{}
-		if oldValue.(string) != "" {
-			oldMap, err := structure.ExpandJsonFromString(oldValue.(string))
-			if err != nil {
-				return fmt.Errorf("while expanding CA json string %s: %s", oldValue.(string), err)
-			}
-			oldSortedMap = SortInnerSlice(oldMap)
-		}
-
-		for k, v := range oldSortedMap {
-			if newVal, ok := newSortedMap[k]; ok {
-				if !reflect.DeepEqual(v, newVal) {
-					var out string
-					if reflect.ValueOf(newVal).Kind() == reflect.Slice {
-						quotedStrings := make([]string, len(newVal.([]string)))
-						for idx, s := range newVal.([]string) {
-							// Using %q here will cause double quotes inside the string to be escaped with \"
-							// which is not desirable in Powershell
-							quotedStrings[idx] = fmt.Sprintf(`"%s"`, s)
-						}
-						out = strings.Join(quotedStrings, ",")
-					} else {
-						out = fmt.Sprintf(`"%s"`, newVal.(string))
-					}
-					toReplace = append(toReplace, fmt.Sprintf("%s=%s", SanitiseString(k), out))
-				}
-			} else {
-				toClear = append(toClear, SanitiseString(k))
-			}
-		}
-
-		for k, newVal := range newSortedMap {
-			if _, ok := oldSortedMap[k]; !ok {
-				var out string
-				if reflect.ValueOf(newVal).Kind() == reflect.Slice {
-					quotedStrings := make([]string, len(newVal.([]string)))
-					for idx, s := range newVal.([]string) {
-						// Using %q here will cause double quotes inside the string to be escaped with \"
-						// which is not desirable in Powershell
-						quotedStrings[idx] = s
-					}
-					out = strings.Join(quotedStrings, ",")
-				} else {
-					out = newVal.(string)
-				}
-				toAdd = append(toAdd, fmt.Sprintf("%s=%s", SanitiseString(k), out))
-			}
-		}
-
-		if len(toClear) > 0 {
-			cmds = append(cmds, fmt.Sprintf(`-Clear %s`, strings.Join(toClear, ";")))
-		}
-
-		if len(toReplace) > 0 {
-			cmds = append(cmds, fmt.Sprintf(`-Replace @{%s}`, strings.Join(toReplace, ";")))
-		}
-
-		if len(toAdd) > 0 {
-			cmds = append(cmds, fmt.Sprintf(`-Add @{%s}`, strings.Join(toAdd, ";")))
-		}
-
+		cmds = append(cmds, otherAttributes...)
 	}
 
 	if len(cmds) > 1 {
@@ -478,25 +411,7 @@ func (u *User) DeleteUser(conf *config.ProviderConf) error {
 }
 
 func (u *User) getOtherAttributes() (string, error) {
-	out := []string{}
-	for k, v := range u.CustomAttributes {
-		cleanKey := SanitiseString(k)
-		var cleanValue string
-		if reflect.ValueOf(v).Kind() == reflect.Slice {
-			quotedStrings := make([]string, len(v.([]interface{})))
-			for idx, s := range v.([]interface{}) {
-				// Using %q here will cause double quotes inside the string to be escaped with \"
-				// which is not desirable in Powershell
-				quotedStrings[idx] = GetString(s.(string))
-			}
-			cleanValue = strings.Join(quotedStrings, ",")
-		} else {
-			cleanValue = GetString(v.(string))
-		}
-		out = append(out, fmt.Sprintf(`'%s'=%s`, cleanKey, cleanValue))
-	}
-	finalAttrString := strings.Join(out, ";")
-	return fmt.Sprintf("@{%s}", finalAttrString), nil
+	return GetOtherAttributes(u.CustomAttributes)
 }
 
 // GetUserFromResource returns a user struct built from Resource data

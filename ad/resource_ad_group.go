@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-provider-ad/ad/internal/config"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/structure"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/terraform-provider-ad/ad/internal/winrmhelper"
 )
@@ -57,6 +58,24 @@ func resourceADGroup() *schema.Resource {
 				Optional:    true,
 				Description: "Description of the Group.",
 			},
+			"managed_by": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "The distinguished name of the user or group that is assigned to manage this object.",
+			},
+			"distinguished_name": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The distinguishedName of the group.",
+			},
+			"custom_attributes": {
+				Type:             schema.TypeString,
+				Optional:         true,
+				Description:      "JSON encoded map that represents key/value pairs for custom attributes. Please note that `terraform import` will not import these attributes.",
+				ValidateFunc:     validation.StringIsJSON,
+				DiffSuppressFunc: suppressJsonDiff,
+				Default:          "{}",
+			},
 			"sid": {
 				Type:        schema.TypeString,
 				Computed:    true,
@@ -67,8 +86,11 @@ func resourceADGroup() *schema.Resource {
 }
 
 func resourceADGroupCreate(d *schema.ResourceData, meta interface{}) error {
-	u := winrmhelper.GetGroupFromResource(d)
-	guid, err := u.AddGroup(meta.(*config.ProviderConf))
+	g, err := winrmhelper.GetGroupFromResource(d)
+	if err != nil {
+		return err
+	}
+	guid, err := g.AddGroup(meta.(*config.ProviderConf))
 	if err != nil {
 		return err
 	}
@@ -77,7 +99,11 @@ func resourceADGroupCreate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceADGroupRead(d *schema.ResourceData, meta interface{}) error {
-	g, err := winrmhelper.GetGroupFromHost(meta.(*config.ProviderConf), d.Id())
+	caKeys, err := extractCustAttrKeys(d)
+	if err != nil {
+		return err
+	}
+	g, err := winrmhelper.GetGroupFromHost(meta.(*config.ProviderConf), d.Id(), caKeys)
 	if err != nil {
 		if strings.Contains(err.Error(), "ADIdentityNotFoundException") {
 			d.SetId("")
@@ -89,20 +115,32 @@ func resourceADGroupRead(d *schema.ResourceData, meta interface{}) error {
 		d.SetId("")
 		return nil
 	}
+	if g.CustomAttributes != nil {
+		ca, err := structure.FlattenJsonToString(g.CustomAttributes)
+		if err != nil {
+			return err
+		}
+		_ = d.Set("custom_attributes", ca)
+	}
 	_ = d.Set("sam_account_name", g.SAMAccountName)
 	_ = d.Set("name", g.Name)
 	_ = d.Set("scope", g.Scope)
 	_ = d.Set("category", g.Category)
 	_ = d.Set("container", g.Container)
 	_ = d.Set("description", g.Description)
+	_ = d.Set("managed_by", g.ManagedBy)
 	_ = d.Set("sid", g.SID.Value)
+	_ = d.Set("distinguished_name", g.DistinguishedName)
 
 	return nil
 }
 
 func resourceADGroupUpdate(d *schema.ResourceData, meta interface{}) error {
-	g := winrmhelper.GetGroupFromResource(d)
-	err := g.ModifyGroup(d, meta.(*config.ProviderConf))
+	g, err := winrmhelper.GetGroupFromResource(d)
+	if err != nil {
+		return err
+	}
+	err = g.ModifyGroup(d, meta.(*config.ProviderConf))
 	if err != nil {
 		return err
 	}
@@ -110,7 +148,7 @@ func resourceADGroupUpdate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceADGroupDelete(d *schema.ResourceData, meta interface{}) error {
-	g, err := winrmhelper.GetGroupFromHost(meta.(*config.ProviderConf), d.Id())
+	g, err := winrmhelper.GetGroupFromHost(meta.(*config.ProviderConf), d.Id(), nil)
 	if err != nil {
 		if strings.Contains(err.Error(), "ADIdentityNotFoundException") {
 			return nil

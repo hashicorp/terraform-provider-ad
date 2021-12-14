@@ -225,6 +225,7 @@ func resourceADUser() *schema.Resource {
 				Description:      "JSON encoded map that represents key/value pairs for custom attributes. Please note that `terraform import` will not import these attributes.",
 				ValidateFunc:     validation.StringIsJSON,
 				DiffSuppressFunc: suppressJsonDiff,
+				Default:          "{}",
 			},
 			"sid": {
 				Type:        schema.TypeString,
@@ -236,7 +237,10 @@ func resourceADUser() *schema.Resource {
 }
 
 func suppressJsonDiff(k, old, new string, d *schema.ResourceData) bool {
-
+	// Avoid permadiff when an empty map json is passed
+	if old == "" && new == "{}" {
+		return true
+	}
 	oldMap, err := structure.ExpandJsonFromString(old)
 	if err != nil {
 		return false
