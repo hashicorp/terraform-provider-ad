@@ -1,11 +1,13 @@
 package ad
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
 	"github.com/hashicorp/terraform-provider-ad/ad/internal/config"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/structure"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -22,6 +24,12 @@ func resourceADGroup() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
+		CustomizeDiff: customdiff.All(
+			customdiff.ComputedIf("distinguished_name", func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
+				// Changing the name (CN) or container (OU) of the group, changes the distinguishedName as well
+				return d.HasChange("name") || d.HasChange("container")
+			}),
+		),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:        schema.TypeString,
