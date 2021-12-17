@@ -86,6 +86,12 @@ func Provider() *schema.Provider {
 				DefaultFunc: schema.EnvDefaultFunc("AD_KRB_SPN", ""),
 				Description: "Alternative Service Principal Name. (default: none, environment variable: AD_KRB_SPN)",
 			},
+			"krb_keytab": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				DefaultFunc: schema.EnvDefaultFunc("AD_KRB_KEYTAB", ""),
+				Description: "Path to a keytab file to be used instead of a password",
+			},
 			"winrm_use_ntlm": {
 				Type:        schema.TypeBool,
 				Optional:    true,
