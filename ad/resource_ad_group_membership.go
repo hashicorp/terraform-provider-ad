@@ -84,7 +84,7 @@ func resourceADGroupMembershipUpdate(d *schema.ResourceData, meta interface{}) e
 		return err
 	}
 
-	err = gm.Update(meta.(*config.ProviderConf), gm.GroupMembers)
+	err = gm.SetGroupMembers(meta.(*config.ProviderConf), gm.GroupMembers)
 	if err != nil {
 		return err
 	}

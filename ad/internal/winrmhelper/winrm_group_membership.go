@@ -128,27 +128,27 @@ func (g *GroupMembership) bulkGroupMembersOp(conf *config.ProviderConf, operatio
 	return nil
 }
 
-func (g *GroupMembership) addGroupMembers(conf *config.ProviderConf, members []*GroupMember) error {
+func (g *GroupMembership) AddGroupMembers(conf *config.ProviderConf, members []*GroupMember) error {
 	return g.bulkGroupMembersOp(conf, "Add-ADGroupMember", members)
 }
 
-func (g *GroupMembership) removeGroupMembers(conf *config.ProviderConf, members []*GroupMember) error {
+func (g *GroupMembership) RemoveGroupMembers(conf *config.ProviderConf, members []*GroupMember) error {
 	return g.bulkGroupMembersOp(conf, "Remove-ADGroupMember", members)
 }
 
-func (g *GroupMembership) Update(conf *config.ProviderConf, expected []*GroupMember) error {
+func (g *GroupMembership) SetGroupMembers(conf *config.ProviderConf, expected []*GroupMember) error {
 	existing, err := g.getGroupMembers(conf)
 	if err != nil {
 		return err
 	}
 
 	toAdd, toRemove := diffGroupMemberLists(expected, existing)
-	err = g.addGroupMembers(conf, toAdd)
+	err = g.AddGroupMembers(conf, toAdd)
 	if err != nil {
 		return err
 	}
 
-	err = g.removeGroupMembers(conf, toRemove)
+	err = g.RemoveGroupMembers(conf, toRemove)
 	if err != nil {
 		return err
 	}

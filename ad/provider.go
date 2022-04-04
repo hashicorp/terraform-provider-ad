@@ -122,6 +122,7 @@ func Provider() *schema.Provider {
 			"ad_user":             resourceADUser(),
 			"ad_group":            resourceADGroup(),
 			"ad_group_membership": resourceADGroupMembership(),
+			"ad_group_member":     resourceADGroupMember(),
 			"ad_gpo":              resourceADGPO(),
 			"ad_gpo_security":     resourceADGPOSecurity(),
 			"ad_computer":         resourceADComputer(),
