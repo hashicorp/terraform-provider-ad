@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/jcmturner/gokrb5/v8/iana/etypeID"
+	"github.com/jcmturner/gokrb5/v8/keytab"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/jcmturner/gokrb5/v8/client"
@@ -34,6 +35,7 @@ type Settings struct {
 	WinRMInsecure        bool
 	KrbRealm             string
 	KrbConfig            string
+	KrbKeytab            string
 	KrbSpn               string
 	WinRMUseNTLM         bool
 	WinRMPassCredentials bool
@@ -52,6 +54,7 @@ func NewConfig(d *schema.ResourceData) (*Settings, error) {
 	winRMInsecure := d.Get("winrm_insecure").(bool)
 	krbRealm := d.Get("krb_realm").(string)
 	krbConfig := d.Get("krb_conf").(string)
+	krbKeytab := d.Get("krb_keytab").(string)
 	krbSpn := d.Get("krb_spn").(string)
 	winRMUseNTLM := d.Get("winrm_use_ntlm").(bool)
 	winRMPassCredentials := d.Get("winrm_pass_credentials").(bool)
@@ -67,6 +70,7 @@ func NewConfig(d *schema.ResourceData) (*Settings, error) {
 		WinRMInsecure:        winRMInsecure,
 		KrbRealm:             krbRealm,
 		KrbConfig:            krbConfig,
+		KrbKeytab:            krbKeytab,
 		KrbSpn:               krbSpn,
 		WinRMUseNTLM:         winRMUseNTLM,
 		WinRMPassCredentials: winRMPassCredentials,
@@ -140,20 +144,22 @@ type KerberosTransporter struct {
 	Proto     string
 	SPN       string
 	KrbConf   string
+	KrbKeytab string
 	transport *http.Transport
 }
 
 func NewKerberosTransporter(settings *Settings) func() winrm.Transporter {
 	return func() winrm.Transporter {
 		return &KerberosTransporter{
-			Username: settings.WinRMUsername,
-			Password: settings.WinRMPassword,
-			Domain:   settings.KrbRealm,
-			Hostname: settings.WinRMHost,
-			Port:     settings.WinRMPort,
-			Proto:    settings.WinRMProto,
-			KrbConf:  settings.KrbConfig,
-			SPN:      settings.KrbSpn,
+			Username:  settings.WinRMUsername,
+			Password:  settings.WinRMPassword,
+			Domain:    settings.KrbRealm,
+			Hostname:  settings.WinRMHost,
+			Port:      settings.WinRMPort,
+			Proto:     settings.WinRMProto,
+			KrbConf:   settings.KrbConfig,
+			KrbKeytab: settings.KrbKeytab,
+			SPN:       settings.KrbSpn,
 		}
 	}
 }
@@ -236,8 +242,19 @@ func (c *KerberosTransporter) Post(_ *winrm.Client, request *soap.SoapMessage) (
 	}
 
 	// setup the kerberos client
-	kerberosClient := client.NewWithPassword(c.Username, c.Domain, c.Password, cfg, client.DisablePAFXFAST(true),
-		client.AssumePreAuthentication(true))
+	var kerberosClient *client.Client
+	if c.KrbKeytab != "" {
+		cfg.LibDefaults.DefaultKeytabName = c.KrbKeytab
+		keytab, err := keytab.Load(cfg.LibDefaults.DefaultKeytabName)
+		if err != nil {
+			return "", err
+		}
+		kerberosClient = client.NewWithKeytab(c.Username, c.Domain, keytab, cfg, client.DisablePAFXFAST(true),
+			client.AssumePreAuthentication(true))
+	} else {
+		kerberosClient = client.NewWithPassword(c.Username, c.Domain, c.Password, cfg, client.DisablePAFXFAST(true),
+			client.AssumePreAuthentication(true))
+	}
 
 	// setup the spnego client using the kerberos client we got above
 	spnegoCl := spnego.NewClient(kerberosClient, nil, c.SPN)
