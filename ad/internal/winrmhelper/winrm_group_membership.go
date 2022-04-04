@@ -78,7 +78,7 @@ func (g *GroupMembership) getGroupMembers(conf *config.ProviderConf) ([]*GroupMe
 		PassCredentials: conf.IsPassCredentialsEnabled(),
 		Username:        conf.Settings.WinRMUsername,
 		Password:        conf.Settings.WinRMPassword,
-		Server:          conf.Settings.DomainName,
+		Server:          conf.IdentifyDomainController(),
 	}
 	psCmd := NewPSCommand([]string{cmd}, psOpts)
 	result, err := psCmd.Run(conf)
@@ -114,7 +114,7 @@ func (g *GroupMembership) bulkGroupMembersOp(conf *config.ProviderConf, operatio
 		PassCredentials: conf.IsPassCredentialsEnabled(),
 		Username:        conf.Settings.WinRMUsername,
 		Password:        conf.Settings.WinRMPassword,
-		Server:          conf.Settings.DomainName,
+		Server:          conf.IdentifyDomainController(),
 	}
 	psCmd := NewPSCommand([]string{cmd}, psOpts)
 	result, err := psCmd.Run(conf)
@@ -170,7 +170,7 @@ func (g *GroupMembership) Create(conf *config.ProviderConf) error {
 		PassCredentials: conf.IsPassCredentialsEnabled(),
 		Username:        conf.Settings.WinRMUsername,
 		Password:        conf.Settings.WinRMPassword,
-		Server:          conf.Settings.DomainName,
+		Server:          conf.IdentifyDomainController(),
 	}
 	psCmd := NewPSCommand(cmds, psOpts)
 	result, err := psCmd.Run(conf)
@@ -191,7 +191,7 @@ func (g *GroupMembership) Delete(conf *config.ProviderConf) error {
 		PassCredentials: conf.IsPassCredentialsEnabled(),
 		Username:        conf.Settings.WinRMUsername,
 		Password:        conf.Settings.WinRMPassword,
-		Server:          conf.Settings.DomainName,
+		Server:          conf.IdentifyDomainController(),
 		SkipCredPrefix:  true,
 	}
 	subcmd := NewPSCommand([]string{fmt.Sprintf("Get-AdGroupMember %q", g.GroupGUID)}, subCmdOpt)
@@ -204,7 +204,7 @@ func (g *GroupMembership) Delete(conf *config.ProviderConf) error {
 		PassCredentials: conf.IsPassCredentialsEnabled(),
 		Username:        conf.Settings.WinRMUsername,
 		Password:        conf.Settings.WinRMPassword,
-		Server:          conf.Settings.DomainName,
+		Server:          conf.IdentifyDomainController(),
 	}
 	psCmd := NewPSCommand([]string{cmd}, psOpts)
 	result, err := psCmd.Run(conf)

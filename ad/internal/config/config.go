@@ -38,6 +38,7 @@ type Settings struct {
 	WinRMUseNTLM         bool
 	WinRMPassCredentials bool
 	DomainName           string
+	DomainController     string
 }
 
 // NewConfig returns a new Config struct populated with Resource Data.
@@ -54,6 +55,7 @@ func NewConfig(d *schema.ResourceData) (*Settings, error) {
 	krbSpn := d.Get("krb_spn").(string)
 	winRMUseNTLM := d.Get("winrm_use_ntlm").(bool)
 	winRMPassCredentials := d.Get("winrm_pass_credentials").(bool)
+	domainController := d.Get("domain_controller").(string)
 
 	cfg := &Settings{
 		DomainName:           krbRealm,
@@ -68,6 +70,7 @@ func NewConfig(d *schema.ResourceData) (*Settings, error) {
 		KrbSpn:               krbSpn,
 		WinRMUseNTLM:         winRMUseNTLM,
 		WinRMPassCredentials: winRMPassCredentials,
+		DomainController:     domainController,
 	}
 
 	return cfg, nil
@@ -363,4 +366,15 @@ func (pcfg *ProviderConf) IsPassCredentialsEnabled() bool {
 	}
 	log.Printf("[DEBUG] Pass Credentials ? %t", isPassCredentialsEnabled)
 	return isPassCredentialsEnabled
+}
+
+// If a
+func (pcfg *ProviderConf) IdentifyDomainController() string {
+	log.Printf("[DEBUG] Checking to see if a domain controller was specified.")
+	if pcfg.Settings.DomainController != "" {
+		log.Printf("[DEBUG] Using specified domain controller for PowerShell commands.")
+		return pcfg.Settings.DomainController
+	}
+	log.Printf("[DEBUG] Using the domain name instead of a specific domain controller for PowerShell commands.")
+	return pcfg.Settings.DomainName
 }
