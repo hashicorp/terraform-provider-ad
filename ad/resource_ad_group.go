@@ -25,7 +25,7 @@ func resourceADGroup() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		CustomizeDiff: customdiff.All(
-			customdiff.ComputedIf("distinguished_name", func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
+			customdiff.ComputedIf("dn", func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
 				// Changing the name (CN) or container (OU) of the group, changes the distinguishedName as well
 				return d.HasChange("name") || d.HasChange("container")
 			}),
@@ -71,10 +71,10 @@ func resourceADGroup() *schema.Resource {
 				Optional:    true,
 				Description: "The distinguished name of the user or group that is assigned to manage this object.",
 			},
-			"distinguished_name": {
+			"dn": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "The distinguishedName of the group.",
+				Description: "The distinguished name of the group object.",
 			},
 			"custom_attributes": {
 				Type:             schema.TypeString,
@@ -138,7 +138,7 @@ func resourceADGroupRead(d *schema.ResourceData, meta interface{}) error {
 	_ = d.Set("description", g.Description)
 	_ = d.Set("managed_by", g.ManagedBy)
 	_ = d.Set("sid", g.SID.Value)
-	_ = d.Set("distinguished_name", g.DistinguishedName)
+	_ = d.Set("dn", g.DistinguishedName)
 
 	return nil
 }
