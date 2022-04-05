@@ -71,11 +71,6 @@ func resourceADGroup() *schema.Resource {
 				Optional:    true,
 				Description: "The distinguished name of the user or group that is assigned to manage this object.",
 			},
-			"dn": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "The distinguished name of the group object.",
-			},
 			"custom_attributes": {
 				Type:             schema.TypeString,
 				Optional:         true,
