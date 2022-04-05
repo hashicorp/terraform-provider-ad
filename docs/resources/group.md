@@ -45,20 +45,20 @@ resource "ad_group" "g" {
 
 ### Required
 
-- **container** (String) A DN of a container object holding the group.
-- **name** (String) The name of the group.
-- **sam_account_name** (String) The pre-win2k name of the group.
+- `container` (String) A DN of a container object holding the group.
+- `name` (String) The name of the group.
+- `sam_account_name` (String) The pre-win2k name of the group.
 
 ### Optional
 
-- **category** (String) The group's category. Can be one of `distribution` or `security` (case sensitive).
-- **description** (String) Description of the Group.
-- **id** (String) The ID of this resource.
-- **scope** (String) The group's scope. Can be one of `global`, `domainlocal`, or `universal` (case sensitive).
+- `category` (String) The group's category. Can be one of `distribution` or `security` (case sensitive).
+- `description` (String) Description of the Group.
+- `id` (String) The ID of this resource.
+- `scope` (String) The group's scope. Can be one of `global`, `domainlocal`, or `universal` (case sensitive).
 
 ### Read-Only
 
-- **sid** (String) The SID of the group object.
+- `sid` (String) The SID of the group object.
 
 ## Import
 

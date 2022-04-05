@@ -40,15 +40,15 @@ resource "ad_gplink" "og" {
 
 ### Required
 
-- **gpo_guid** (String) The GUID of the GPO that will be linked to the container object.
-- **target_dn** (String) The DN of the object the GPO will be linked to.
+- `gpo_guid` (String) The GUID of the GPO that will be linked to the container object.
+- `target_dn` (String) The DN of the object the GPO will be linked to.
 
 ### Optional
 
-- **enabled** (Boolean) Controls the state of the GP link between a GPO and a container object.
-- **enforced** (Boolean) If set to true, the GPO will be enforced on the container object.
-- **id** (String) The ID of this resource.
-- **order** (Number) Sets the precedence between multiple GPOs linked to the same container object.
+- `enabled` (Boolean) Controls the state of the GP link between a GPO and a container object.
+- `enforced` (Boolean) If set to true, the GPO will be enforced on the container object.
+- `id` (String) The ID of this resource.
+- `order` (Number) Sets the precedence between multiple GPOs linked to the same container object.
 
 ## Import
 

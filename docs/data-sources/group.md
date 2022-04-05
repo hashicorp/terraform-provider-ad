@@ -39,21 +39,21 @@ output "g2_description" {
 
 ### Required
 
-- **group_id** (String) The group's identifier. It can be the group's GUID, SID, Distinguished Name, or SAM Account Name.
+- `group_id` (String) The group's identifier. It can be the group's GUID, SID, Distinguished Name, or SAM Account Name.
 
 ### Optional
 
-- **id** (String) The ID of this resource.
+- `id` (String) The ID of this resource.
 
 ### Read-Only
 
-- **category** (String) The Group's category.
-- **container** (String) The Group's container object.
-- **description** (String) Description of the Group object.
-- **display_name** (String) The display name of the Group object.
-- **name** (String) The name of the Group object.
-- **sam_account_name** (String) The SAM account name of the Group object.
-- **scope** (String) The Group's scope.
-- **sid** (String) The SID of the group object.
+- `category` (String) The Group's category.
+- `container` (String) The Group's container object.
+- `description` (String) Description of the Group object.
+- `display_name` (String) The display name of the Group object.
+- `name` (String) The name of the Group object.
+- `sam_account_name` (String) The SAM account name of the Group object.
+- `scope` (String) The Group's scope.
+- `sid` (String) The SID of the group object.
 
 

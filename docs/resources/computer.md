@@ -27,20 +27,20 @@ resource "ad_computer" "c" {
 
 ### Required
 
-- **name** (String) The name for the computer account.
+- `name` (String) The name for the computer account.
 
 ### Optional
 
-- **container** (String) The DN of the container used to hold the computer account.
-- **description** (String) Specifies a description of the object. This parameter sets the value of the Description property for the computer object.
-- **id** (String) The ID of this resource.
-- **pre2kname** (String) The pre-win2k name for the computer account.
+- `container` (String) The DN of the container used to hold the computer account.
+- `description` (String) Specifies a description of the object. This parameter sets the value of the Description property for the computer object.
+- `id` (String) The ID of this resource.
+- `pre2kname` (String) The pre-win2k name for the computer account.
 
 ### Read-Only
 
-- **dn** (String)
-- **guid** (String)
-- **sid** (String) The SID of the computer object.
+- `dn` (String)
+- `guid` (String)
+- `sid` (String) The SID of the computer object.
 
 ## Import
 
