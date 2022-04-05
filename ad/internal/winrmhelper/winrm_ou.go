@@ -52,7 +52,7 @@ func NewOrgUnitFromHost(conf *config.ProviderConf, guid, name, path string) (*Or
 		PassCredentials: conf.IsPassCredentialsEnabled(),
 		Username:        conf.Settings.WinRMUsername,
 		Password:        conf.Settings.WinRMPassword,
-		Server:          conf.Settings.DomainName,
+		Server:          conf.IdentifyDomainController(),
 	}
 	psCmd := NewPSCommand([]string{cmd}, psOpts)
 	result, err := psCmd.Run(conf)
@@ -96,7 +96,7 @@ func (o *OrgUnit) Create(conf *config.ProviderConf) (string, error) {
 		PassCredentials: conf.IsPassCredentialsEnabled(),
 		Username:        conf.Settings.WinRMUsername,
 		Password:        conf.Settings.WinRMPassword,
-		Server:          conf.Settings.DomainName,
+		Server:          conf.IdentifyDomainController(),
 	}
 	psCmd := NewPSCommand([]string{cmd}, psOpts)
 	result, err := psCmd.Run(conf)
@@ -140,7 +140,7 @@ func (o *OrgUnit) Update(conf *config.ProviderConf, changes map[string]interface
 			PassCredentials: conf.IsPassCredentialsEnabled(),
 			Username:        conf.Settings.WinRMUsername,
 			Password:        conf.Settings.WinRMPassword,
-			Server:          conf.Settings.DomainName,
+			Server:          conf.IdentifyDomainController(),
 		}
 		psCmd := NewPSCommand([]string{cmd}, psOpts)
 		result, err := psCmd.Run(conf)
@@ -163,7 +163,7 @@ func (o *OrgUnit) Update(conf *config.ProviderConf, changes map[string]interface
 				PassCredentials: conf.IsPassCredentialsEnabled(),
 				Username:        conf.Settings.WinRMUsername,
 				Password:        conf.Settings.WinRMPassword,
-				Server:          conf.Settings.DomainName,
+				Server:          conf.IdentifyDomainController(),
 			}
 			psCmd := NewPSCommand([]string{cmd}, psOpts)
 			result, err := psCmd.Run(conf)
@@ -184,7 +184,7 @@ func (o *OrgUnit) Update(conf *config.ProviderConf, changes map[string]interface
 			PassCredentials: conf.IsPassCredentialsEnabled(),
 			Username:        conf.Settings.WinRMUsername,
 			Password:        conf.Settings.WinRMPassword,
-			Server:          conf.Settings.DomainName,
+			Server:          conf.IdentifyDomainController(),
 		}
 		psCmd := NewPSCommand([]string{cmd}, psOpts)
 		result, err := psCmd.Run(conf)
@@ -204,7 +204,7 @@ func (o *OrgUnit) Update(conf *config.ProviderConf, changes map[string]interface
 				PassCredentials: conf.IsPassCredentialsEnabled(),
 				Username:        conf.Settings.WinRMUsername,
 				Password:        conf.Settings.WinRMPassword,
-				Server:          conf.Settings.DomainName,
+				Server:          conf.IdentifyDomainController(),
 			}
 			psCmd := NewPSCommand([]string{cmd}, psOpts)
 			result, err := psCmd.Run(conf)
@@ -226,7 +226,7 @@ func (o *OrgUnit) Update(conf *config.ProviderConf, changes map[string]interface
 			PassCredentials: conf.IsPassCredentialsEnabled(),
 			Username:        conf.Settings.WinRMUsername,
 			Password:        conf.Settings.WinRMPassword,
-			Server:          conf.Settings.DomainName,
+			Server:          conf.IdentifyDomainController(),
 		}
 		psCmd := NewPSCommand([]string{cmd}, psOpts)
 		result, err := psCmd.Run(conf)
@@ -247,7 +247,7 @@ func (o *OrgUnit) Update(conf *config.ProviderConf, changes map[string]interface
 			PassCredentials: conf.IsPassCredentialsEnabled(),
 			Username:        conf.Settings.WinRMUsername,
 			Password:        conf.Settings.WinRMPassword,
-			Server:          conf.Settings.DomainName,
+			Server:          conf.IdentifyDomainController(),
 		}
 		psCmd := NewPSCommand([]string{cmd}, psOpts)
 		result, err := psCmd.Run(conf)
@@ -280,7 +280,7 @@ func (o *OrgUnit) Delete(conf *config.ProviderConf) error {
 		PassCredentials: conf.IsPassCredentialsEnabled(),
 		Username:        conf.Settings.WinRMUsername,
 		Password:        conf.Settings.WinRMPassword,
-		Server:          conf.Settings.DomainName,
+		Server:          conf.IdentifyDomainController(),
 		SkipCredPrefix:  true,
 	}
 

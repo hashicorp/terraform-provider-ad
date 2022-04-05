@@ -60,6 +60,11 @@ func dataSourceADGroup() *schema.Resource {
 				Computed:    true,
 				Description: "The SID of the group object.",
 			},
+			"dn": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The distinguished name of the group object.",
+			},
 		},
 	}
 }
@@ -79,6 +84,7 @@ func dataSourceADGroupRead(d *schema.ResourceData, meta interface{}) error {
 	_ = d.Set("scope", g.Scope)
 	_ = d.Set("category", g.Category)
 	_ = d.Set("container", g.Container)
+	_ = d.Set("dn", g.DistinguishedName)
 	_ = d.Set("name", g.Name)
 	_ = d.Set("group_id", groupID)
 	_ = d.Set("description", g.Description)

@@ -232,6 +232,11 @@ func resourceADUser() *schema.Resource {
 				Computed:    true,
 				Description: "The SID of the user object.",
 			},
+			"dn": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The distinguished name of the user object.",
+			},
 		},
 	}
 }
@@ -316,6 +321,7 @@ func resourceADUserRead(d *schema.ResourceData, meta interface{}) error {
 	_ = d.Set("department", u.Department)
 	_ = d.Set("description", u.Description)
 	_ = d.Set("division", u.Division)
+	_ = d.Set("dn", u.DistinguishedName)
 	_ = d.Set("email_address", u.EmailAddress)
 	_ = d.Set("employee_id", u.EmployeeID)
 	_ = d.Set("employee_number", u.EmployeeNumber)

@@ -60,7 +60,7 @@ func (g *Group) AddGroup(conf *config.ProviderConf) (string, error) {
 		PassCredentials: conf.IsPassCredentialsEnabled(),
 		Username:        conf.Settings.WinRMUsername,
 		Password:        conf.Settings.WinRMPassword,
-		Server:          conf.Settings.DomainName,
+		Server:          conf.IdentifyDomainController(),
 	}
 	psCmd := NewPSCommand(cmds, psOpts)
 	result, err := psCmd.Run(conf)
@@ -125,7 +125,7 @@ func (g *Group) ModifyGroup(d *schema.ResourceData, conf *config.ProviderConf) e
 			PassCredentials: conf.IsPassCredentialsEnabled(),
 			Username:        conf.Settings.WinRMUsername,
 			Password:        conf.Settings.WinRMPassword,
-			Server:          conf.Settings.DomainName,
+			Server:          conf.IdentifyDomainController(),
 		}
 		psCmd := NewPSCommand(cmds, psOpts)
 		result, err := psCmd.Run(conf)
@@ -147,7 +147,7 @@ func (g *Group) ModifyGroup(d *schema.ResourceData, conf *config.ProviderConf) e
 			PassCredentials: conf.IsPassCredentialsEnabled(),
 			Username:        conf.Settings.WinRMUsername,
 			Password:        conf.Settings.WinRMPassword,
-			Server:          conf.Settings.DomainName,
+			Server:          conf.IdentifyDomainController(),
 		}
 		psCmd := NewPSCommand([]string{cmd}, psOpts)
 		result, err := psCmd.Run(conf)
@@ -169,7 +169,7 @@ func (g *Group) ModifyGroup(d *schema.ResourceData, conf *config.ProviderConf) e
 			PassCredentials: conf.IsPassCredentialsEnabled(),
 			Username:        conf.Settings.WinRMUsername,
 			Password:        conf.Settings.WinRMPassword,
-			Server:          conf.Settings.DomainName,
+			Server:          conf.IdentifyDomainController(),
 		}
 		psCmd := NewPSCommand([]string{cmd}, psOpts)
 		result, err := psCmd.Run(conf)
@@ -194,7 +194,7 @@ func (g *Group) DeleteGroup(conf *config.ProviderConf) error {
 		PassCredentials: conf.IsPassCredentialsEnabled(),
 		Username:        conf.Settings.WinRMUsername,
 		Password:        conf.Settings.WinRMPassword,
-		Server:          conf.Settings.DomainName,
+		Server:          conf.IdentifyDomainController(),
 	}
 	psCmd := NewPSCommand([]string{cmd}, psOpts)
 	result, err := psCmd.Run(conf)
@@ -251,7 +251,7 @@ func GetGroupFromHost(conf *config.ProviderConf, guid string, customAttributes [
 		PassCredentials: conf.IsPassCredentialsEnabled(),
 		Username:        conf.Settings.WinRMUsername,
 		Password:        conf.Settings.WinRMPassword,
-		Server:          conf.Settings.DomainName,
+		Server:          conf.IdentifyDomainController(),
 	}
 	psCmd := NewPSCommand([]string{cmd}, psOpts)
 	result, err := psCmd.Run(conf)
