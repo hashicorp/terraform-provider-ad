@@ -51,6 +51,7 @@ output "g2_description" {
 - `container` (String) The Group's container object.
 - `description` (String) Description of the Group object.
 - `display_name` (String) The display name of the Group object.
+- `dn` (String) The distinguished name of the group object.
 - `name` (String) The name of the Group object.
 - `sam_account_name` (String) The SAM account name of the Group object.
 - `scope` (String) The Group's scope.

@@ -121,6 +121,7 @@ resource "ad_user" "u2" {
 
 ### Read-Only
 
+- `dn` (String) The distinguished name of the user object.
 - `sid` (String) The SID of the user object.
 
 ## Import

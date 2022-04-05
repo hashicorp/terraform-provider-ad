@@ -177,7 +177,9 @@ provider "ad" {
 
 ### Optional
 
+- `domain_controller` (String) Use a specific domain controller. (default: none, environment variable: AD_DC)
 - `krb_conf` (String) Path to kerberos configuration file. (default: none, environment variable: AD_KRB_CONF)
+- `krb_keytab` (String) Path to a keytab file to be used instead of a password
 - `krb_realm` (String) The name of the kerberos realm (domain) we will use for authentication. (default: "", environment variable: AD_KRB_REALM)
 - `krb_spn` (String) Alternative Service Principal Name. (default: none, environment variable: AD_KRB_SPN)
 - `winrm_insecure` (Boolean) Trust unknown certificates. (default: false, environment variable: AD_WINRM_INSECURE)

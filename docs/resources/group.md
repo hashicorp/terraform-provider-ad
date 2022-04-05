@@ -58,6 +58,7 @@ resource "ad_group" "g" {
 
 ### Read-Only
 
+- `dn` (String) The distinguished name of the group object.
 - `sid` (String) The SID of the group object.
 
 ## Import

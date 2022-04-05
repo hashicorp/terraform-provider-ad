@@ -58,6 +58,7 @@ output "testuser_guid" {
 - `description` (String) Description of the user object.
 - `display_name` (String) The display name of the user object.
 - `division` (String) Division assigned to user object.
+- `dn` (String) The distinguished name of the user object.
 - `email_address` (String) Email address assigned to user object.
 - `employee_id` (String) Employee ID assigned to user object.
 - `employee_number` (String) Employee Number assigned to user object.
