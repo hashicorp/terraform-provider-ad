@@ -1,4 +1,4 @@
-## 0.4.4 (Unreleased)
+## 0.4.4 (April 05, 2022)
 
 IMPROVEMENTS:
 * **Data Source**: `ad_user`: Add `distinguished_name` attribute to data source.
