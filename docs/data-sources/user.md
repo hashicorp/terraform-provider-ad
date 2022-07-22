@@ -43,47 +43,46 @@ output "testuser_guid" {
 
 ### Required
 
-- `user_id` (String) The user's identifier. It can be the group's GUID, SID, Distinguished Name, or SAM Account Name.
+- **user_id** (String) The user's identifier. It can be the group's GUID, SID, Distinguished Name, or SAM Account Name.
 
 ### Optional
 
-- `id` (String) The ID of this resource.
+- **id** (String) The ID of this resource.
 
 ### Read-Only
 
-- `city` (String) City assigned to user object.
-- `company` (String) Company assigned to user object.
-- `country` (String) Country assigned to user object.
-- `department` (String) Department assigned to user object.
-- `description` (String) Description of the user object.
-- `display_name` (String) The display name of the user object.
-- `division` (String) Division assigned to user object.
-- `dn` (String) The distinguished name of the user object.
-- `email_address` (String) Email address assigned to user object.
-- `employee_id` (String) Employee ID assigned to user object.
-- `employee_number` (String) Employee Number assigned to user object.
-- `fax` (String) Fax number assigned to user object.
-- `given_name` (String) Given name of the user object.
-- `home_directory` (String) Home directory of the user object.
-- `home_drive` (String) Home drive of the user object.
-- `home_page` (String) Home page of the user object.
-- `home_phone` (String) Home phone of the user object.
-- `initials` (String) Initials of the user object.
-- `mobile_phone` (String) Mobile phone of the user object.
-- `office` (String) Office assigned to user object.
-- `office_phone` (String) Office phone of the user object.
-- `organization` (String) Organization assigned to user object.
-- `other_name` (String) Extra name of the user object.
-- `po_box` (String) Post office assigned to user object.
-- `postal_code` (String) Postal code of the user object.
-- `principal_name` (String) The principal name of the user object.
-- `sam_account_name` (String) The SAM account name of the user object.
-- `sid` (String) The SID of the user object.
-- `smart_card_logon_required` (Boolean) Smart card required to logon or not
-- `state` (String) State of the user object.
-- `street_address` (String) Address of the user object.
-- `surname` (String) Surname of the user object.
-- `title` (String) Title of the user object
-- `trusted_for_delegation` (Boolean) Check if user is trusted for delegation
+- **city** (String) City assigned to user object.
+- **company** (String) Company assigned to user object.
+- **country** (String) Country assigned to user object.
+- **department** (String) Department assigned to user object.
+- **description** (String) Description of the user object.
+- **display_name** (String) The display name of the user object.
+- **division** (String) Division assigned to user object.
+- **email_address** (String) Email address assigned to user object.
+- **employee_id** (String) Employee ID assigned to user object.
+- **employee_number** (String) Employee Number assigned to user object.
+- **fax** (String) Fax number assigned to user object.
+- **given_name** (String) Given name of the user object.
+- **home_directory** (String) Home directory of the user object.
+- **home_drive** (String) Home drive of the user object.
+- **home_page** (String) Home page of the user object.
+- **home_phone** (String) Home phone of the user object.
+- **initials** (String) Initials of the user object.
+- **mobile_phone** (String) Mobile phone of the user object.
+- **office** (String) Office assigned to user object.
+- **office_phone** (String) Office phone of the user object.
+- **organization** (String) Organization assigned to user object.
+- **other_name** (String) Extra name of the user object.
+- **po_box** (String) Post office assigned to user object.
+- **postal_code** (String) Postal code of the user object.
+- **principal_name** (String) The principal name of the user object.
+- **sam_account_name** (String) The SAM account name of the user object.
+- **sid** (String) The SID of the user object.
+- **smart_card_logon_required** (Boolean) Smart card required to logon or not
+- **state** (String) State of the user object.
+- **street_address** (String) Address of the user object.
+- **surname** (String) Surname of the user object.
+- **title** (String) Title of the user object
+- **trusted_for_delegation** (Boolean) Check if user is trusted for delegation
 
 

@@ -1,14 +1,3 @@
-## 0.4.4 (April 05, 2022)
-
-IMPROVEMENTS:
-* **Data Source**: `ad_user`: Add `distinguished_name` attribute to data source.
-* **Data Source**: `ad_group`: Add `distinguished_name` attribute to data source.
-* **Resource**: `ad_group`: Add `distinguished_name` attribute to resource.
-* **Resource**: `ad_user`: Add `distinguished_name` attribute to resource.
-* **provider**: Ability to define a specific domain controller.
-* **provider**: Support for authentication via Kerberos keytab files
-
-
 ## 0.4.3 (June 10, 2021)
 
 FEATURES:

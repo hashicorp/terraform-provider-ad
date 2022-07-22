@@ -4,16 +4,13 @@ import (
 	"errors"
 
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5/internal/tfplugin5"
-	"github.com/hashicorp/terraform-plugin-go/tftypes"
+	"github.com/hashicorp/terraform-plugin-go/tfprotov5/tftypes"
 )
 
 var ErrUnknownAttributePathStepType = errors.New("unknown type of AttributePath_Step")
 
 func AttributePath(in *tftypes.AttributePath) (*tfplugin5.AttributePath, error) {
-	if in == nil {
-		return nil, nil
-	}
-	steps, err := AttributePath_Steps(in.Steps())
+	steps, err := AttributePath_Steps(in.Steps)
 	if err != nil {
 		return nil, err
 	}

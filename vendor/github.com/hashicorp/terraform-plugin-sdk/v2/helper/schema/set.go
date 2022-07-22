@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/internal/helper/hashcode"
 )
 
@@ -151,12 +150,46 @@ func (s *Set) Union(other *Set) *Set {
 	return result
 }
 
+func checkSetMapEqual(m1, m2 map[string]interface{}) bool {
+	if (m1 == nil) != (m2 == nil) {
+		return false
+	}
+	if len(m1) != len(m2) {
+		return false
+	}
+	for k := range m1 {
+		v1 := m1[k]
+		v2, ok := m2[k]
+		if !ok {
+			return false
+		}
+		switch v1.(type) {
+		case map[string]interface{}:
+			same := checkSetMapEqual(v1.(map[string]interface{}), v2.(map[string]interface{}))
+			if !same {
+				return false
+			}
+		case *Set:
+			same := v1.(*Set).Equal(v2)
+			if !same {
+				return false
+			}
+		default:
+			same := reflect.DeepEqual(v1, v2)
+			if !same {
+				return false
+			}
+		}
+	}
+	return true
+}
+
 func (s *Set) Equal(raw interface{}) bool {
 	other, ok := raw.(*Set)
 	if !ok {
 		return false
 	}
-	return cmp.Equal(s.m, other.m)
+	return checkSetMapEqual(s.m, other.m)
 }
 
 // HashEqual simply checks to the keys the top-level map to the keys in the
@@ -238,6 +271,6 @@ func (s *Set) listCode() []string {
 	for k := range s.m {
 		keys = append(keys, k)
 	}
-	sort.Strings(keys)
+	sort.Sort(sort.StringSlice(keys))
 	return keys
 }

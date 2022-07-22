@@ -27,19 +27,19 @@ resource "ad_gpo" "gpo" {
 
 ### Required
 
-- `name` (String) Name of the GPO.
+- **name** (String) Name of the GPO.
 
 ### Optional
 
-- `description` (String) Description of the GPO.
-- `domain` (String) Domain of the GPO.
-- `id` (String) The ID of this resource.
-- `status` (String) Status of the GPO. Can be one of `AllSettingsEnabled`, `UserSettingsDisabled`, `ComputerSettingsDisabled`, or `AllSettingsDisabled` (case sensitive).
+- **description** (String) Description of the GPO.
+- **domain** (String) Domain of the GPO.
+- **id** (String) The ID of this resource.
+- **status** (String) Status of the GPO. Can be one of `AllSettingsEnabled`, `UserSettingsDisabled`, `ComputerSettingsDisabled`, or `AllSettingsDisabled` (case sensitive).
 
 ### Read-Only
 
-- `dn` (String)
-- `numeric_status` (Number)
+- **dn** (String)
+- **numeric_status** (Number)
 
 ## Import
 

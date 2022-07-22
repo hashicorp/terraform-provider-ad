@@ -27,14 +27,14 @@ output "computer_guid" {
 
 ### Optional
 
-- `computer_id` (String) The OU's identifier. It can be the OU's GUID, SID, Distinguished Name, or SAM Account Name.
-- `dn` (String, Deprecated) The Distinguished Name of the computer object. This field is deprecated in favour of `computer_id`. In the future this field will be read-only.
-- `guid` (String, Deprecated) The GUID of the computer object. This field is deprecated in favour of `computer_id`. In the future this field will be read-only.
-- `id` (String) The ID of this resource.
+- **computer_id** (String) The OU's identifier. It can be the OU's GUID, SID, Distinguished Name, or SAM Account Name.
+- **dn** (String, Deprecated) The Distinguished Name of the computer object. This field is deprecated in favour of `computer_id`. In the future this field will be read-only.
+- **guid** (String, Deprecated) The GUID of the computer object. This field is deprecated in favour of `computer_id`. In the future this field will be read-only.
+- **id** (String) The ID of this resource.
 
 ### Read-Only
 
-- `name` (String) The name of the computer object.
-- `sid` (String) The SID of the computer object.
+- **name** (String) The name of the computer object.
+- **sid** (String) The SID of the computer object.
 
 

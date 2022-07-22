@@ -26,24 +26,24 @@ resource "ad_ou" "o" {
 
 ### Required
 
-- `name` (String) Name of the OU.
+- **name** (String) Name of the OU.
 
 ### Optional
 
-- `description` (String) Description of the OU.
-- `id` (String) The ID of this resource.
-- `path` (String) DN of the object that contains the OU.
-- `protected` (Boolean) Protect this OU from being deleted accidentaly.
+- **description** (String) Description of the OU.
+- **id** (String) The ID of this resource.
+- **path** (String) DN of the object that contains the OU.
+- **protected** (Boolean) Protect this OU from being deleted accidentaly.
 
 ### Read-Only
 
-- `dn` (String) The OU's DN.
-- `guid` (String) The OU's GUID.
+- **dn** (String) The OU's DN.
+- **guid** (String) The OU's GUID.
 
 ## Import
 
 Import is supported using the following syntax:
 
 ```shell
-$ terraform import ad_ou.o 9CB8219C-31FF-4A85-A7A3-9BCBB6A41D02
+$ terraform import ad_ou 9CB8219C-31FF-4A85-A7A3-9BCBB6A41D02
 ```

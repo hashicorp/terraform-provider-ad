@@ -1,7 +1,6 @@
 package resource
 
 import (
-	"context"
 	"errors"
 	"flag"
 	"fmt"
@@ -10,16 +9,14 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/hashicorp/go-multierror"
 	testing "github.com/mitchellh/go-testing-interface"
 
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
-	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/logging"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/internal/addrs"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/internal/logging"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/internal/plugintest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
@@ -85,27 +82,6 @@ func AddTestSweepers(name string, s *Sweeper) {
 	sweeperFuncs[name] = s
 }
 
-// TestMain adds sweeper functionality to the "go test" command, otherwise
-// tests are executed as normal. Most provider acceptance tests are written
-// using the Test() function of this package, which imposes its own
-// requirements and Terraform CLI behavior. Refer to that function's
-// documentation for additional details.
-//
-// Sweepers enable infrastructure cleanup functions to be included with
-// resource definitions, typically so developers can remove all resources of
-// that resource type from testing infrastructure in case of failures that
-// prevented the normal resource destruction behavior of acceptance tests.
-// Use the AddTestSweepers() function to configure available sweepers.
-//
-// Sweeper flags added to the "go test" command:
-//
-// -sweep: Comma-separated list of locations/regions to run available sweepers.
-// -sweep-allow-failues: Enable to allow other sweepers to run after failures.
-// -sweep-run: Comma-separated list of resource type sweepers to run. Defaults
-//             to all sweepers.
-//
-// Refer to the Env prefixed constants for environment variables that further
-// control testing functionality.
 func TestMain(m interface {
 	Run() int
 }) {
@@ -136,7 +112,6 @@ func runSweepers(regions []string, sweepers map[string]*Sweeper, allowFailures b
 		var regionSweeperErrorFound bool
 		regionSweeperRunList := make(map[string]error)
 
-		start := time.Now()
 		log.Printf("[DEBUG] Running Sweepers for region (%s):\n", region)
 		for _, sweeper := range sweepers {
 			if err := runSweeperWithRegion(region, sweeper, sweepers, regionSweeperRunList, allowFailures); err != nil {
@@ -148,10 +123,8 @@ func runSweepers(regions []string, sweepers map[string]*Sweeper, allowFailures b
 				return sweeperRunList, fmt.Errorf("sweeper (%s) for region (%s) failed: %s", sweeper.Name, region, err)
 			}
 		}
-		elapsed := time.Since(start)
-		log.Printf("Completed Sweepers for region (%s) in %s", region, elapsed)
 
-		log.Printf("Sweeper Tests for region (%s) ran successfully:\n", region)
+		log.Printf("Sweeper Tests ran successfully:\n")
 		for sweeper, sweeperErr := range regionSweeperRunList {
 			if sweeperErr == nil {
 				fmt.Printf("\t- %s\n", sweeper)
@@ -162,7 +135,7 @@ func runSweepers(regions []string, sweepers map[string]*Sweeper, allowFailures b
 
 		if regionSweeperErrorFound {
 			sweeperErrorFound = true
-			log.Printf("Sweeper Tests for region (%s) ran unsuccessfully:\n", region)
+			log.Printf("Sweeper Tests ran unsuccessfully:\n")
 			for sweeper, sweeperErr := range regionSweeperRunList {
 				if sweeperErr != nil {
 					fmt.Printf("\t- %s: %s\n", sweeper, sweeperErr)
@@ -259,11 +232,7 @@ func runSweeperWithRegion(region string, s *Sweeper, sweepers map[string]*Sweepe
 
 	log.Printf("[DEBUG] Running Sweeper (%s) in region (%s)", s.Name, region)
 
-	start := time.Now()
 	runE := s.F(region)
-	elapsed := time.Since(start)
-
-	log.Printf("[DEBUG] Completed Sweeper (%s) in region (%s) in %s", s.Name, region, elapsed)
 
 	sweeperRunList[s.Name] = runE
 
@@ -274,8 +243,7 @@ func runSweeperWithRegion(region string, s *Sweeper, sweepers map[string]*Sweepe
 	return runE
 }
 
-// Deprecated: Use EnvTfAcc instead.
-const TestEnvVar = EnvTfAcc
+const TestEnvVar = "TF_ACC"
 
 // TestCheckFunc is the callback type used with acceptance tests to check
 // the state of a resource. The state passed in is the latest state known,
@@ -298,9 +266,6 @@ type ErrorCheckFunc func(error) error
 //
 // When the destroy plan is executed, the config from the last TestStep
 // is used to plan it.
-//
-// Refer to the Env prefixed constants for environment variables that further
-// control testing functionality.
 type TestCase struct {
 	// IsUnitTest allows a test to run regardless of the TF_ACC
 	// environment variable. This should be used with care - only for
@@ -340,13 +305,6 @@ type TestCase struct {
 	// ProviderServer interface.
 	ProtoV5ProviderFactories map[string]func() (tfprotov5.ProviderServer, error)
 
-	// ProtoV6ProviderFactories serves the same purpose as ProviderFactories,
-	// but for protocol v6 providers defined using the terraform-plugin-go
-	// ProviderServer interface.
-	// The version of Terraform used in acceptance testing must be greater
-	// than or equal to v0.15.4 to use ProtoV6ProviderFactories.
-	ProtoV6ProviderFactories map[string]func() (tfprotov6.ProviderServer, error)
-
 	// Providers is the ResourceProvider that will be under test.
 	//
 	// Deprecated: Providers is deprecated, please use ProviderFactories
@@ -376,18 +334,16 @@ type TestCase struct {
 	// same state. Each step can have its own check to verify correctness.
 	Steps []TestStep
 
-	// IDRefreshName is the name of the resource to check during ID-only
-	// refresh testing, which ensures that a resource can be refreshed solely
-	// by its identifier. This will default to the first non-nil primary
-	// resource in the state. It runs every TestStep.
+	// The settings below control the "ID-only refresh test." This is
+	// an enabled-by-default test that tests that a refresh can be
+	// refreshed with only an ID to result in the same attributes.
+	// This validates completeness of Refresh.
 	//
-	// While not deprecated, most resource tests should instead prefer using
-	// TestStep.ImportState based testing as it works with multiple attribute
-	// identifiers and also verifies resource import functionality.
-	IDRefreshName string
-
-	// IDRefreshIgnore is a list of configuration keys that will be ignored
-	// during ID-only refresh testing.
+	// IDRefreshName is the name of the resource to check. This will
+	// default to the first non-nil primary resource in the state.
+	//
+	// IDRefreshIgnore is a list of configuration keys that will be ignored.
+	IDRefreshName   string
 	IDRefreshIgnore []string
 }
 
@@ -404,9 +360,6 @@ type ExternalProvider struct {
 // Multiple TestSteps can be sequenced in a Test to allow testing
 // potentially complex update logic. In general, simply create/destroy
 // tests will only need one step.
-//
-// Refer to the Env prefixed constants for environment variables that further
-// control testing functionality.
 type TestStep struct {
 	// ResourceName should be set to the name of the resource
 	// that is being tested. Example: "aws_instance.foo". Various test
@@ -445,9 +398,6 @@ type TestStep struct {
 	// Config a string of the configuration to give to Terraform. If this
 	// is set, then the TestCase will execute this step with the same logic
 	// as a `terraform apply`.
-	//
-	// JSON Configuration Syntax can be used and is assumed whenever Config
-	// contains valid JSON.
 	Config string
 
 	// Check is called after the Config is applied. Use this step to
@@ -486,15 +436,8 @@ type TestStep struct {
 	// are tested alongside real resources
 	PreventPostDestroyRefresh bool
 
-	// SkipFunc enables skipping the TestStep, based on environment criteria.
-	// For example, this can prevent running certain steps that may be runtime
-	// platform or API configuration dependent.
-	//
-	// Return true with no error to skip the test step. The error return
-	// should be used to signify issues that prevented the function from
-	// completing as expected.
-	//
-	// SkipFunc is called after PreConfig but before applying the Config.
+	// SkipFunc is called before applying config, but after PreConfig
+	// This is useful for defining test steps with platform-dependent checks
 	SkipFunc func() (bool, error)
 
 	//---------------------------------------------------------------
@@ -542,13 +485,11 @@ type TestStep struct {
 }
 
 // ParallelTest performs an acceptance test on a resource, allowing concurrency
-// with other ParallelTest. The number of concurrent tests is controlled by the
-// "go test" command -parallel flag.
+// with other ParallelTest.
 //
 // Tests will fail if they do not properly handle conditions to allow multiple
 // tests to occur against the same resource or service (e.g. random naming).
-//
-// Test() function requirements and documentation also apply to this function.
+// All other requirements of the Test function also apply to this function.
 func ParallelTest(t testing.T, c TestCase) {
 	t.Helper()
 	t.Parallel()
@@ -565,42 +506,20 @@ func ParallelTest(t testing.T, c TestCase) {
 // the "-test.v" flag) is set. Because some acceptance tests take quite
 // long, we require the verbose flag so users are able to see progress
 // output.
-//
-// Use the ParallelTest() function to automatically set (*testing.T).Parallel()
-// to enable testing concurrency. Use the UnitTest() function to automatically
-// set the TestCase type IsUnitTest field.
-//
-// This function will automatically find or install Terraform CLI into a
-// temporary directory, based on the following behavior:
-//
-// - If the TF_ACC_TERRAFORM_PATH environment variable is set, that Terraform
-//   CLI binary is used if found and executable. If not found or executable,
-//   an error will be returned unless the TF_ACC_TERRAFORM_VERSION environment
-//   variable is also set.
-// - If the TF_ACC_TERRAFORM_VERSION environment variable is set, install and
-//   use that Terraform CLI version.
-// - If both the TF_ACC_TERRAFORM_PATH and TF_ACC_TERRAFORM_VERSION environment
-//   variables are unset, perform a lookup for the Terraform CLI binary based
-//   on the operating system PATH. If not found, the latest available Terraform
-//   CLI binary is installed.
-//
-// Refer to the Env prefixed constants for additional details about these
-// environment variables, and others, that control testing functionality.
 func Test(t testing.T, c TestCase) {
 	t.Helper()
-
-	ctx := context.Background()
-	ctx = logging.InitTestContext(ctx, t)
 
 	// We only run acceptance tests if an env var is set because they're
 	// slow and generally require some outside configuration. You can opt out
 	// of this with OverrideEnvVar on individual TestCases.
-	if os.Getenv(EnvTfAcc) == "" && !c.IsUnitTest {
+	if os.Getenv(TestEnvVar) == "" && !c.IsUnitTest {
 		t.Skip(fmt.Sprintf(
 			"Acceptance tests skipped unless env '%s' set",
-			EnvTfAcc))
+			TestEnvVar))
 		return
 	}
+
+	logging.SetOutput(t)
 
 	// Copy any explicitly passed providers to factories, this is for backwards compatibility.
 	if len(c.Providers) > 0 {
@@ -611,40 +530,32 @@ func Test(t testing.T, c TestCase) {
 				t.Fatalf("ProviderFactory for %q already exists, cannot overwrite with Provider", name)
 			}
 			prov := p
-			c.ProviderFactories[name] = func() (*schema.Provider, error) { //nolint:unparam // required signature
+			c.ProviderFactories[name] = func() (*schema.Provider, error) {
 				return prov, nil
 			}
 		}
 	}
 
-	logging.HelperResourceDebug(ctx, "Starting TestCase")
-
 	// Run the PreCheck if we have it.
 	// This is done after the auto-configure to allow providers
 	// to override the default auto-configure parameters.
 	if c.PreCheck != nil {
-		logging.HelperResourceDebug(ctx, "Calling TestCase PreCheck")
-
 		c.PreCheck()
-
-		logging.HelperResourceDebug(ctx, "Called TestCase PreCheck")
 	}
 
 	sourceDir, err := os.Getwd()
 	if err != nil {
 		t.Fatalf("Error getting working dir: %s", err)
 	}
-	helper := plugintest.AutoInitProviderHelper(ctx, sourceDir)
+	helper := plugintest.AutoInitProviderHelper(sourceDir)
 	defer func(helper *plugintest.Helper) {
 		err := helper.Close()
 		if err != nil {
-			logging.HelperResourceError(ctx, "Unable to clean up temporary test files", map[string]interface{}{logging.KeyError: err})
+			log.Printf("Error cleaning up temporary test files: %s", err)
 		}
 	}(helper)
 
-	runNewTest(ctx, t, c, helper)
-
-	logging.HelperResourceDebug(ctx, "Finished TestCase")
+	runNewTest(t, c, helper)
 }
 
 // testProviderConfig takes the list of Providers in a TestCase and returns a
@@ -687,8 +598,6 @@ func testProviderConfig(c TestCase) (string, error) {
 // UnitTest is a helper to force the acceptance testing harness to run in the
 // normal unit test suite. This should only be used for resource that don't
 // have any external dependencies.
-//
-// Test() function requirements and documentation also apply to this function.
 func UnitTest(t testing.T, c TestCase) {
 	t.Helper()
 
@@ -1079,7 +988,7 @@ func TestMatchOutput(name string, r *regexp.Regexp) TestCheckFunc {
 
 // modulePrimaryInstanceState returns the instance state for the given resource
 // name in a ModuleState
-func modulePrimaryInstanceState(ms *terraform.ModuleState, name string) (*terraform.InstanceState, error) {
+func modulePrimaryInstanceState(s *terraform.State, ms *terraform.ModuleState, name string) (*terraform.InstanceState, error) {
 	rs, ok := ms.Resources[name]
 	if !ok {
 		return nil, fmt.Errorf("Not found: %s in %s", name, ms.Path)
@@ -1101,14 +1010,14 @@ func modulePathPrimaryInstanceState(s *terraform.State, mp addrs.ModuleInstance,
 		return nil, fmt.Errorf("No module found at: %s", mp)
 	}
 
-	return modulePrimaryInstanceState(ms, name)
+	return modulePrimaryInstanceState(s, ms, name)
 }
 
 // primaryInstanceState returns the primary instance state for the given
 // resource name in the root module.
 func primaryInstanceState(s *terraform.State, name string) (*terraform.InstanceState, error) {
 	ms := s.RootModule()
-	return modulePrimaryInstanceState(ms, name)
+	return modulePrimaryInstanceState(s, ms, name)
 }
 
 // indexesIntoTypeSet is a heuristic to try and identify if a flatmap style

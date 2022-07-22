@@ -366,11 +366,11 @@ func (s *State) Remove(addr ...string) error {
 
 		switch v := r.Value.(type) {
 		case *ModuleState:
-			s.removeModule(v)
+			s.removeModule(path, v)
 		case *ResourceState:
 			s.removeResource(path, v)
 		case *InstanceState:
-			s.removeInstance(r.Parent.Value.(*ResourceState), v)
+			s.removeInstance(path, r.Parent.Value.(*ResourceState), v)
 		default:
 			return fmt.Errorf("unknown type to delete: %T", r.Value)
 		}
@@ -384,7 +384,7 @@ func (s *State) Remove(addr ...string) error {
 	return nil
 }
 
-func (s *State) removeModule(v *ModuleState) {
+func (s *State) removeModule(path []string, v *ModuleState) {
 	for i, m := range s.Modules {
 		if m == v {
 			s.Modules, s.Modules[len(s.Modules)-1] = append(s.Modules[:i], s.Modules[i+1:]...), nil
@@ -412,7 +412,7 @@ func (s *State) removeResource(path []string, v *ResourceState) {
 	}
 }
 
-func (s *State) removeInstance(r *ResourceState, v *InstanceState) {
+func (s *State) removeInstance(path []string, r *ResourceState, v *InstanceState) {
 	// Go through the resource and find the instance that matches this
 	// (if any) and remove it.
 
@@ -420,6 +420,20 @@ func (s *State) removeInstance(r *ResourceState, v *InstanceState) {
 	if r.Primary == v {
 		r.Primary = nil
 		return
+	}
+
+	// Check lists
+	lists := [][]*InstanceState{r.Deposed}
+	for _, is := range lists {
+		for i, instance := range is {
+			if instance == v {
+				// Found it, remove it
+				is, is[len(is)-1] = append(is[:i], is[i+1:]...), nil
+
+				// Done
+				return
+			}
+		}
 	}
 }
 
@@ -548,12 +562,12 @@ func (s *State) DeepCopy() *State {
 		return nil
 	}
 
-	copiedState, err := copystructure.Config{Lock: true}.Copy(s)
+	copy, err := copystructure.Config{Lock: true}.Copy(s)
 	if err != nil {
 		panic(err)
 	}
 
-	return copiedState.(*State)
+	return copy.(*State)
 }
 
 func (s *State) Init() {
@@ -1009,7 +1023,7 @@ func (m *ModuleState) String() string {
 		}
 
 		if len(rs.Dependencies) > 0 {
-			buf.WriteString("\n  Dependencies:\n")
+			buf.WriteString(fmt.Sprintf("\n  Dependencies:\n"))
 			for _, dep := range rs.Dependencies {
 				buf.WriteString(fmt.Sprintf("    %s\n", dep))
 			}
@@ -1223,7 +1237,11 @@ func (s *ResourceState) Equal(other *ResourceState) bool {
 	}
 
 	// States must be equal
-	return s.Primary.Equal(other.Primary)
+	if !s.Primary.Equal(other.Primary) {
+		return false
+	}
+
+	return true
 }
 
 // Taint marks a resource as tainted.
@@ -1325,10 +1343,6 @@ type InstanceState struct {
 
 	ProviderMeta cty.Value
 
-	RawConfig cty.Value
-	RawState  cty.Value
-	RawPlan   cty.Value
-
 	// Tainted is used to mark a resource for recreation.
 	Tainted bool `json:"tainted"`
 
@@ -1412,12 +1426,12 @@ func (s *InstanceState) Set(from *InstanceState) {
 }
 
 func (s *InstanceState) DeepCopy() *InstanceState {
-	copiedState, err := copystructure.Config{Lock: true}.Copy(s)
+	copy, err := copystructure.Config{Lock: true}.Copy(s)
 	if err != nil {
 		panic(err)
 	}
 
-	return copiedState.(*InstanceState)
+	return copy.(*InstanceState)
 }
 
 func (s *InstanceState) Empty() bool {

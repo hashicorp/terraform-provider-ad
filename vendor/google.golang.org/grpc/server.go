@@ -40,7 +40,6 @@ import (
 	"google.golang.org/grpc/encoding"
 	"google.golang.org/grpc/encoding/proto"
 	"google.golang.org/grpc/grpclog"
-	"google.golang.org/grpc/internal"
 	"google.golang.org/grpc/internal/binarylog"
 	"google.golang.org/grpc/internal/channelz"
 	"google.golang.org/grpc/internal/grpcrand"
@@ -57,23 +56,7 @@ import (
 const (
 	defaultServerMaxReceiveMessageSize = 1024 * 1024 * 4
 	defaultServerMaxSendMessageSize    = math.MaxInt32
-
-	// Server transports are tracked in a map which is keyed on listener
-	// address. For regular gRPC traffic, connections are accepted in Serve()
-	// through a call to Accept(), and we use the actual listener address as key
-	// when we add it to the map. But for connections received through
-	// ServeHTTP(), we do not have a listener and hence use this dummy value.
-	listenerAddressForServeHTTP = "listenerAddressForServeHTTP"
 )
-
-func init() {
-	internal.GetServerCredentials = func(srv *Server) credentials.TransportCredentials {
-		return srv.opts.creds
-	}
-	internal.DrainServerTransports = func(srv *Server, addr string) {
-		srv.drainServerTransports(addr)
-	}
-}
 
 var statusOK = status.New(codes.OK, "")
 var logger = grpclog.Component("core")
@@ -117,12 +100,9 @@ type serverWorkerData struct {
 type Server struct {
 	opts serverOptions
 
-	mu  sync.Mutex // guards following
-	lis map[net.Listener]bool
-	// conns contains all active server transports. It is a map keyed on a
-	// listener address with the value being the set of active transports
-	// belonging to that listener.
-	conns    map[string]map[transport.ServerTransport]bool
+	mu       sync.Mutex // guards following
+	lis      map[net.Listener]bool
+	conns    map[transport.ServerTransport]bool
 	serve    bool
 	drain    bool
 	cv       *sync.Cond              // signaled when connections close for GracefulStop
@@ -183,10 +163,7 @@ type ServerOption interface {
 // EmptyServerOption does not alter the server configuration. It can be embedded
 // in another structure to build custom server options.
 //
-// Experimental
-//
-// Notice: This type is EXPERIMENTAL and may be changed or removed in a
-// later release.
+// This API is EXPERIMENTAL.
 type EmptyServerOption struct{}
 
 func (EmptyServerOption) apply(*serverOptions) {}
@@ -274,35 +251,6 @@ func KeepaliveEnforcementPolicy(kep keepalive.EnforcementPolicy) ServerOption {
 // https://github.com/grpc/grpc-go/blob/master/Documentation/encoding.md#using-a-codec.
 // Will be supported throughout 1.x.
 func CustomCodec(codec Codec) ServerOption {
-	return newFuncServerOption(func(o *serverOptions) {
-		o.codec = codec
-	})
-}
-
-// ForceServerCodec returns a ServerOption that sets a codec for message
-// marshaling and unmarshaling.
-//
-// This will override any lookups by content-subtype for Codecs registered
-// with RegisterCodec.
-//
-// See Content-Type on
-// https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md#requests for
-// more details. Also see the documentation on RegisterCodec and
-// CallContentSubtype for more details on the interaction between encoding.Codec
-// and content-subtype.
-//
-// This function is provided for advanced users; prefer to register codecs
-// using encoding.RegisterCodec.
-// The server will automatically use registered codecs based on the incoming
-// requests' headers. See also
-// https://github.com/grpc/grpc-go/blob/master/Documentation/encoding.md#using-a-codec.
-// Will be supported throughout 1.x.
-//
-// Experimental
-//
-// Notice: This API is EXPERIMENTAL and may be changed or removed in a
-// later release.
-func ForceServerCodec(codec encoding.Codec) ServerOption {
 	return newFuncServerOption(func(o *serverOptions) {
 		o.codec = codec
 	})
@@ -418,11 +366,6 @@ func ChainStreamInterceptor(interceptors ...StreamServerInterceptor) ServerOptio
 
 // InTapHandle returns a ServerOption that sets the tap handle for all the server
 // transport to be created. Only one can be installed.
-//
-// Experimental
-//
-// Notice: This API is EXPERIMENTAL and may be changed or removed in a
-// later release.
 func InTapHandle(h tap.ServerInHandle) ServerOption {
 	return newFuncServerOption(func(o *serverOptions) {
 		if o.inTapHandle != nil {
@@ -462,10 +405,7 @@ func UnknownServiceHandler(streamHandler StreamHandler) ServerOption {
 // new connections.  If this is not set, the default is 120 seconds.  A zero or
 // negative value will result in an immediate timeout.
 //
-// Experimental
-//
-// Notice: This API is EXPERIMENTAL and may be changed or removed in a
-// later release.
+// This API is EXPERIMENTAL.
 func ConnectionTimeout(d time.Duration) ServerOption {
 	return newFuncServerOption(func(o *serverOptions) {
 		o.connectionTimeout = d
@@ -483,10 +423,7 @@ func MaxHeaderListSize(s uint32) ServerOption {
 // HeaderTableSize returns a ServerOption that sets the size of dynamic
 // header table for stream.
 //
-// Experimental
-//
-// Notice: This API is EXPERIMENTAL and may be changed or removed in a
-// later release.
+// This API is EXPERIMENTAL.
 func HeaderTableSize(s uint32) ServerOption {
 	return newFuncServerOption(func(o *serverOptions) {
 		o.headerTableSize = &s
@@ -498,10 +435,7 @@ func HeaderTableSize(s uint32) ServerOption {
 // zero (default) will disable workers and spawn a new goroutine for each
 // stream.
 //
-// Experimental
-//
-// Notice: This API is EXPERIMENTAL and may be changed or removed in a
-// later release.
+// This API is EXPERIMENTAL.
 func NumStreamWorkers(numServerWorkers uint32) ServerOption {
 	// TODO: If/when this API gets stabilized (i.e. stream workers become the
 	// only way streams are processed), change the behavior of the zero value to
@@ -566,7 +500,7 @@ func NewServer(opt ...ServerOption) *Server {
 	s := &Server{
 		lis:      make(map[net.Listener]bool),
 		opts:     opts,
-		conns:    make(map[string]map[transport.ServerTransport]bool),
+		conns:    make(map[transport.ServerTransport]bool),
 		services: make(map[string]*serviceInfo),
 		quit:     grpcsync.NewEvent(),
 		done:     grpcsync.NewEvent(),
@@ -710,6 +644,13 @@ func (s *Server) GetServiceInfo() map[string]ServiceInfo {
 // the server being stopped.
 var ErrServerStopped = errors.New("grpc: the server has been stopped")
 
+func (s *Server) useTransportAuthenticator(rawConn net.Conn) (net.Conn, credentials.AuthInfo, error) {
+	if s.opts.creds == nil {
+		return rawConn, nil, nil
+	}
+	return s.opts.creds.ServerHandshake(rawConn)
+}
+
 type listenSocket struct {
 	net.Listener
 	channelzID int64
@@ -818,7 +759,7 @@ func (s *Server) Serve(lis net.Listener) error {
 		// s.conns before this conn can be added.
 		s.serveWG.Add(1)
 		go func() {
-			s.handleRawConn(lis.Addr().String(), rawConn)
+			s.handleRawConn(rawConn)
 			s.serveWG.Done()
 		}()
 	}
@@ -826,45 +767,49 @@ func (s *Server) Serve(lis net.Listener) error {
 
 // handleRawConn forks a goroutine to handle a just-accepted connection that
 // has not had any I/O performed on it yet.
-func (s *Server) handleRawConn(lisAddr string, rawConn net.Conn) {
+func (s *Server) handleRawConn(rawConn net.Conn) {
 	if s.quit.HasFired() {
 		rawConn.Close()
 		return
 	}
 	rawConn.SetDeadline(time.Now().Add(s.opts.connectionTimeout))
+	conn, authInfo, err := s.useTransportAuthenticator(rawConn)
+	if err != nil {
+		// ErrConnDispatched means that the connection was dispatched away from
+		// gRPC; those connections should be left open.
+		if err != credentials.ErrConnDispatched {
+			s.mu.Lock()
+			s.errorf("ServerHandshake(%q) failed: %v", rawConn.RemoteAddr(), err)
+			s.mu.Unlock()
+			channelz.Warningf(logger, s.channelzID, "grpc: Server.Serve failed to complete security handshake from %q: %v", rawConn.RemoteAddr(), err)
+			rawConn.Close()
+		}
+		rawConn.SetDeadline(time.Time{})
+		return
+	}
 
 	// Finish handshaking (HTTP2)
-	st := s.newHTTP2Transport(rawConn)
-	rawConn.SetDeadline(time.Time{})
+	st := s.newHTTP2Transport(conn, authInfo)
 	if st == nil {
 		return
 	}
 
-	if !s.addConn(lisAddr, st) {
+	rawConn.SetDeadline(time.Time{})
+	if !s.addConn(st) {
 		return
 	}
 	go func() {
 		s.serveStreams(st)
-		s.removeConn(lisAddr, st)
+		s.removeConn(st)
 	}()
-}
-
-func (s *Server) drainServerTransports(addr string) {
-	s.mu.Lock()
-	conns := s.conns[addr]
-	for st := range conns {
-		st.Drain()
-	}
-	s.mu.Unlock()
 }
 
 // newHTTP2Transport sets up a http/2 transport (using the
 // gRPC http2 server transport in transport/http2_server.go).
-func (s *Server) newHTTP2Transport(c net.Conn) transport.ServerTransport {
+func (s *Server) newHTTP2Transport(c net.Conn, authInfo credentials.AuthInfo) transport.ServerTransport {
 	config := &transport.ServerConfig{
 		MaxStreams:            s.opts.maxConcurrentStreams,
-		ConnectionTimeout:     s.opts.connectionTimeout,
-		Credentials:           s.opts.creds,
+		AuthInfo:              authInfo,
 		InTapHandle:           s.opts.inTapHandle,
 		StatsHandler:          s.opts.statsHandler,
 		KeepaliveParams:       s.opts.keepaliveParams,
@@ -877,20 +822,13 @@ func (s *Server) newHTTP2Transport(c net.Conn) transport.ServerTransport {
 		MaxHeaderListSize:     s.opts.maxHeaderListSize,
 		HeaderTableSize:       s.opts.headerTableSize,
 	}
-	st, err := transport.NewServerTransport(c, config)
+	st, err := transport.NewServerTransport("http2", c, config)
 	if err != nil {
 		s.mu.Lock()
 		s.errorf("NewServerTransport(%q) failed: %v", c.RemoteAddr(), err)
 		s.mu.Unlock()
-		// ErrConnDispatched means that the connection was dispatched away from
-		// gRPC; those connections should be left open.
-		if err != credentials.ErrConnDispatched {
-			// Don't log on ErrConnDispatched and io.EOF to prevent log spam.
-			if err != io.EOF {
-				channelz.Warning(logger, s.channelzID, "grpc: Server.Serve failed to create ServerTransport: ", err)
-			}
-			c.Close()
-		}
+		c.Close()
+		channelz.Warning(logger, s.channelzID, "grpc: Server.Serve failed to create ServerTransport: ", err)
 		return nil
 	}
 
@@ -955,22 +893,18 @@ var _ http.Handler = (*Server)(nil)
 // Note that ServeHTTP uses Go's HTTP/2 server implementation which is totally
 // separate from grpc-go's HTTP/2 server. Performance and features may vary
 // between the two paths. ServeHTTP does not support some gRPC features
-// available through grpc-go's HTTP/2 server.
-//
-// Experimental
-//
-// Notice: This API is EXPERIMENTAL and may be changed or removed in a
-// later release.
+// available through grpc-go's HTTP/2 server, and it is currently EXPERIMENTAL
+// and subject to change.
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	st, err := transport.NewServerHandlerTransport(w, r, s.opts.statsHandler)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	if !s.addConn(listenerAddressForServeHTTP, st) {
+	if !s.addConn(st) {
 		return
 	}
-	defer s.removeConn(listenerAddressForServeHTTP, st)
+	defer s.removeConn(st)
 	s.serveStreams(st)
 }
 
@@ -998,7 +932,7 @@ func (s *Server) traceInfo(st transport.ServerTransport, stream *transport.Strea
 	return trInfo
 }
 
-func (s *Server) addConn(addr string, st transport.ServerTransport) bool {
+func (s *Server) addConn(st transport.ServerTransport) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.conns == nil {
@@ -1010,28 +944,15 @@ func (s *Server) addConn(addr string, st transport.ServerTransport) bool {
 		// immediately.
 		st.Drain()
 	}
-
-	if s.conns[addr] == nil {
-		// Create a map entry if this is the first connection on this listener.
-		s.conns[addr] = make(map[transport.ServerTransport]bool)
-	}
-	s.conns[addr][st] = true
+	s.conns[st] = true
 	return true
 }
 
-func (s *Server) removeConn(addr string, st transport.ServerTransport) {
+func (s *Server) removeConn(st transport.ServerTransport) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-
-	conns := s.conns[addr]
-	if conns != nil {
-		delete(conns, st)
-		if len(conns) == 0 {
-			// If the last connection for this address is being removed, also
-			// remove the map entry corresponding to the address. This is used
-			// in GracefulStop() when waiting for all connections to be closed.
-			delete(s.conns, addr)
-		}
+	if s.conns != nil {
+		delete(s.conns, st)
 		s.cv.Broadcast()
 	}
 }
@@ -1096,29 +1017,22 @@ func chainUnaryServerInterceptors(s *Server) {
 	} else if len(interceptors) == 1 {
 		chainedInt = interceptors[0]
 	} else {
-		chainedInt = chainUnaryInterceptors(interceptors)
+		chainedInt = func(ctx context.Context, req interface{}, info *UnaryServerInfo, handler UnaryHandler) (interface{}, error) {
+			return interceptors[0](ctx, req, info, getChainUnaryHandler(interceptors, 0, info, handler))
+		}
 	}
 
 	s.opts.unaryInt = chainedInt
 }
 
-func chainUnaryInterceptors(interceptors []UnaryServerInterceptor) UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *UnaryServerInfo, handler UnaryHandler) (interface{}, error) {
-		// the struct ensures the variables are allocated together, rather than separately, since we
-		// know they should be garbage collected together. This saves 1 allocation and decreases
-		// time/call by about 10% on the microbenchmark.
-		var state struct {
-			i    int
-			next UnaryHandler
-		}
-		state.next = func(ctx context.Context, req interface{}) (interface{}, error) {
-			if state.i == len(interceptors)-1 {
-				return interceptors[state.i](ctx, req, info, handler)
-			}
-			state.i++
-			return interceptors[state.i-1](ctx, req, info, state.next)
-		}
-		return state.next(ctx, req)
+// getChainUnaryHandler recursively generate the chained UnaryHandler
+func getChainUnaryHandler(interceptors []UnaryServerInterceptor, curr int, info *UnaryServerInfo, finalHandler UnaryHandler) UnaryHandler {
+	if curr == len(interceptors)-1 {
+		return finalHandler
+	}
+
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		return interceptors[curr+1](ctx, req, info, getChainUnaryHandler(interceptors, curr+1, info, finalHandler))
 	}
 }
 
@@ -1132,9 +1046,7 @@ func (s *Server) processUnaryRPC(t transport.ServerTransport, stream *transport.
 		if sh != nil {
 			beginTime := time.Now()
 			statsBegin = &stats.Begin{
-				BeginTime:      beginTime,
-				IsClientStream: false,
-				IsServerStream: false,
+				BeginTime: beginTime,
 			}
 			sh.HandleRPC(stream.Context(), statsBegin)
 		}
@@ -1263,7 +1175,7 @@ func (s *Server) processUnaryRPC(t transport.ServerTransport, stream *transport.
 			sh.HandleRPC(stream.Context(), &stats.InPayload{
 				RecvTime:   time.Now(),
 				Payload:    v,
-				WireLength: payInfo.wireLength + headerLen,
+				WireLength: payInfo.wireLength,
 				Data:       d,
 				Length:     len(d),
 			})
@@ -1283,10 +1195,9 @@ func (s *Server) processUnaryRPC(t transport.ServerTransport, stream *transport.
 	if appErr != nil {
 		appStatus, ok := status.FromError(appErr)
 		if !ok {
-			// Convert non-status application error to a status error with code
-			// Unknown, but handle context errors specifically.
-			appStatus = status.FromContextError(appErr)
-			appErr = appStatus.Err()
+			// Convert appErr if it is not a grpc status error.
+			appErr = status.Error(codes.Unknown, appErr.Error())
+			appStatus, _ = status.FromError(appErr)
 		}
 		if trInfo != nil {
 			trInfo.tr.LazyLog(stringer(appStatus.Message()), true)
@@ -1387,29 +1298,22 @@ func chainStreamServerInterceptors(s *Server) {
 	} else if len(interceptors) == 1 {
 		chainedInt = interceptors[0]
 	} else {
-		chainedInt = chainStreamInterceptors(interceptors)
+		chainedInt = func(srv interface{}, ss ServerStream, info *StreamServerInfo, handler StreamHandler) error {
+			return interceptors[0](srv, ss, info, getChainStreamHandler(interceptors, 0, info, handler))
+		}
 	}
 
 	s.opts.streamInt = chainedInt
 }
 
-func chainStreamInterceptors(interceptors []StreamServerInterceptor) StreamServerInterceptor {
-	return func(srv interface{}, ss ServerStream, info *StreamServerInfo, handler StreamHandler) error {
-		// the struct ensures the variables are allocated together, rather than separately, since we
-		// know they should be garbage collected together. This saves 1 allocation and decreases
-		// time/call by about 10% on the microbenchmark.
-		var state struct {
-			i    int
-			next StreamHandler
-		}
-		state.next = func(srv interface{}, ss ServerStream) error {
-			if state.i == len(interceptors)-1 {
-				return interceptors[state.i](srv, ss, info, handler)
-			}
-			state.i++
-			return interceptors[state.i-1](srv, ss, info, state.next)
-		}
-		return state.next(srv, ss)
+// getChainStreamHandler recursively generate the chained StreamHandler
+func getChainStreamHandler(interceptors []StreamServerInterceptor, curr int, info *StreamServerInfo, finalHandler StreamHandler) StreamHandler {
+	if curr == len(interceptors)-1 {
+		return finalHandler
+	}
+
+	return func(srv interface{}, ss ServerStream) error {
+		return interceptors[curr+1](srv, ss, info, getChainStreamHandler(interceptors, curr+1, info, finalHandler))
 	}
 }
 
@@ -1422,9 +1326,7 @@ func (s *Server) processStreamingRPC(t transport.ServerTransport, stream *transp
 	if sh != nil {
 		beginTime := time.Now()
 		statsBegin = &stats.Begin{
-			BeginTime:      beginTime,
-			IsClientStream: sd.ClientStreams,
-			IsServerStream: sd.ServerStreams,
+			BeginTime: beginTime,
 		}
 		sh.HandleRPC(stream.Context(), statsBegin)
 	}
@@ -1527,8 +1429,6 @@ func (s *Server) processStreamingRPC(t transport.ServerTransport, stream *transp
 		}
 	}
 
-	ss.ctx = newContextWithRPCInfo(ss.ctx, false, ss.codec, ss.cp, ss.comp)
-
 	if trInfo != nil {
 		trInfo.tr.LazyLog(&trInfo.firstLine, false)
 	}
@@ -1550,9 +1450,7 @@ func (s *Server) processStreamingRPC(t transport.ServerTransport, stream *transp
 	if appErr != nil {
 		appStatus, ok := status.FromError(appErr)
 		if !ok {
-			// Convert non-status application error to a status error with code
-			// Unknown, but handle context errors specifically.
-			appStatus = status.FromContextError(appErr)
+			appStatus = status.New(codes.Unknown, appErr.Error())
 			appErr = appStatus.Err()
 		}
 		if trInfo != nil {
@@ -1598,7 +1496,7 @@ func (s *Server) handleStream(t transport.ServerTransport, stream *transport.Str
 			trInfo.tr.SetError()
 		}
 		errDesc := fmt.Sprintf("malformed method name: %q", stream.Method())
-		if err := t.WriteStatus(stream, status.New(codes.Unimplemented, errDesc)); err != nil {
+		if err := t.WriteStatus(stream, status.New(codes.ResourceExhausted, errDesc)); err != nil {
 			if trInfo != nil {
 				trInfo.tr.LazyLog(&fmtStringer{"%v", []interface{}{err}}, true)
 				trInfo.tr.SetError()
@@ -1657,10 +1555,7 @@ type streamKey struct{}
 // NewContextWithServerTransportStream creates a new context from ctx and
 // attaches stream to it.
 //
-// Experimental
-//
-// Notice: This API is EXPERIMENTAL and may be changed or removed in a
-// later release.
+// This API is EXPERIMENTAL.
 func NewContextWithServerTransportStream(ctx context.Context, stream ServerTransportStream) context.Context {
 	return context.WithValue(ctx, streamKey{}, stream)
 }
@@ -1672,10 +1567,7 @@ func NewContextWithServerTransportStream(ctx context.Context, stream ServerTrans
 //
 // See also NewContextWithServerTransportStream.
 //
-// Experimental
-//
-// Notice: This type is EXPERIMENTAL and may be changed or removed in a
-// later release.
+// This API is EXPERIMENTAL.
 type ServerTransportStream interface {
 	Method() string
 	SetHeader(md metadata.MD) error
@@ -1687,10 +1579,7 @@ type ServerTransportStream interface {
 // ctx. Returns nil if the given context has no stream associated with it
 // (which implies it is not an RPC invocation context).
 //
-// Experimental
-//
-// Notice: This API is EXPERIMENTAL and may be changed or removed in a
-// later release.
+// This API is EXPERIMENTAL.
 func ServerTransportStreamFromContext(ctx context.Context) ServerTransportStream {
 	s, _ := ctx.Value(streamKey{}).(ServerTransportStream)
 	return s
@@ -1718,7 +1607,7 @@ func (s *Server) Stop() {
 	s.mu.Lock()
 	listeners := s.lis
 	s.lis = nil
-	conns := s.conns
+	st := s.conns
 	s.conns = nil
 	// interrupt GracefulStop if Stop and GracefulStop are called concurrently.
 	s.cv.Broadcast()
@@ -1727,10 +1616,8 @@ func (s *Server) Stop() {
 	for lis := range listeners {
 		lis.Close()
 	}
-	for _, cs := range conns {
-		for st := range cs {
-			st.Close()
-		}
+	for c := range st {
+		c.Close()
 	}
 	if s.opts.numServerWorkers > 0 {
 		s.stopServerWorkers()
@@ -1767,10 +1654,8 @@ func (s *Server) GracefulStop() {
 	}
 	s.lis = nil
 	if !s.drain {
-		for _, conns := range s.conns {
-			for st := range conns {
-				st.Drain()
-			}
+		for st := range s.conns {
+			st.Drain()
 		}
 		s.drain = true
 	}

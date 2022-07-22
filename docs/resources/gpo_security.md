@@ -47,33 +47,33 @@ resource "ad_gpo_security" "gpo_sec" {
 
 ### Required
 
-- `gpo_container` (String) The GUID of the container the security settings belong to.
+- **gpo_container** (String) The GUID of the container the security settings belong to.
 
 ### Optional
 
-- `account_lockout` (Block List, Max: 1) Settings related to account lockout. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-gpsb/2cd39c97-97cd-4859-a7b4-1229dad5f53d) (see [below for nested schema](#nestedblock--account_lockout))
-- `application_log` (Block List, Max: 1) Application log related settings. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-gpsb/0b9673a7-ce0a-49b4-912b-591efdb37cdf) (see [below for nested schema](#nestedblock--application_log))
-- `audit_log` (Block List, Max: 1) Audit log related settings. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-gpsb/0b9673a7-ce0a-49b4-912b-591efdb37cdf) (see [below for nested schema](#nestedblock--audit_log))
-- `event_audit` (Block List, Max: 1) Event audit related settings. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-gpsb/01f8e057-f6a8-4d6e-8a00-99bcd241b403). Valid values for all items below are: 0 (None), 1 (Success audits only), 2 (Failure audits only), 3 (Success and failure audits), 4 (None) (see [below for nested schema](#nestedblock--event_audit))
-- `filesystem` (Block Set) Settings related to File System permissions. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-gpsb/abeebe06-49aa-44d4-ae5b-d6aff458e8e7) (see [below for nested schema](#nestedblock--filesystem))
-- `id` (String) The ID of this resource.
-- `kerberos_policy` (Block List, Max: 1) Settings related to kerberos policies. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-gpsb/0fce5b92-bcc1-4b96-9c2b-56397c3f144f) (see [below for nested schema](#nestedblock--kerberos_policy))
-- `password_policies` (Block List, Max: 1) Settings related to password policies. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-gpsb/0b40db09-d95d-40a6-8467-32aedec8140c) (see [below for nested schema](#nestedblock--password_policies))
-- `registry_keys` (Block Set) Settings related to Registry Keys. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-gpsb/13712a60-de1e-4642-bd9c-ab054dd86278) (see [below for nested schema](#nestedblock--registry_keys))
-- `registry_values` (Block Set) Settings related to Registry Values. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-gpsb/3a14ca47-a22f-43c5-b35e-6be791003ca7) (see [below for nested schema](#nestedblock--registry_values))
-- `restricted_groups` (Block Set) Settings related to Groups Membership. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-gpsb/b73d8bae-ed22-48aa-acba-7065ab52d709) (see [below for nested schema](#nestedblock--restricted_groups))
-- `system_log` (Block List, Max: 1) System log related settings. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-gpsb/0b9673a7-ce0a-49b4-912b-591efdb37cdf) (see [below for nested schema](#nestedblock--system_log))
-- `system_services` (Block Set) Settings related to System Services. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-gpsb/32deea3e-3fa4-414b-ba25-4121ad8c055c) (see [below for nested schema](#nestedblock--system_services))
+- **account_lockout** (Block List, Max: 1) Settings related to account lockout. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-gpsb/2cd39c97-97cd-4859-a7b4-1229dad5f53d) (see [below for nested schema](#nestedblock--account_lockout))
+- **application_log** (Block List, Max: 1) Application log related settings. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-gpsb/0b9673a7-ce0a-49b4-912b-591efdb37cdf) (see [below for nested schema](#nestedblock--application_log))
+- **audit_log** (Block List, Max: 1) Audit log related settings. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-gpsb/0b9673a7-ce0a-49b4-912b-591efdb37cdf) (see [below for nested schema](#nestedblock--audit_log))
+- **event_audit** (Block List, Max: 1) Event audit related settings. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-gpsb/01f8e057-f6a8-4d6e-8a00-99bcd241b403). Valid values for all items below are: 0 (None), 1 (Success audits only), 2 (Failure audits only), 3 (Success and failure audits), 4 (None) (see [below for nested schema](#nestedblock--event_audit))
+- **filesystem** (Block Set) Settings related to File System permissions. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-gpsb/abeebe06-49aa-44d4-ae5b-d6aff458e8e7) (see [below for nested schema](#nestedblock--filesystem))
+- **id** (String) The ID of this resource.
+- **kerberos_policy** (Block List, Max: 1) Settings related to kerberos policies. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-gpsb/0fce5b92-bcc1-4b96-9c2b-56397c3f144f) (see [below for nested schema](#nestedblock--kerberos_policy))
+- **password_policies** (Block List, Max: 1) Settings related to password policies. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-gpsb/0b40db09-d95d-40a6-8467-32aedec8140c) (see [below for nested schema](#nestedblock--password_policies))
+- **registry_keys** (Block Set) Settings related to Registry Keys. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-gpsb/13712a60-de1e-4642-bd9c-ab054dd86278) (see [below for nested schema](#nestedblock--registry_keys))
+- **registry_values** (Block Set) Settings related to Registry Values. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-gpsb/3a14ca47-a22f-43c5-b35e-6be791003ca7) (see [below for nested schema](#nestedblock--registry_values))
+- **restricted_groups** (Block Set) Settings related to Groups Membership. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-gpsb/b73d8bae-ed22-48aa-acba-7065ab52d709) (see [below for nested schema](#nestedblock--restricted_groups))
+- **system_log** (Block List, Max: 1) System log related settings. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-gpsb/0b9673a7-ce0a-49b4-912b-591efdb37cdf) (see [below for nested schema](#nestedblock--system_log))
+- **system_services** (Block Set) Settings related to System Services. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-gpsb/32deea3e-3fa4-414b-ba25-4121ad8c055c) (see [below for nested schema](#nestedblock--system_services))
 
 <a id="nestedblock--account_lockout"></a>
 ### Nested Schema for `account_lockout`
 
 Optional:
 
-- `force_logoff_when_hour_expire` (String) Disconnect SMB sessions when logon hours expire.
-- `lockout_bad_count` (String) Number of failed logon attempts until a account is locked.
-- `lockout_duration` (String) Number of minutes a locked out account must remain locked out.
-- `reset_lockout_count` (String) Number of minutes a account will remain locked after a failed logon attempt.
+- **force_logoff_when_hour_expire** (String) Disconnect SMB sessions when logon hours expire.
+- **lockout_bad_count** (String) Number of failed logon attempts until a account is locked.
+- **lockout_duration** (String) Number of minutes a locked out account must remain locked out.
+- **reset_lockout_count** (String) Number of minutes a account will remain locked after a failed logon attempt.
 
 
 <a id="nestedblock--application_log"></a>
@@ -81,10 +81,10 @@ Optional:
 
 Optional:
 
-- `audit_log_retention_period` (String) Control log retention. Values: 0: overwrite events as needed, 1: overwrite events as specified specified by `retention_days`, 2: never overwrite events.
-- `maximum_log_size` (String) Maximum size of log in KiloBytes. (64-4194240)
-- `restrict_guest_access` (String) Restrict access to logs for guest users. A non-zero value restricts access to guest users.
-- `retention_days` (String) Number of days before new events overwrite old events. (1-365)
+- **audit_log_retention_period** (String) Control log retention. Values: 0: overwrite events as needed, 1: overwrite events as specified specified by `retention_days`, 2: never overwrite events.
+- **maximum_log_size** (String) Maximum size of log in KiloBytes. (64-4194240)
+- **restrict_guest_access** (String) Restrict access to logs for guest users. A non-zero value restricts access to guest users.
+- **retention_days** (String) Number of days before new events overwrite old events. (1-365)
 
 
 <a id="nestedblock--audit_log"></a>
@@ -92,10 +92,10 @@ Optional:
 
 Optional:
 
-- `audit_log_retention_period` (String) Control log retention. Values: 0: overwrite events as needed, 1: overwrite events as specified specified by `retention_days`, 2: never overwrite events.
-- `maximum_log_size` (String) Maximum size of log in KiloBytes. (64-4194240)
-- `restrict_guest_access` (String) Restrict access to logs for guest users. A non-zero value restricts access to guest users.
-- `retention_days` (String) Number of days before new events overwrite old events. (1-365)
+- **audit_log_retention_period** (String) Control log retention. Values: 0: overwrite events as needed, 1: overwrite events as specified specified by `retention_days`, 2: never overwrite events.
+- **maximum_log_size** (String) Maximum size of log in KiloBytes. (64-4194240)
+- **restrict_guest_access** (String) Restrict access to logs for guest users. A non-zero value restricts access to guest users.
+- **retention_days** (String) Number of days before new events overwrite old events. (1-365)
 
 
 <a id="nestedblock--event_audit"></a>
@@ -103,15 +103,15 @@ Optional:
 
 Optional:
 
-- `audit_account_logon` (String) Audit credential validation.
-- `audit_account_manage` (String) Audit account management events.
-- `audit_ds_access` (String) Audit access attempts to AD objects.
-- `audit_logon_events` (String) Audit logon events.
-- `audit_object_access` (String) Audit access attempts to non-AD objects.
-- `audit_policy_change` (String) Audit attempts to change a policy.
-- `audit_privilege_use` (String) Audit user attempts of exercising user rights.
-- `audit_process_tracking` (String) Audit process related events.
-- `audit_system_events` (String) Audit system events.
+- **audit_account_logon** (String) Audit credential validation.
+- **audit_account_manage** (String) Audit account management events.
+- **audit_ds_access** (String) Audit access attempts to AD objects.
+- **audit_logon_events** (String) Audit logon events.
+- **audit_object_access** (String) Audit access attempts to non-AD objects.
+- **audit_policy_change** (String) Audit attempts to change a policy.
+- **audit_privilege_use** (String) Audit user attempts of exercising user rights.
+- **audit_process_tracking** (String) Audit process related events.
+- **audit_system_events** (String) Audit system events.
 
 
 <a id="nestedblock--filesystem"></a>
@@ -119,9 +119,9 @@ Optional:
 
 Required:
 
-- `acl` (String) Security descriptor to apply. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-dtyp/f4296d69-1c0f-491f-9587-a960b292d070)
-- `path` (String) Path of the file or directory.
-- `propagation_mode` (String) Control permission propagation. 0: Propagate permissions to all subfolders and files, 1: Replace existing permissions on all subfolders and files, 2: Do not allow permissions to be replaced.
+- **acl** (String) Security descriptor to apply. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-dtyp/f4296d69-1c0f-491f-9587-a960b292d070)
+- **path** (String) Path of the file or directory.
+- **propagation_mode** (String) Control permission propagation. 0: Propagate permissions to all subfolders and files, 1: Replace existing permissions on all subfolders and files, 2: Do not allow permissions to be replaced.
 
 
 <a id="nestedblock--kerberos_policy"></a>
@@ -129,11 +129,11 @@ Required:
 
 Optional:
 
-- `max_clock_skew` (String) Maximum time difference, in minutes, between the client clock and the server clock. (0-99999).
-- `max_renew_age` (String) Number of days during which a ticket-granting ticket can be renewed (0-99999).
-- `max_service_age` (String) Maximum amount of minutes a ticket must be valid to access a service or resource. Minimum should be 10 and maximum should be equal to `max_ticket_age`.
-- `max_ticket_age` (String) Maximum amount of hours a ticket-granting ticket is valid (0-99999).
-- `ticket_validate_client` (String) Control if the session ticket is validated for every request. A non-zero value disables the policy.
+- **max_clock_skew** (String) Maximum time difference, in minutes, between the client clock and the server clock. (0-99999).
+- **max_renew_age** (String) Number of days during which a ticket-granting ticket can be renewed (0-99999).
+- **max_service_age** (String) Maximum amount of minutes a ticket must be valid to access a service or resource. Minimum should be 10 and maximum should be equal to `max_ticket_age`.
+- **max_ticket_age** (String) Maximum amount of hours a ticket-granting ticket is valid (0-99999).
+- **ticket_validate_client** (String) Control if the session ticket is validated for every request. A non-zero value disables the policy.
 
 
 <a id="nestedblock--password_policies"></a>
@@ -141,12 +141,12 @@ Optional:
 
 Optional:
 
-- `clear_text_password` (String) Store password with reversible encryption (0-2^16). The password will not be stored with reversible encryption if the value is set to 0. Reversible encryption will be used in any other case.
-- `maximum_password_age` (String) Number of days before password expires (-1-999). If set to -1, it means the password never expires.
-- `minimum_password_age` (String) Number of days a password must be used before changing it (0-999).
-- `minimum_password_length` (String) Minimum number of characters used in a password (0-2^16). If set to 0, it means no password is required.
-- `password_complexity` (String) Password must meet complexity requirements (0-2^16). If set to 0, then requirements do not apply, any other value means requirements are applied
-- `password_history_size` (String) The number of unique new passwords that are required before an old password can be reused in association with a user account (0-2^16).  A value of 0 indicates that the password history is disabled.
+- **clear_text_password** (String) Store password with reversible encryption (0-2^16). The password will not be stored with reversible encryption if the value is set to 0. Reversible encryption will be used in any other case.
+- **maximum_password_age** (String) Number of days before password expires (-1-999). If set to -1, it means the password never expires.
+- **minimum_password_age** (String) Number of days a password must be used before changing it (0-999).
+- **minimum_password_length** (String) Minimum number of characters used in a password (0-2^16). If set to 0, it means no password is required.
+- **password_complexity** (String) Password must meet complexity requirements (0-2^16). If set to 0, then requirements do not apply, any other value means requirements are applied
+- **password_history_size** (String) The number of unique new passwords that are required before an old password can be reused in association with a user account (0-2^16).  A value of 0 indicates that the password history is disabled.
 
 
 <a id="nestedblock--registry_keys"></a>
@@ -154,9 +154,9 @@ Optional:
 
 Required:
 
-- `acl` (String) Security descriptor to apply. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-dtyp/f4296d69-1c0f-491f-9587-a960b292d070)
-- `key_name` (String) Fully qualified name of the key (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-rrp/97587de7-3524-4291-8527-3951711      0c0eb)
-- `propagation_mode` (String) Control permission propagation. 0: Propagate permissions to all subkeys, 1: Replace existing permissions on all subkeys, 2: Do not allow permissions to be replaced on the key.
+- **acl** (String) Security descriptor to apply. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-dtyp/f4296d69-1c0f-491f-9587-a960b292d070)
+- **key_name** (String) Fully qualified name of the key (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-rrp/97587de7-3524-4291-8527-3951711      0c0eb)
+- **propagation_mode** (String) Control permission propagation. 0: Propagate permissions to all subkeys, 1: Replace existing permissions on all subkeys, 2: Do not allow permissions to be replaced on the key.
 
 
 <a id="nestedblock--registry_values"></a>
@@ -164,9 +164,9 @@ Required:
 
 Required:
 
-- `key_name` (String) Fully qualified name of the key (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-rrp/97587de7-3524-4291-8527-39517110c0eb)
-- `value` (String) The value of the key, matching the type set in `value_type`.
-- `value_type` (String) Data type of the key's value. 1: String, 2: Expand String, 3: Binary, 4: DWORD, 5: MULTI_SZ.
+- **key_name** (String) Fully qualified name of the key (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-rrp/97587de7-3524-4291-8527-39517110c0eb)
+- **value** (String) The value of the key, matching the type set in `value_type`.
+- **value_type** (String) Data type of the key's value. 1: String, 2: Expand String, 3: Binary, 4: DWORD, 5: MULTI_SZ.
 
 
 <a id="nestedblock--restricted_groups"></a>
@@ -174,9 +174,9 @@ Required:
 
 Required:
 
-- `group_memberof` (String) Comma separated list of group names or SIDs that this group belongs to.
-- `group_members` (String) Comma separated list of group names or SIDs that are members of the group.
-- `group_name` (String) Name of the group we are managing.
+- **group_memberof** (String) Comma separated list of group names or SIDs that this group belongs to.
+- **group_members** (String) Comma separated list of group names or SIDs that are members of the group.
+- **group_name** (String) Name of the group we are managing.
 
 
 <a id="nestedblock--system_log"></a>
@@ -184,10 +184,10 @@ Required:
 
 Optional:
 
-- `audit_log_retention_period` (String) Control log retention. Values: 0: overwrite events as needed, 1: overwrite events as specified specified by `retention_days`, 2: never overwrite events.
-- `maximum_log_size` (String) Maximum size of log in KiloBytes. (64-4194240)
-- `restrict_guest_access` (String) Restrict access to logs for guest users. A non-zero value restricts access to guest users.
-- `retention_days` (String) Number of days before new events overwrite old events. (1-365)
+- **audit_log_retention_period** (String) Control log retention. Values: 0: overwrite events as needed, 1: overwrite events as specified specified by `retention_days`, 2: never overwrite events.
+- **maximum_log_size** (String) Maximum size of log in KiloBytes. (64-4194240)
+- **restrict_guest_access** (String) Restrict access to logs for guest users. A non-zero value restricts access to guest users.
+- **retention_days** (String) Number of days before new events overwrite old events. (1-365)
 
 
 <a id="nestedblock--system_services"></a>
@@ -195,9 +195,9 @@ Optional:
 
 Required:
 
-- `acl` (String) Security descriptor to apply. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-dtyp/f4296d69-1c0f-491f-9587-a960b292d070)
-- `service_name` (String) Name of the service.
-- `startup_mode` (String) Startup mode of the service. Possible values are 2: Automatic, 3: Manual, 4: Disabled.
+- **acl** (String) Security descriptor to apply. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-dtyp/f4296d69-1c0f-491f-9587-a960b292d070)
+- **service_name** (String) Name of the service.
+- **startup_mode** (String) Startup mode of the service. Possible values are 2: Automatic, 3: Manual, 4: Disabled.
 
 ## Import
 

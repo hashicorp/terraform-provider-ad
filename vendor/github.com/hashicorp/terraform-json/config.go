@@ -147,9 +147,6 @@ type ConfigVariable struct {
 
 	// The defined text description of the variable.
 	Description string `json:"description,omitempty"`
-
-	// Whether the variable is marked as sensitive
-	Sensitive bool `json:"sensitive,omitempty"`
 }
 
 // ConfigProvisioner describes a provisioner declared in a resource

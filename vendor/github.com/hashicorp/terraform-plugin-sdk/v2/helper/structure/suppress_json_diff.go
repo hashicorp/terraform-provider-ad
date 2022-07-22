@@ -6,13 +6,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func SuppressJsonDiff(k, oldValue, newValue string, d *schema.ResourceData) bool {
-	oldMap, err := ExpandJsonFromString(oldValue)
+func SuppressJsonDiff(k, old, new string, d *schema.ResourceData) bool {
+	oldMap, err := ExpandJsonFromString(old)
 	if err != nil {
 		return false
 	}
 
-	newMap, err := ExpandJsonFromString(newValue)
+	newMap, err := ExpandJsonFromString(new)
 	if err != nil {
 		return false
 	}

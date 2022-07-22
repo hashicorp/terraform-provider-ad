@@ -4,13 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-
-	"github.com/hashicorp/go-version"
 )
 
-// PlanFormatVersionConstraints defines the versions of the JSON plan format
-// that are supported by this package.
-var PlanFormatVersionConstraints = ">= 0.1, < 2.0"
+// PlanFormatVersion is the version of the JSON plan format that is
+// supported by this package.
+const PlanFormatVersion = "0.1"
 
 // ResourceMode is a string representation of the resource type found
 // in certain fields in the plan.
@@ -68,31 +66,11 @@ func (p *Plan) Validate() error {
 		return errors.New("unexpected plan input, format version is missing")
 	}
 
-	constraint, err := version.NewConstraint(PlanFormatVersionConstraints)
-	if err != nil {
-		return fmt.Errorf("invalid version constraint: %w", err)
-	}
-
-	version, err := version.NewVersion(p.FormatVersion)
-	if err != nil {
-		return fmt.Errorf("invalid format version %q: %w", p.FormatVersion, err)
-	}
-
-	if !constraint.Check(version) {
-		return fmt.Errorf("unsupported plan format version: %q does not satisfy %q",
-			version, constraint)
+	if PlanFormatVersion != p.FormatVersion {
+		return fmt.Errorf("unsupported plan format version: expected %q, got %q", PlanFormatVersion, p.FormatVersion)
 	}
 
 	return nil
-}
-
-func isStringInSlice(slice []string, s string) bool {
-	for _, el := range slice {
-		if el == s {
-			return true
-		}
-	}
-	return false
 }
 
 func (p *Plan) UnmarshalJSON(b []byte) error {
@@ -172,14 +150,6 @@ type Change struct {
 	// If the value cannot be found in this map, then its value should
 	// be available within After, so long as the operation supports it.
 	AfterUnknown interface{} `json:"after_unknown,omitempty"`
-
-	// BeforeSensitive and AfterSensitive are object values with similar
-	// structure to Before and After, but with all sensitive leaf values
-	// replaced with true, and all non-sensitive leaf values omitted. These
-	// objects should be combined with Before and After to prevent accidental
-	// display of sensitive values in user interfaces.
-	BeforeSensitive interface{} `json:"before_sensitive,omitempty"`
-	AfterSensitive  interface{} `json:"after_sensitive,omitempty"`
 }
 
 // PlanVariable is a top-level variable in the Terraform plan.

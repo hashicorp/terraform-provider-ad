@@ -1,6 +1,6 @@
 // Copyright 2019, The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+// license that can be found in the LICENSE.md file.
 
 package cmp
 
@@ -207,10 +207,9 @@ func (opts formatOptions) FormatValue(v reflect.Value, parentKind reflect.Kind, 
 		// Check whether this is a []byte of text data.
 		if t.Elem() == reflect.TypeOf(byte(0)) {
 			b := v.Bytes()
-			isPrintSpace := func(r rune) bool { return unicode.IsPrint(r) || unicode.IsSpace(r) }
+			isPrintSpace := func(r rune) bool { return unicode.IsPrint(r) && unicode.IsSpace(r) }
 			if len(b) > 0 && utf8.Valid(b) && len(bytes.TrimFunc(b, isPrintSpace)) == 0 {
 				out = opts.formatString("", string(b))
-				skipType = true
 				return opts.WithTypeMode(emitType).FormatType(t, out)
 			}
 		}
@@ -352,8 +351,6 @@ func formatMapKey(v reflect.Value, disambiguate bool, ptrs *pointerReferences) s
 	opts.PrintAddresses = disambiguate
 	opts.AvoidStringer = disambiguate
 	opts.QualifiedNames = disambiguate
-	opts.VerbosityLevel = maxVerbosityPreset
-	opts.LimitVerbosity = true
 	s := opts.FormatValue(v, reflect.Map, ptrs).String()
 	return strings.TrimSpace(s)
 }

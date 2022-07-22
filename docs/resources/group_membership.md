@@ -58,12 +58,12 @@ resource ad_group_membership "gm" {
 
 ### Required
 
-- `group_id` (String) The ID of the group. This can be a GUID, a SID, a Distinguished Name, or the SAM Account Name of the group.
-- `group_members` (Set of String) A list of member AD Principals. Each principal can be identified by its GUID, SID, Distinguished Name, or SAM Account Name. Only one is required
+- **group_id** (String) The ID of the group. This can be a GUID, a SID, a Distinguished Name, or the SAM Account Name of the group.
+- **group_members** (Set of String) A list of member AD Principals. Each principal can be identified by its GUID, SID, Distinguished Name, or SAM Account Name. Only one is required
 
 ### Optional
 
-- `id` (String) The ID of this resource.
+- **id** (String) The ID of this resource.
 
 ## Import
 

@@ -1,31 +1,20 @@
 package plugintest
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 )
 
-func symlinkFile(src string, dest string) error {
-	err := os.Symlink(src, dest)
-
-	if err != nil {
-		return fmt.Errorf("unable to symlink %q to %q: %w", src, dest, err)
+func symlinkFile(src string, dest string) (err error) {
+	err = os.Symlink(src, dest)
+	if err == nil {
+		srcInfo, err := os.Stat(src)
+		if err != nil {
+			err = os.Chmod(dest, srcInfo.Mode())
+		}
 	}
 
-	srcInfo, err := os.Stat(src)
-
-	if err != nil {
-		return fmt.Errorf("unable to stat %q: %w", src, err)
-	}
-
-	err = os.Chmod(dest, srcInfo.Mode())
-
-	if err != nil {
-		return fmt.Errorf("unable to set %q permissions: %w", dest, err)
-	}
-
-	return nil
+	return
 }
 
 // symlinkDir is a simplistic function for recursively symlinking all files in a directory to a new path.

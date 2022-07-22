@@ -1,6 +1,7 @@
 package tfexec
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -43,7 +44,7 @@ func FormatString(ctx context.Context, execPath string, content string) (string,
 // FormatString formats a passed string.
 func (tf *Terraform) FormatString(ctx context.Context, content string) (string, error) {
 	in := strings.NewReader(content)
-	var outBuf strings.Builder
+	var outBuf bytes.Buffer
 	err := tf.Format(ctx, in, &outBuf)
 	if err != nil {
 		return "", err
@@ -100,7 +101,7 @@ func (tf *Terraform) FormatCheck(ctx context.Context, opts ...FormatOption) (boo
 		return false, nil, err
 	}
 
-	var outBuf strings.Builder
+	var outBuf bytes.Buffer
 	cmd.Stdout = mergeWriters(cmd.Stdout, &outBuf)
 
 	err = tf.runTerraformCmd(ctx, cmd)

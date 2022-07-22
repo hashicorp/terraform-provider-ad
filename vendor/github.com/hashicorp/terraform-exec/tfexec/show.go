@@ -1,10 +1,10 @@
 package tfexec
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"os/exec"
-	"strings"
 
 	tfjson "github.com/hashicorp/terraform-json"
 )
@@ -173,14 +173,14 @@ func (tf *Terraform) ShowPlanFileRaw(ctx context.Context, planPath string, opts 
 
 	showCmd := tf.showCmd(ctx, false, mergeEnv, planPath)
 
-	var outBuf strings.Builder
-	showCmd.Stdout = &outBuf
+	var ret bytes.Buffer
+	showCmd.Stdout = &ret
 	err := tf.runTerraformCmd(ctx, showCmd)
 	if err != nil {
 		return "", err
 	}
 
-	return outBuf.String(), nil
+	return ret.String(), nil
 
 }
 
