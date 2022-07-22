@@ -27,12 +27,12 @@ output "gpo_uuid" {
 
 ### Optional
 
-- **guid** (String) GUID of the GPO.
-- **id** (String) The ID of this resource.
-- **name** (String) Name of the GPO.
+- `guid` (String) GUID of the GPO.
+- `id` (String) The ID of this resource.
+- `name` (String) Name of the GPO.
 
 ### Read-Only
 
-- **domain** (String) Domain of the GPO.
+- `domain` (String) Domain of the GPO.
 
 

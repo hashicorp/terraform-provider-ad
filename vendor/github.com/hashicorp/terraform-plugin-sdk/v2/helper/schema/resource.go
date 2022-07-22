@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/go-cty/cty"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/internal/logging"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
@@ -100,8 +101,11 @@ type Resource struct {
 	// Deprecated: Please use the context aware equivalents instead. Only one of
 	// the operations or context aware equivalent can be set, not both.
 	Create CreateFunc
-	Read   ReadFunc
+	// Deprecated: Please use the context aware equivalents instead.
+	Read ReadFunc
+	// Deprecated: Please use the context aware equivalents instead.
 	Update UpdateFunc
+	// Deprecated: Please use the context aware equivalents instead.
 	Delete DeleteFunc
 
 	// Exists is a function that is called to check if a resource still
@@ -268,9 +272,17 @@ func (r *Resource) ShimInstanceStateFromValue(state cty.Value) (*terraform.Insta
 //
 // Deprecated: Please use the context aware equivalents instead.
 type CreateFunc func(*ResourceData, interface{}) error
+
+// Deprecated: Please use the context aware equivalents instead.
 type ReadFunc func(*ResourceData, interface{}) error
+
+// Deprecated: Please use the context aware equivalents instead.
 type UpdateFunc func(*ResourceData, interface{}) error
+
+// Deprecated: Please use the context aware equivalents instead.
 type DeleteFunc func(*ResourceData, interface{}) error
+
+// Deprecated: Please use the context aware equivalents instead.
 type ExistsFunc func(*ResourceData, interface{}) (bool, error)
 
 // See Resource documentation.
@@ -425,7 +437,10 @@ func (r *Resource) Apply(
 	if d.Destroy || d.RequiresNew() {
 		if s.ID != "" {
 			// Destroy the resource since it is created
+			logging.HelperSchemaTrace(ctx, "Calling downstream")
 			diags = append(diags, r.delete(ctx, data, meta)...)
+			logging.HelperSchemaTrace(ctx, "Called downstream")
+
 			if diags.HasError() {
 				return r.recordCurrentSchemaVersion(data.State()), diags
 			}
@@ -453,7 +468,9 @@ func (r *Resource) Apply(
 	if data.Id() == "" {
 		// We're creating, it is a new resource.
 		data.MarkNewResource()
+		logging.HelperSchemaTrace(ctx, "Calling downstream")
 		diags = append(diags, r.create(ctx, data, meta)...)
+		logging.HelperSchemaTrace(ctx, "Called downstream")
 	} else {
 		if !r.updateFuncSet() {
 			return s, append(diags, diag.Diagnostic{
@@ -461,7 +478,9 @@ func (r *Resource) Apply(
 				Summary:  "doesn't support update",
 			})
 		}
+		logging.HelperSchemaTrace(ctx, "Calling downstream")
 		diags = append(diags, r.update(ctx, data, meta)...)
+		logging.HelperSchemaTrace(ctx, "Called downstream")
 	}
 
 	return r.recordCurrentSchemaVersion(data.State()), diags
@@ -555,7 +574,10 @@ func (r *Resource) ReadDataApply(
 		return nil, diag.FromErr(err)
 	}
 
+	logging.HelperSchemaTrace(ctx, "Calling downstream")
 	diags := r.read(ctx, data, meta)
+	logging.HelperSchemaTrace(ctx, "Called downstream")
+
 	state := data.State()
 	if state != nil && state.ID == "" {
 		// Data sources can set an ID if they want, but they aren't
@@ -601,7 +623,10 @@ func (r *Resource) RefreshWithoutUpgrade(
 			data.providerMeta = s.ProviderMeta
 		}
 
+		logging.HelperSchemaTrace(ctx, "Calling downstream")
 		exists, err := r.Exists(data, meta)
+		logging.HelperSchemaTrace(ctx, "Called downstream")
+
 		if err != nil {
 			return s, diag.FromErr(err)
 		}
@@ -621,12 +646,16 @@ func (r *Resource) RefreshWithoutUpgrade(
 		data.providerMeta = s.ProviderMeta
 	}
 
+	logging.HelperSchemaTrace(ctx, "Calling downstream")
 	diags := r.read(ctx, data, meta)
+	logging.HelperSchemaTrace(ctx, "Called downstream")
+
 	state := data.State()
 	if state != nil && state.ID == "" {
 		state = nil
 	}
 
+	schemaMap(r.Schema).handleDiffSuppressOnRefresh(ctx, s, state)
 	return r.recordCurrentSchemaVersion(state), diags
 }
 
@@ -726,8 +755,8 @@ func (r *Resource) InternalValidate(topSchemaMap schemaMap, writable bool) error
 			}
 		}
 
-		for k, f := range tsm {
-			if isReservedResourceFieldName(k, f) {
+		for k := range tsm {
+			if isReservedResourceFieldName(k) {
 				return fmt.Errorf("%s is a reserved field name", k)
 			}
 		}
@@ -833,13 +862,13 @@ func validateResourceID(s *Schema) error {
 
 	// ID should at least be computed. If unspecified it will be set to Computed and Optional,
 	// but Optional is unnecessary if undesired.
-	if s.Computed != true {
+	if !s.Computed {
 		return fmt.Errorf(`the "id" attribute must be marked Computed`)
 	}
 	return nil
 }
 
-func isReservedResourceFieldName(name string, s *Schema) bool {
+func isReservedResourceFieldName(name string) bool {
 	for _, reservedName := range ReservedResourceFields {
 		if name == reservedName {
 			return true
