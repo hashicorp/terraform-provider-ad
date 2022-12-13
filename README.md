@@ -11,6 +11,12 @@ This Windows AD provider for Terraform allows you to manage users, groups and gr
 
 This provider is a technical preview, which means it's a community supported project. It still requires extensive testing and polishing to mature into a HashiCorp officially supported project. Please [file issues](https://github.com/hashicorp/terraform-provider-ad/issues/new/choose) generously and detail your experience while using the provider. We welcome your feedback.
 
+By using the software in this repository (the AD provider), you acknowledge that: 
+* The provider is still in development, may change, and has not been released as a commercial product by HashiCorp and is not currently supported in any way by HashiCorp.
+* The provider is provided on an "as-is" basis, and may include bugs, errors, or other issues.
+* The provider is NOT INTENDED FOR PRODUCTION USE, use of the Software may result in unexpected results, loss of data, or other unexpected results, and HashiCorp disclaims any and all liability resulting from use of the Software.
+* HashiCorp reserves all rights to make all decisions about the features, functionality and commercial release (or non-release) of the provider, at any time and without any obligation or liability whatsoever.
+
 ## Requirements
 
 * [Terraform](https://www.terraform.io/downloads.html) version 0.12.x+
