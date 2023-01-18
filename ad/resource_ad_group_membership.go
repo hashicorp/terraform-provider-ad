@@ -33,7 +33,7 @@ func resourceADGroupMembership() *schema.Resource {
 				Required:    true,
 				Description: "A list of member AD Principals. Each principal can be identified by its GUID, SID, Distinguished Name, or SAM Account Name. Only one is required",
 				Elem:        &schema.Schema{Type: schema.TypeString},
-				MinItems:    1,
+				MinItems:    0,
 			},
 		},
 	}
