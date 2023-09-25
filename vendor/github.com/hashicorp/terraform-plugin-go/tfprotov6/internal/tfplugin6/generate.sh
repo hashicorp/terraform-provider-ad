@@ -1,4 +1,7 @@
 #!/bin/bash
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
 
 # We do not run protoc under go:generate because we want to ensure that all
 # dependencies of go:generate are "go get"-able for general dev environment

@@ -1,3 +1,6 @@
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
 variable "hostname" { default = "ad.yourdomain.com" }
 variable "username" { default = "user" }
 variable "password" { default = "password" }

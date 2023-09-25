@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package hclogutils
 
 // MapsToArgs will shallow merge field maps into the slice of key1, value1,

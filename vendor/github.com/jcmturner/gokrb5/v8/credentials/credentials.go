@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 // Package credentials provides credentials management for Kerberos 5 authentication.
 package credentials
 

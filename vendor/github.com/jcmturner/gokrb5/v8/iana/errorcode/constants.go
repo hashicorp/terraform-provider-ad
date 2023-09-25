@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 // Package errorcode provides Kerberos 5 assigned error codes.
 package errorcode
 
