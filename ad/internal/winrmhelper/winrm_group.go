@@ -6,9 +6,9 @@ import (
 	"log"
 	"strings"
 
-	"github.com/hashicorp/terraform-provider-ad/ad/internal/config"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/structure"
+	"github.com/hashicorp/terraform-provider-ad/ad/internal/config"
 )
 
 // Group represents an AD Group
@@ -23,7 +23,9 @@ type Group struct {
 	Category          string
 	Container         string
 	Description       string
+	ManagedBy         string
 	SID               SID `json:"SID"`
+	CustomAttributes  map[string]interface{}
 }
 
 // AddGroup creates a new group
@@ -38,6 +40,19 @@ func (g *Group) AddGroup(conf *config.ProviderConf) (string, error) {
 	if g.Description != "" {
 		cmds = append(cmds, fmt.Sprintf("-Description %q", g.Description))
 	}
+
+	if g.ManagedBy != "" {
+		cmds = append(cmds, fmt.Sprintf("-ManagedBy %q", g.ManagedBy))
+	}
+
+	if g.CustomAttributes != nil {
+		attrs, err := g.getOtherAttributes()
+		if err != nil {
+			return "", err
+		}
+		cmds = append(cmds, fmt.Sprintf("-OtherAttributes %s", attrs))
+	}
+
 	psOpts := CreatePSCommandOpts{
 		JSONOutput:      true,
 		ForceArray:      false,
@@ -61,7 +76,7 @@ func (g *Group) AddGroup(conf *config.ProviderConf) (string, error) {
 		return "", fmt.Errorf("command New-ADGroup exited with a non-zero exit code %d, stderr: %s", result.ExitCode, result.StdErr)
 	}
 
-	group, err := unmarshallGroup([]byte(result.Stdout))
+	group, err := unmarshallGroup([]byte(result.Stdout), nil)
 	if err != nil {
 		return "", fmt.Errorf("error while unmarshalling group json document: %s", err)
 	}
@@ -76,6 +91,7 @@ func (g *Group) ModifyGroup(d *schema.ResourceData, conf *config.ProviderConf) e
 		"scope":            "GroupScope",
 		"category":         "GroupCategory",
 		"description":      "Description",
+		"managed_by":       "ManagedBy",
 	}
 
 	cmds := []string{fmt.Sprintf("Set-ADGroup -Identity %q", g.GUID)}
@@ -90,6 +106,15 @@ func (g *Group) ModifyGroup(d *schema.ResourceData, conf *config.ProviderConf) e
 			}
 			cmds = append(cmds, fmt.Sprintf(`-%s %s`, param, value))
 		}
+	}
+
+	if d.HasChange("custom_attributes") {
+		oldValue, newValue := d.GetChange("custom_attributes")
+		otherAttributes, err := GetChangesForCustomAttributes(oldValue, newValue)
+		if err != nil {
+			return err
+		}
+		cmds = append(cmds, otherAttributes...)
 	}
 
 	if len(cmds) > 1 {
@@ -185,8 +210,12 @@ func (g *Group) DeleteGroup(conf *config.ProviderConf) error {
 	return nil
 }
 
+func (g *Group) getOtherAttributes() (string, error) {
+	return GetOtherAttributes(g.CustomAttributes)
+}
+
 // GetGroupFromResource returns a Group struct built from Resource data
-func GetGroupFromResource(d *schema.ResourceData) *Group {
+func GetGroupFromResource(d *schema.ResourceData) (*Group, error) {
 	g := Group{
 		Name:           SanitiseTFInput(d, "name"),
 		SAMAccountName: SanitiseTFInput(d, "sam_account_name"),
@@ -195,14 +224,25 @@ func GetGroupFromResource(d *schema.ResourceData) *Group {
 		Category:       SanitiseTFInput(d, "category"),
 		GUID:           SanitiseString(d.Id()),
 		Description:    SanitiseTFInput(d, "description"),
+		ManagedBy:      SanitiseTFInput(d, "managed_by"),
 	}
 
-	return &g
+	ca, ok := d.Get("custom_attributes").(string)
+	if ok && len(ca) > 0 {
+		g.CustomAttributes = make(map[string]interface{})
+		customAttributes, err := structure.ExpandJsonFromString(ca)
+		if err != nil {
+			return nil, fmt.Errorf("while unmarshalling custom attributes JSON doc: %s", err)
+		}
+		g.CustomAttributes = customAttributes
+	}
+
+	return &g, nil
 }
 
 // GetGroupFromHost returns a Group struct based on data
 // retrieved from the AD Controller.
-func GetGroupFromHost(conf *config.ProviderConf, guid string) (*Group, error) {
+func GetGroupFromHost(conf *config.ProviderConf, guid string, customAttributes []string) (*Group, error) {
 	cmd := fmt.Sprintf("Get-ADGroup -identity %q -properties *", guid)
 	psOpts := CreatePSCommandOpts{
 		JSONOutput:      true,
@@ -225,7 +265,7 @@ func GetGroupFromHost(conf *config.ProviderConf, guid string) (*Group, error) {
 		return nil, fmt.Errorf("command Get-ADGroup exited with a non-zero exit code %d, stderr: %s", result.ExitCode, result.StdErr)
 	}
 
-	g, err := unmarshallGroup([]byte(result.Stdout))
+	g, err := unmarshallGroup([]byte(result.Stdout), customAttributes)
 	if err != nil {
 		return nil, fmt.Errorf("error while unmarshalling group json document: %s", err)
 	}
@@ -236,7 +276,7 @@ func GetGroupFromHost(conf *config.ProviderConf, guid string) (*Group, error) {
 // unmarshallGroup unmarshalls the incoming byte array containing JSON
 // into a Group structure and populates all fields based on the data
 // extracted.
-func unmarshallGroup(input []byte) (*Group, error) {
+func unmarshallGroup(input []byte, customAttributes []string) (*Group, error) {
 	var g Group
 	err := json.Unmarshal(input, &g)
 	if err != nil {
@@ -254,6 +294,25 @@ func unmarshallGroup(input []byte) (*Group, error) {
 
 	commaIdx := strings.Index(g.DistinguishedName, ",")
 	g.Container = g.DistinguishedName[commaIdx+1:]
+
+	if customAttributes == nil {
+		return &g, nil
+	}
+
+	var groupMapIntf interface{}
+	err = json.Unmarshal(input, &groupMapIntf)
+	if err != nil {
+		log.Printf("[DEBUG] Failed to unmarshall json document with error %q, document was: %s", err, string(input))
+		return nil, fmt.Errorf("failed while unmarshalling json response: %s", err)
+	}
+
+	groupMap := groupMapIntf.(map[string]interface{})
+	g.CustomAttributes = make(map[string]interface{})
+	for _, property := range customAttributes {
+		if val, ok := groupMap[property]; ok {
+			g.CustomAttributes[property] = val
+		}
+	}
 
 	return &g, nil
 }

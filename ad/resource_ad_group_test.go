@@ -151,7 +151,7 @@ func testAccResourceADGroupExists(name, groupSAM string, expected bool) resource
 		}
 		defer conf.ReleaseWinRMClient(client)
 
-		u, err := winrmhelper.GetGroupFromHost(conf, rs.Primary.ID)
+		u, err := winrmhelper.GetGroupFromHost(conf, rs.Primary.ID, nil)
 		if err != nil {
 			if strings.Contains(err.Error(), "ADIdentityNotFoundException") && !expected {
 				return nil
