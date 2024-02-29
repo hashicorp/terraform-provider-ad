@@ -1,3 +1,8 @@
+## 0.5.0 (Unreleased)
+
+* dependencies: update go to `1.21` [GH-187]
+* dependencies: update `terraform-plugin-sdk` to `v2.33.0` [GH-187]
+
 ## 0.4.4 (April 05, 2022)
 
 IMPROVEMENTS:
