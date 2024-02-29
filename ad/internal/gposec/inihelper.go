@@ -266,8 +266,7 @@ func ParseIniFile(iniBytes []byte, utf16Decode bool) (*SecuritySettings, error) 
 // HandleSectionRead handles all the logic behind the provider's Read() method.
 // For the purposes of the function below:
 // "section": is one of the blocks in the resource's configuration.
-// "hostData": is the golang structure representing the data we parsed from the
-//             .inf file we downladed from the host
+// "hostData": is the golang structure representing the data we parsed from the .inf file we downloaded from the host
 func HandleSectionRead(schemaKeys []string, hostData *SecuritySettings, d *schema.ResourceData) error {
 	// each of the schemaKeys elements, apart from gpo_container, represent a block
 	// in the resource's configuration. Each of these blocks is mapped to a section

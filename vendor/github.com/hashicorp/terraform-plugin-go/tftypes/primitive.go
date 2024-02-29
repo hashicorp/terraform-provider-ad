@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tftypes
 
 import (
@@ -35,6 +38,12 @@ type primitive struct {
 	// see https://golang.org/ref/spec#Comparison_operators
 	// this enforces the use of Is, instead
 	_ []struct{}
+}
+
+// ApplyTerraform5AttributePathStep always returns an ErrInvalidStep error
+// as it is invalid to step into a primitive.
+func (p primitive) ApplyTerraform5AttributePathStep(step AttributePathStep) (interface{}, error) {
+	return nil, ErrInvalidStep
 }
 
 func (p primitive) Equal(o Type) bool {
@@ -77,7 +86,10 @@ func (p primitive) MarshalJSON() ([]byte, error) {
 	case DynamicPseudoType.name:
 		return []byte(`"dynamic"`), nil
 	}
-	return nil, fmt.Errorf("unknown primitive type %q", p)
+
+	// MarshalJSON should always be error safe and reaching this panic implies
+	// a new primitive type was added that needs to be handled above.
+	panic(fmt.Sprintf("unimplemented tftypes.primitive type: %+v", p))
 }
 
 func (p primitive) supportedGoTypes() []string {

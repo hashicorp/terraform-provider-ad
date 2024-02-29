@@ -35,7 +35,7 @@ func (r *RestrictedGroups) SetResourceData(section string, d *schema.ResourceDat
 	return d.Set(section, out)
 }
 
-//SetIniData populates the INI file with data from this struct
+// SetIniData populates the INI file with data from this struct
 func (r *RestrictedGroups) SetIniData(f *ini.File) error {
 	if len(r.Groups) == 0 {
 		return nil
