@@ -453,7 +453,7 @@ func (u *User) ModifyUser(d *schema.ResourceData, conf *config.ProviderConf) err
 	return nil
 }
 
-//DeleteUser deletes an AD user by calling Remove-ADUser
+// DeleteUser deletes an AD user by calling Remove-ADUser
 func (u *User) DeleteUser(conf *config.ProviderConf) error {
 	cmd := fmt.Sprintf("Remove-ADUser -Identity %s -Confirm:$false", u.GUID)
 	psOpts := CreatePSCommandOpts{

@@ -14,7 +14,7 @@ type RegistryValues struct {
 	Values []string
 }
 
-//SetResourceData populates the resource's filed for the given section using the struct's data.
+// SetResourceData populates the resource's filed for the given section using the struct's data.
 func (r *RegistryValues) SetResourceData(section string, d *schema.ResourceData) error {
 	out := []map[string]interface{}{}
 	for _, valuesLine := range r.Values {
@@ -30,7 +30,7 @@ func (r *RegistryValues) SetResourceData(section string, d *schema.ResourceData)
 	return d.Set(section, out)
 }
 
-//SetIniData populates the INI file with data from this struct
+// SetIniData populates the INI file with data from this struct
 func (r *RegistryValues) SetIniData(f *ini.File) error {
 	if len(r.Values) == 0 {
 		return nil
