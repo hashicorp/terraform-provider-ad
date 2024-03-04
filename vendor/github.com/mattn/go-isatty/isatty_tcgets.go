@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 //go:build (linux || aix || zos) && !appengine && !tinygo
 // +build linux aix zos
 // +build !appengine

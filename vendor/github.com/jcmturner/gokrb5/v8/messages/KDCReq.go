@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package messages
 
 // Reference: https://www.ietf.org/rfc/rfc4120.txt
