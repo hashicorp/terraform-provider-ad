@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 // Package rfc4757 provides encryption and checksum methods as specified in RFC 4757
 package rfc4757
 

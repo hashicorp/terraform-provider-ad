@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 // Package msgtype provides Kerberos 5 message type assigned numbers.
 package msgtype
 
