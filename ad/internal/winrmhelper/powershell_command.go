@@ -97,16 +97,15 @@ func (p *PSCommand) Run(conf *config.ProviderConf) (*PSCommandResult, error) {
 	}
 	defer conf.ReleaseWinRMClient(conn)
 
-	encodedCmd := winrm.Powershell(p.cmd)
-
 	if !p.ExecLocally && conn != nil {
 		log.Printf("[DEBUG] Executing command on remote host")
-		stdout, stderr, res, err = conn.RunWithString(encodedCmd, "")
+		stdout, stderr, res, err = conn.RunPSWithString(p.cmd, "")
 		log.Printf("[DEBUG] Powershell command exited with code %d", res)
 	} else {
 		log.Printf("[DEBUG] Creating local shell")
 		localShell := NewLocalPSSession()
 		log.Printf("[DEBUG] Executing command on local host")
+		encodedCmd := winrm.Powershell(p.cmd)
 		stdout, stderr, res, err = localShell.ExecutePScmd(encodedCmd)
 	}
 

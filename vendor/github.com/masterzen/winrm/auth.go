@@ -3,7 +3,7 @@ package winrm
 import (
 	"crypto/tls"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"strings"
@@ -12,11 +12,13 @@ import (
 	"github.com/masterzen/winrm/soap"
 )
 
+// ClientAuthRequest ClientAuthRequest
 type ClientAuthRequest struct {
 	transport http.RoundTripper
-	dial func(network, addr string) (net.Conn, error)
+	dial      func(network, addr string) (net.Conn, error)
 }
 
+// Transport Transport
 func (c *ClientAuthRequest) Transport(endpoint *Endpoint) error {
 	cert, err := tls.X509KeyPair(endpoint.Cert, endpoint.Key)
 	if err != nil {
@@ -32,13 +34,15 @@ func (c *ClientAuthRequest) Transport(endpoint *Endpoint) error {
 		dial = c.dial
 	}
 
+	//nolint:gosec
 	transport := &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
 		TLSClientConfig: &tls.Config{
+			Renegotiation:      tls.RenegotiateOnceAsClient,
 			InsecureSkipVerify: endpoint.Insecure,
 			Certificates:       []tls.Certificate{cert},
 		},
-		Dial: dial,
+		Dial:                  dial,
 		ResponseHeaderTimeout: endpoint.Timeout,
 	}
 
@@ -58,10 +62,9 @@ func (c *ClientAuthRequest) Transport(endpoint *Endpoint) error {
 
 // parse func reads the response body and return it as a string
 func parse(response *http.Response) (string, error) {
-
-	// if we recived the content we expected
+	// if we received the content we expected
 	if strings.Contains(response.Header.Get("Content-Type"), "application/soap+xml") {
-		body, err := ioutil.ReadAll(response.Body)
+		body, err := io.ReadAll(response.Body)
 		defer func() {
 			// defer can modify the returned value before
 			// it is actually passed to the calling statement
@@ -70,7 +73,7 @@ func parse(response *http.Response) (string, error) {
 			}
 		}()
 		if err != nil {
-			return "", fmt.Errorf("error while reading request body %s", err)
+			return "", fmt.Errorf("error while reading request body %w", err)
 		}
 
 		return string(body), nil
@@ -79,12 +82,13 @@ func parse(response *http.Response) (string, error) {
 	return "", fmt.Errorf("invalid content type")
 }
 
+// Post Post
 func (c ClientAuthRequest) Post(client *Client, request *soap.SoapMessage) (string, error) {
 	httpClient := &http.Client{Transport: c.transport}
 
 	req, err := http.NewRequest("POST", client.url, strings.NewReader(request.String()))
 	if err != nil {
-		return "", fmt.Errorf("impossible to create http request %s", err)
+		return "", fmt.Errorf("impossible to create http request %w", err)
 	}
 
 	req.Header.Set("Content-Type", soapXML+";charset=UTF-8")
@@ -92,12 +96,12 @@ func (c ClientAuthRequest) Post(client *Client, request *soap.SoapMessage) (stri
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("unknown error %s", err)
+		return "", fmt.Errorf("unknown error %w", err)
 	}
 
 	body, err := parse(resp)
 	if err != nil {
-		return "", fmt.Errorf("http response error: %d - %s", resp.StatusCode, err.Error())
+		return "", fmt.Errorf("http response error: %d - %w", resp.StatusCode, err)
 	}
 
 	// if we have different 200 http status code
@@ -111,8 +115,9 @@ func (c ClientAuthRequest) Post(client *Client, request *soap.SoapMessage) (stri
 	return body, err
 }
 
+// NewClientAuthRequestWithDial NewClientAuthRequestWithDial
 func NewClientAuthRequestWithDial(dial func(network, addr string) (net.Conn, error)) *ClientAuthRequest {
 	return &ClientAuthRequest{
-		dial:dial,
+		dial: dial,
 	}
 }
