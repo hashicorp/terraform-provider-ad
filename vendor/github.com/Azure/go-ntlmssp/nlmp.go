@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 // Package ntlmssp provides NTLM/Negotiate authentication over HTTP
 //
 // Protocol details from https://msdn.microsoft.com/en-us/library/cc236621.aspx,

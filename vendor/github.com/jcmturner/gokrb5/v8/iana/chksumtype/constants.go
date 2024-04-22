@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 // Package chksumtype provides Kerberos 5 checksum type assigned numbers.
 package chksumtype
 
