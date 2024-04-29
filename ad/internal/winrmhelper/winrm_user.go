@@ -620,12 +620,10 @@ func unmarshallUser(input []byte, customAttributes []string) (*User, error) {
 	var accountControlMap = map[string]int64{
 		"disabled":               0x00000002,
 		"password_never_expires": 0x00010000,
-		"cannot_change_password": 0x00000040,
 	}
 
 	user.Enabled = !(user.UserAccountControl&accountControlMap["disabled"] != 0)
 	user.PasswordNeverExpires = user.UserAccountControl&accountControlMap["password_never_expires"] != 0
-	user.CannotChangePassword = user.UserAccountControl&accountControlMap["cannot_change_password"] != 0
 
 	if customAttributes == nil {
 		return &user, nil
