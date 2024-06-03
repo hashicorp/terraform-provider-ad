@@ -24,7 +24,7 @@ func Provider() *schema.Provider {
 					v := val.(string)
 					os := runtime.GOOS
 					if v == "" && os != "windows" {
-						errs = append(errs, fmt.Errorf("%q is allowed to be empty only if terraform runs on windows, (curent os: %q) ", key, os))
+						errs = append(errs, fmt.Errorf("%q is allowed to be empty only if terraform runs on windows, (current os: %q) ", key, os))
 					}
 					return
 				},
@@ -45,7 +45,7 @@ func Provider() *schema.Provider {
 					v := val.(string)
 					os := runtime.GOOS
 					if v == "" && os != "windows" {
-						errs = append(errs, fmt.Errorf("%q is allowed to be empty only if terraform runs on windows, (curent os: %q) ", key, os))
+						errs = append(errs, fmt.Errorf("%q is allowed to be empty only if terraform runs on windows, (current os: %q) ", key, os))
 					}
 					return
 				},
