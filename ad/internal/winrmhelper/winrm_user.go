@@ -39,6 +39,7 @@ type User struct {
 	HomePage               string
 	Initials               string
 	MobilePhone            string
+	Name                   string `json:"Name"`
 	Office                 string
 	OfficePhone            string
 	Organization           string
@@ -69,7 +70,13 @@ func (u *User) NewUser(conf *config.ProviderConf) (string, error) {
 	}
 
 	log.Printf("Adding user with UPN: %q", u.PrincipalName)
-	cmds := []string{fmt.Sprintf("New-ADUser -Passthru -Name %q", u.Username)}
+	cmds := []string{}
+
+	if u.Name != "" {
+		cmds = append(cmds, fmt.Sprintf("New-ADUser -Passthru -Name %q", u.Name))
+	} else {
+		cmds = append(cmds, fmt.Sprintf("New-ADUser -Passthru -Name %q", u.Username))
+	}
 
 	cmds = append(cmds, fmt.Sprintf("-CannotChangePassword $%t", u.CannotChangePassword))
 	cmds = append(cmds, fmt.Sprintf("-PasswordNeverExpires $%t", u.PasswordNeverExpires))
@@ -450,6 +457,28 @@ func (u *User) ModifyUser(d *schema.ResourceData, conf *config.ProviderConf) err
 		}
 	}
 
+	if d.HasChange("name") {
+		name := d.Get("name").(string)
+		cmd := fmt.Sprintf("Rename-ADObject -Identity %q -NewName %q", u.GUID, name)
+		psOpts := CreatePSCommandOpts{
+			JSONOutput:      true,
+			ForceArray:      false,
+			ExecLocally:     conf.IsConnectionTypeLocal(),
+			PassCredentials: conf.IsPassCredentialsEnabled(),
+			Username:        conf.Settings.WinRMUsername,
+			Password:        conf.Settings.WinRMPassword,
+			Server:          conf.Settings.DomainName,
+		}
+		psCmd := NewPSCommand([]string{cmd}, psOpts)
+		result, err := psCmd.Run(conf)
+		if err != nil {
+			return fmt.Errorf("winrm execution failure while renaming user object: %s", err)
+		}
+		if result.ExitCode != 0 {
+			return fmt.Errorf("Rename-ADObject exited with a non zero exit code (%d), stderr: %s", result.ExitCode, result.StdErr)
+		}
+	}
+
 	return nil
 }
 
@@ -503,6 +532,7 @@ func (u *User) getOtherAttributes() (string, error) {
 func GetUserFromResource(d *schema.ResourceData) (*User, error) {
 	user := User{
 		GUID:                   d.Id(),
+		Name:                   SanitiseTFInput(d, "name"),
 		SAMAccountName:         SanitiseTFInput(d, "sam_account_name"),
 		PrincipalName:          SanitiseTFInput(d, "principal_name"),
 		DisplayName:            SanitiseTFInput(d, "display_name"),
@@ -565,7 +595,7 @@ func GetUserFromResource(d *schema.ResourceData) (*User, error) {
 // GetUserFromHost returns a User struct based on data
 // retrieved from the AD Domain Controller.
 func GetUserFromHost(conf *config.ProviderConf, guid string, customAttributes []string) (*User, error) {
-	cmd := fmt.Sprintf("Get-ADUser -identity %q -properties *", guid)
+	cmd := fmt.Sprintf("Get-ADUser -Identity %q -Properties *", guid)
 	psOpts := CreatePSCommandOpts{
 		JSONOutput:      true,
 		ForceArray:      false,
