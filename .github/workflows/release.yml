@@ -14,18 +14,18 @@ jobs:
     outputs:
       version: ${{ steps.go-version.outputs.version }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
       - id: go-version
         run: echo "::set-output name=version::$(cat ./.go-version)"
   release-notes:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
         with:
           fetch-depth: 0
       - name: Generate Release Notes
         run: sed -n -e "1{/# /d;}" -e "2{/^$/d;}" -e "/# $(git describe --abbrev=0 --exclude="$(git describe --abbrev=0 --match='v*.*.*' --tags)" --match='v*.*.*' --tags | tr -d v)/q;p" CHANGELOG.md > release-notes.txt
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
         with:
           name: release-notes
           path: release-notes.txt

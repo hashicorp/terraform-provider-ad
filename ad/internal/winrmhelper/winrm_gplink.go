@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-//GPLink represents an AD Object that links a GPO and another AD object such as a group,
+// GPLink represents an AD Object that links a GPO and another AD object such as a group,
 // an OU, or a domain.
 type GPLink struct {
 	GPOGuid  string `json:"GpoId"`
@@ -23,7 +23,7 @@ type GPLink struct {
 	Enabled  bool   `json:"Enabled"`
 }
 
-//NewGPLink creates a link between a GPO and an AD object
+// NewGPLink creates a link between a GPO and an AD object
 func (g *GPLink) NewGPLink(conf *config.ProviderConf) (string, error) {
 	log.Printf("[DEBUG] Creating new user")
 	enforced := "No"
@@ -85,7 +85,7 @@ func (g *GPLink) NewGPLink(conf *config.ProviderConf) (string, error) {
 
 }
 
-//ModifyGPLink changes a GPO link
+// ModifyGPLink changes a GPO link
 func (g *GPLink) ModifyGPLink(conf *config.ProviderConf, changes map[string]interface{}) error {
 	cmds := []string{fmt.Sprintf("Set-GPLink -guid %q -target %q", g.GPOGuid, g.Target)}
 	keyMap := map[string]string{
@@ -137,7 +137,7 @@ func (g *GPLink) ModifyGPLink(conf *config.ProviderConf, changes map[string]inte
 	return nil
 }
 
-//RemoveGPLink deletes a link between a GPO and an AD object
+// RemoveGPLink deletes a link between a GPO and an AD object
 func (g *GPLink) RemoveGPLink(conf *config.ProviderConf) error {
 	cmd := fmt.Sprintf("Remove-GPlink -Guid %q -Target %q", g.GPOGuid, g.Target)
 	domainName := conf.Settings.DomainName
@@ -169,8 +169,8 @@ func (g *GPLink) RemoveGPLink(conf *config.ProviderConf) error {
 	return nil
 }
 
-//GetGPLinkFromResource returns a GPLink struct populated with data from the
-//resource's configuration
+// GetGPLinkFromResource returns a GPLink struct populated with data from the
+// resource's configuration
 func GetGPLinkFromResource(d *schema.ResourceData) *GPLink {
 	gplink := GPLink{
 		GPOGuid:  SanitiseTFInput(d, "gpo_guid"),
@@ -182,8 +182,8 @@ func GetGPLinkFromResource(d *schema.ResourceData) *GPLink {
 	return &gplink
 }
 
-//GetGPLinkFromHost returns a GPLink struct populated with data retrieved from the
-//Domain Controller
+// GetGPLinkFromHost returns a GPLink struct populated with data retrieved from the
+// Domain Controller
 func GetGPLinkFromHost(conf *config.ProviderConf, gpoGUID, containerGUID string) (*GPLink, error) {
 	cmds := []string{fmt.Sprintf("Get-ADObject -filter {ObjectGUID -eq %q} -properties gplink", containerGUID)}
 	psOpts := CreatePSCommandOpts{

@@ -1,7 +1,8 @@
-# Windows Active Directory (AD) provider for Terraform
 <a href="https://terraform.io">
-    <img src="https://cdn.rawgit.com/hashicorp/terraform-website/master/content/source/assets/images/logo-hashicorp.svg" alt="Terraform logo" align="right" height="50" />
+    <img src="https://github.com/hashicorp/terraform-provider-azurerm/raw/main/.github/tf.png" alt="Terraform logo" title="Terraform" align="left" height="50" />
 </a>
+
+# Terraform Provider for Windows Active Directory (AD)
 
 ![Status: Tech Preview](https://img.shields.io/badge/status-experimental-EAAA32) [![Releases](https://img.shields.io/github/release/hashicorp/terraform-provider-ad.svg)](https://github.com/hashicorp/terraform-provider-ad/releases)
 [![LICENSE](https://img.shields.io/github/license/hashicorp/terraform-provider-ad.svg)](https://github.com/hashicorp/terraform-provider-ad/blob/main/LICENSE)
@@ -10,6 +11,12 @@
 This Windows AD provider for Terraform allows you to manage users, groups and group policies in your AD installation.
 
 This provider is a technical preview, which means it's a community supported project. It still requires extensive testing and polishing to mature into a HashiCorp officially supported project. Please [file issues](https://github.com/hashicorp/terraform-provider-ad/issues/new/choose) generously and detail your experience while using the provider. We welcome your feedback.
+
+By using the software in this repository (the AD provider), you acknowledge that: 
+* The AD provider is still in development, may change, and has not been released as a commercial product by HashiCorp and is not currently supported in any way by HashiCorp.
+* The AD provider is provided on an "as-is" basis, and may include bugs, errors, or other issues.
+* The AD provider is NOT INTENDED FOR PRODUCTION USE, use of the Software may result in unexpected results, loss of data, or other unexpected results, and HashiCorp disclaims any and all liability resulting from use of the AD provider.
+* HashiCorp reserves all rights to make all decisions about the features, functionality and commercial release (or non-release) of the AD provider, at any time and without any obligation or liability whatsoever.
 
 ## Requirements
 

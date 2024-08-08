@@ -174,7 +174,7 @@ func (g *GPO) Rename(conf *config.ProviderConf, target string) error {
 	return nil
 }
 
-//ChangeStatus Changes the status of a GPO
+// ChangeStatus Changes the status of a GPO
 func (g *GPO) ChangeStatus(conf *config.ProviderConf, status string) error {
 	cmd := fmt.Sprintf(`(%s).GpoStatus = "%s"`, getGPOCmdByGUID(g.ID), status)
 
@@ -332,7 +332,7 @@ func (g *GPO) getGPOFilePath(conf *config.ProviderConf) (string, error) {
 	return result.Stdout, nil
 }
 
-//getSysVolPath returns the local path for the SYSVOL share on a Domain Controller. The combination of this
+// getSysVolPath returns the local path for the SYSVOL share on a Domain Controller. The combination of this
 // and the value we get from getGPOFilePath is used to construct the GPO path on the DC's filesystem.
 func getSysVolPath(conf *config.ProviderConf) (string, error) {
 	cmd := "(Get-SmbShare sysvol).path"

@@ -20,7 +20,7 @@ type OrgUnit struct {
 	GUID              string `json:"ObjectGuid"`
 }
 
-//NewOrgUnitFromResource returns a new OrgUnit struct populated from resource data
+// NewOrgUnitFromResource returns a new OrgUnit struct populated from resource data
 func NewOrgUnitFromResource(d *schema.ResourceData) *OrgUnit {
 	ou := OrgUnit{
 		Description:       SanitiseTFInput(d, "description"),
