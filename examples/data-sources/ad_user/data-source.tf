@@ -1,3 +1,6 @@
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
 data "ad_user" "u" {
     user_id = "DC3E5929-71C0-4232-9C32-9C7AFAABF0BB"
 }

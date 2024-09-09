@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 // Package rfc8009 provides encryption and checksum methods as specified in RFC 8009
 package rfc8009
 
