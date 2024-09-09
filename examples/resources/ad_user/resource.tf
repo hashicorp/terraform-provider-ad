@@ -1,3 +1,6 @@
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
 # basic example
 variable principal_name { default = "testuser" }
 variable samaccountname { default = "testuser" }
