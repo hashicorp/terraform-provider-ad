@@ -90,7 +90,7 @@ func testAccResourceADGroupMembershipExists(resourceName string, expected bool, 
 			return fmt.Errorf("%s resource not found", resourceName)
 		}
 
-		toks := strings.Split(rs.Primary.ID, "_")
+		toks := strings.Split(rs.Primary.ID, "/")
 		gm, err := winrmhelper.NewGroupMembershipFromHost(testAccProvider.Meta().(*config.ProviderConf), toks[0])
 		if err != nil {
 			if strings.Contains(err.Error(), "ADIdentityNotFoundException") && !expected {
