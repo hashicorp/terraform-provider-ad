@@ -41,6 +41,7 @@ type Settings struct {
 	WinRMPassCredentials bool
 	DomainName           string
 	DomainController     string
+	MembershipAttribute  string
 }
 
 // NewConfig returns a new Config struct populated with Resource Data.
@@ -59,6 +60,7 @@ func NewConfig(d *schema.ResourceData) (*Settings, error) {
 	winRMUseNTLM := d.Get("winrm_use_ntlm").(bool)
 	winRMPassCredentials := d.Get("winrm_pass_credentials").(bool)
 	domainController := d.Get("domain_controller").(string)
+	membershipAttribute := d.Get("membership_attribute").(string)
 
 	cfg := &Settings{
 		DomainName:           krbRealm,
@@ -75,6 +77,7 @@ func NewConfig(d *schema.ResourceData) (*Settings, error) {
 		WinRMUseNTLM:         winRMUseNTLM,
 		WinRMPassCredentials: winRMPassCredentials,
 		DomainController:     domainController,
+		MembershipAttribute:  membershipAttribute,
 	}
 
 	return cfg, nil
