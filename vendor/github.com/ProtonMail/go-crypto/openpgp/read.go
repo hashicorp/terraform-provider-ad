@@ -6,7 +6,6 @@
 package openpgp // import "github.com/ProtonMail/go-crypto/openpgp"
 
 import (
-	"bytes"
 	"crypto"
 	_ "crypto/sha256"
 	_ "crypto/sha512"
@@ -234,7 +233,7 @@ FindKey:
 	}
 	mdFinal, sensitiveParsingErr := readSignedMessage(packets, md, keyring, config)
 	if sensitiveParsingErr != nil {
-		return nil, errors.StructuralError("parsing error")
+		return nil, errors.HandleSensitiveParsingError(sensitiveParsingErr, md.decrypted != nil)
 	}
 	return mdFinal, nil
 }
@@ -369,7 +368,7 @@ func (cr *checkReader) Read(buf []byte) (int, error) {
 	}
 
 	if sensitiveParsingError != nil {
-		return n, errors.StructuralError("parsing error")
+		return n, errors.HandleSensitiveParsingError(sensitiveParsingError, true)
 	}
 
 	return n, nil
@@ -393,6 +392,7 @@ func (scr *signatureCheckReader) Read(buf []byte) (int, error) {
 		scr.wrappedHash.Write(buf[:n])
 	}
 
+	readsDecryptedData := scr.md.decrypted != nil
 	if sensitiveParsingError == io.EOF {
 		var p packet.Packet
 		var readError error
@@ -411,7 +411,7 @@ func (scr *signatureCheckReader) Read(buf []byte) (int, error) {
 					key := scr.md.SignedBy
 					signatureError := key.PublicKey.VerifySignature(scr.h, sig)
 					if signatureError == nil {
-						signatureError = checkSignatureDetails(key, sig, scr.config)
+						signatureError = checkMessageSignatureDetails(key, sig, scr.config)
 					}
 					scr.md.Signature = sig
 					scr.md.SignatureError = signatureError
@@ -435,16 +435,15 @@ func (scr *signatureCheckReader) Read(buf []byte) (int, error) {
 		// unsigned hash of its own. In order to check this we need to
 		// close that Reader.
 		if scr.md.decrypted != nil {
-			mdcErr := scr.md.decrypted.Close()
-			if mdcErr != nil {
-				return n, mdcErr
+			if sensitiveParsingError := scr.md.decrypted.Close(); sensitiveParsingError != nil {
+				return n, errors.HandleSensitiveParsingError(sensitiveParsingError, true)
 			}
 		}
 		return n, io.EOF
 	}
 
 	if sensitiveParsingError != nil {
-		return n, errors.StructuralError("parsing error")
+		return n, errors.HandleSensitiveParsingError(sensitiveParsingError, readsDecryptedData)
 	}
 
 	return n, nil
@@ -455,19 +454,13 @@ func (scr *signatureCheckReader) Read(buf []byte) (int, error) {
 // if any, and a possible signature verification error.
 // If the signer isn't known, ErrUnknownIssuer is returned.
 func VerifyDetachedSignature(keyring KeyRing, signed, signature io.Reader, config *packet.Config) (sig *packet.Signature, signer *Entity, err error) {
-	return verifyDetachedSignature(keyring, signed, signature, nil, nil, false, config)
+	return verifyDetachedSignature(keyring, signed, signature, nil, false, config)
 }
 
 // VerifyDetachedSignatureAndHash performs the same actions as
 // VerifyDetachedSignature and checks that the expected hash functions were used.
 func VerifyDetachedSignatureAndHash(keyring KeyRing, signed, signature io.Reader, expectedHashes []crypto.Hash, config *packet.Config) (sig *packet.Signature, signer *Entity, err error) {
-	return verifyDetachedSignature(keyring, signed, signature, expectedHashes, nil, true, config)
-}
-
-// VerifyDetachedSignatureAndSaltedHash performs the same actions as
-// VerifyDetachedSignature and checks that the expected hash functions and salts were used.
-func VerifyDetachedSignatureAndSaltedHash(keyring KeyRing, signed, signature io.Reader, expectedHashes []crypto.Hash, expectedSaltedHashes []*packet.SaltedHashSpecifier, config *packet.Config) (sig *packet.Signature, signer *Entity, err error) {
-	return verifyDetachedSignature(keyring, signed, signature, expectedHashes, expectedSaltedHashes, true, config)
+	return verifyDetachedSignature(keyring, signed, signature, expectedHashes, true, config)
 }
 
 // CheckDetachedSignature takes a signed file and a detached signature and
@@ -475,25 +468,18 @@ func VerifyDetachedSignatureAndSaltedHash(keyring KeyRing, signed, signature io.
 // signature verification error. If the signer isn't known,
 // ErrUnknownIssuer is returned.
 func CheckDetachedSignature(keyring KeyRing, signed, signature io.Reader, config *packet.Config) (signer *Entity, err error) {
-	_, signer, err = verifyDetachedSignature(keyring, signed, signature, nil, nil, false, config)
-	return
-}
-
-// CheckDetachedSignatureAndSaltedHash performs the same actions as
-// CheckDetachedSignature and checks that the expected hash functions or salted hash functions were used.
-func CheckDetachedSignatureAndSaltedHash(keyring KeyRing, signed, signature io.Reader, expectedHashes []crypto.Hash, expectedSaltedHashes []*packet.SaltedHashSpecifier, config *packet.Config) (signer *Entity, err error) {
-	_, signer, err = verifyDetachedSignature(keyring, signed, signature, expectedHashes, expectedSaltedHashes, true, config)
+	_, signer, err = verifyDetachedSignature(keyring, signed, signature, nil, false, config)
 	return
 }
 
 // CheckDetachedSignatureAndHash performs the same actions as
 // CheckDetachedSignature and checks that the expected hash functions were used.
 func CheckDetachedSignatureAndHash(keyring KeyRing, signed, signature io.Reader, expectedHashes []crypto.Hash, config *packet.Config) (signer *Entity, err error) {
-	_, signer, err = verifyDetachedSignature(keyring, signed, signature, expectedHashes, nil, true, config)
+	_, signer, err = verifyDetachedSignature(keyring, signed, signature, expectedHashes, true, config)
 	return
 }
 
-func verifyDetachedSignature(keyring KeyRing, signed, signature io.Reader, expectedHashes []crypto.Hash, expectedSaltedHashes []*packet.SaltedHashSpecifier, checkHashes bool, config *packet.Config) (sig *packet.Signature, signer *Entity, err error) {
+func verifyDetachedSignature(keyring KeyRing, signed, signature io.Reader, expectedHashes []crypto.Hash, checkHashes bool, config *packet.Config) (sig *packet.Signature, signer *Entity, err error) {
 	var issuerKeyId uint64
 	var hashFunc crypto.Hash
 	var sigType packet.SignatureType
@@ -523,22 +509,11 @@ func verifyDetachedSignature(keyring KeyRing, signed, signature io.Reader, expec
 		sigType = sig.SigType
 		if checkHashes {
 			matchFound := false
-			if sig.Version == 6 {
-				// check for salted hashes
-				for _, expectedSaltedHash := range expectedSaltedHashes {
-					if hashFunc == expectedSaltedHash.Hash && bytes.Equal(sig.Salt(), expectedSaltedHash.Salt) {
-						matchFound = true
-						break
-					}
-				}
-
-			} else {
-				// check for hashes
-				for _, expectedHash := range expectedHashes {
-					if hashFunc == expectedHash {
-						matchFound = true
-						break
-					}
+			// check for hashes
+			for _, expectedHash := range expectedHashes {
+				if hashFunc == expectedHash {
+					matchFound = true
+					break
 				}
 			}
 			if !matchFound {
@@ -571,7 +546,7 @@ func verifyDetachedSignature(keyring KeyRing, signed, signature io.Reader, expec
 	for _, key := range keys {
 		err = key.PublicKey.VerifySignature(h, sig)
 		if err == nil {
-			return sig, key.Entity, checkSignatureDetails(&key, sig, config)
+			return sig, key.Entity, checkMessageSignatureDetails(&key, sig, config)
 		}
 	}
 
@@ -589,7 +564,7 @@ func CheckArmoredDetachedSignature(keyring KeyRing, signed, signature io.Reader,
 	return CheckDetachedSignature(keyring, signed, body, config)
 }
 
-// checkSignatureDetails returns an error if:
+// checkMessageSignatureDetails returns an error if:
 //   - The signature (or one of the binding signatures mentioned below)
 //     has a unknown critical notation data subpacket
 //   - The primary key of the signing entity is revoked
@@ -607,7 +582,7 @@ func CheckArmoredDetachedSignature(keyring KeyRing, signed, signature io.Reader,
 // NOTE: The order of these checks is important, as the caller may choose to
 // ignore ErrSignatureExpired or ErrKeyExpired errors, but should never
 // ignore any other errors.
-func checkSignatureDetails(key *Key, signature *packet.Signature, config *packet.Config) error {
+func checkMessageSignatureDetails(key *Key, signature *packet.Signature, config *packet.Config) error {
 	now := config.Now()
 	primarySelfSignature, primaryIdentity := key.Entity.PrimarySelfSignature()
 	signedBySubKey := key.PublicKey != key.Entity.PrimaryKey

@@ -53,10 +53,14 @@ type ProviderServer interface {
 	// are a handy interface for defining what a function is to
 	// terraform-plugin-go, so they are their own interface that is composed
 	// into ProviderServer.
-	//
-	// This will be required in an upcoming release.
-	// Reference: https://github.com/hashicorp/terraform-plugin-go/issues/353
-	// FunctionServer
+	FunctionServer
+
+	// EphemeralResourceServer is an interface encapsulating all the ephemeral
+	// resource-related RPC requests. ProviderServer implementations must
+	// implement them, but they are a handy interface for defining what an
+	// ephemeral resource is to terraform-plugin-go, so they're their own
+	// interface that is composed into ProviderServer.
+	EphemeralResourceServer
 }
 
 // GetMetadataRequest represents a GetMetadata RPC request.
@@ -81,6 +85,9 @@ type GetMetadataResponse struct {
 
 	// Resources returns metadata for all managed resources.
 	Resources []ResourceMetadata
+
+	// EphemeralResources returns metadata for all ephemeral resources.
+	EphemeralResources []EphemeralResourceMetadata
 }
 
 // GetProviderSchemaRequest represents a Terraform RPC request for the
@@ -126,6 +133,13 @@ type GetProviderSchemaResponse struct {
 	// references to functions use a separate namespacing syntax that already
 	// includes the provider name.
 	Functions map[string]*Function
+
+	// EphemeralResourceSchemas is a map of ephemeral resource names to the schema for
+	// the configuration specified in the ephemeral resource. The name should be an
+	// ephemeral resource name, and should be prefixed with your provider's
+	// shortname and an underscore. It should match the first label after
+	// `ephemeral` in a user's configuration.
+	EphemeralResourceSchemas map[string]*Schema
 
 	// Diagnostics report errors or warnings related to returning the
 	// provider's schemas. Returning an empty slice indicates success, with
@@ -211,6 +225,10 @@ type ConfigureProviderRequest struct {
 	// known values. Values that are not set in the configuration will be
 	// null.
 	Config *DynamicValue
+
+	// ClientCapabilities defines optionally supported protocol features for the
+	// ConfigureProvider RPC, such as forward-compatible Terraform behavior changes.
+	ClientCapabilities *ConfigureProviderClientCapabilities
 }
 
 // ConfigureProviderResponse represents a Terraform RPC response to the

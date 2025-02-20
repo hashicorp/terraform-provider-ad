@@ -1,9 +1,9 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
 
-// Terraform Plugin RPC protocol version 6.5
+// Terraform Plugin RPC protocol version 6.8
 //
-// This file defines version 6.5 of the RPC protocol. To implement a plugin
+// This file defines version 6.8 of the RPC protocol. To implement a plugin
 // against this protocol, copy this definition into your own codebase and
 // use protoc to generate stubs for your target language.
 //
@@ -21,6 +21,8 @@
 //
 syntax = "proto3";
 option go_package = "github.com/hashicorp/terraform-plugin-go/tfprotov6/internal/tfplugin6";
+
+import "google/protobuf/timestamp.proto";
 
 package tfplugin6;
 
@@ -108,6 +110,11 @@ message Schema {
         bool sensitive = 7;
         StringKind description_kind = 8;
         bool deprecated = 9;
+        // write_only indicates that the attribute value will be provided via
+        // configuration and must be omitted from state. write_only must be
+        // combined with optional or required, and is only valid for managed
+        // resource schemas.
+        bool write_only = 11;
     }
 
     message NestedBlock {
@@ -230,6 +237,38 @@ message ServerCapabilities {
     bool move_resource_state = 3;
 }
 
+// ClientCapabilities allows Terraform to publish information regarding
+// supported protocol features. This is used to indicate availability of
+// certain forward-compatible changes which may be optional in a major
+// protocol version, but cannot be tested for directly.
+message ClientCapabilities {
+    // The deferral_allowed capability signals that the client is able to
+    // handle deferred responses from the provider.
+    bool deferral_allowed = 1;
+    // The write_only_attributes_allowed capability signals that the client
+    // is able to handle write_only attributes for managed resources.
+    bool write_only_attributes_allowed = 2;
+}
+
+// Deferred is a message that indicates that change is deferred for a reason.
+message Deferred {
+    // Reason is the reason for deferring the change.
+    enum Reason {
+        // UNKNOWN is the default value, and should not be used.
+        UNKNOWN = 0;
+        // RESOURCE_CONFIG_UNKNOWN is used when the config is partially unknown and the real
+        // values need to be known before the change can be planned.
+        RESOURCE_CONFIG_UNKNOWN = 1;
+        // PROVIDER_CONFIG_UNKNOWN is used when parts of the provider configuration
+        // are unknown, e.g. the provider configuration is only known after the apply is done.
+        PROVIDER_CONFIG_UNKNOWN = 2;
+        // ABSENT_PREREQ is used when a hard dependency has not been satisfied.
+        ABSENT_PREREQ = 3;
+    }
+    // reason is the reason for deferring the change.
+    Reason reason = 1;
+}
+
 service Provider {
     //////// Information about what a provider supports/expects
 
@@ -259,6 +298,12 @@ service Provider {
     rpc MoveResourceState(MoveResourceState.Request) returns (MoveResourceState.Response);
     rpc ReadDataSource(ReadDataSource.Request) returns (ReadDataSource.Response);
 
+    //////// Ephemeral Resource Lifecycle
+    rpc ValidateEphemeralResourceConfig(ValidateEphemeralResourceConfig.Request) returns (ValidateEphemeralResourceConfig.Response);
+    rpc OpenEphemeralResource(OpenEphemeralResource.Request) returns (OpenEphemeralResource.Response);
+    rpc RenewEphemeralResource(RenewEphemeralResource.Request) returns (RenewEphemeralResource.Response);
+    rpc CloseEphemeralResource(CloseEphemeralResource.Request) returns (CloseEphemeralResource.Response);
+
     // Functions
 
     // GetFunctions returns the definitions of all functions.
@@ -284,6 +329,7 @@ message GetMetadata {
 
         // functions returns metadata for any functions.
         repeated FunctionMetadata functions = 5;
+        repeated EphemeralResourceMetadata ephemeral_resources = 6;
     }
 
     message FunctionMetadata {
@@ -296,6 +342,10 @@ message GetMetadata {
     }
 
     message ResourceMetadata {
+        string type_name = 1;
+    }
+
+    message EphemeralResourceMetadata {
         string type_name = 1;
     }
 }
@@ -313,6 +363,7 @@ message GetProviderSchema {
 
         // functions is a mapping of function names to definitions.
         map<string, Function> functions = 7;
+        map<string, Schema> ephemeral_resource_schemas = 8;
     }
 }
 
@@ -365,6 +416,7 @@ message ValidateResourceConfig {
     message Request {
         string type_name = 1;
         DynamicValue config = 2;
+        ClientCapabilities client_capabilities = 3;
     }
     message Response {
         repeated Diagnostic diagnostics = 1;
@@ -385,6 +437,7 @@ message ConfigureProvider {
     message Request {
         string terraform_version = 1;
         DynamicValue config = 2;
+        ClientCapabilities client_capabilities = 3;
     }
     message Response {
         repeated Diagnostic diagnostics = 1;
@@ -405,11 +458,15 @@ message ReadResource {
         DynamicValue current_state = 2;
         bytes private = 3;
         DynamicValue provider_meta = 4;
+        ClientCapabilities client_capabilities = 5;
     }
     message Response {
         DynamicValue new_state = 1;
         repeated Diagnostic diagnostics = 2;
         bytes private = 3;
+        // deferred is set if the provider is deferring the change. If set the caller
+        // needs to handle the deferral.
+        Deferred deferred = 4;
     }
 }
 
@@ -421,6 +478,7 @@ message PlanResourceChange {
         DynamicValue config = 4;
         bytes prior_private = 5;
         DynamicValue provider_meta = 6;
+        ClientCapabilities client_capabilities = 7;
     }
 
     message Response {
@@ -428,6 +486,7 @@ message PlanResourceChange {
         repeated AttributePath requires_replace = 2;
         bytes planned_private = 3;
         repeated Diagnostic diagnostics = 4;
+
 
         // This may be set only by the helper/schema "SDK" in the main Terraform
         // repository, to request that Terraform Core >=0.12 permit additional
@@ -441,6 +500,9 @@ message PlanResourceChange {
         //     ==== THIS MUST BE LEFT UNSET IN ALL OTHER SDKS ====
         //     ====              DO NOT USE THIS              ====
         bool legacy_type_system = 5;
+        // deferred is set if the provider is deferring the change. If set the caller
+        // needs to handle the deferral.
+        Deferred deferred = 6;
     }
 }
 
@@ -477,6 +539,7 @@ message ImportResourceState {
     message Request {
         string type_name = 1;
         string id = 2;
+        ClientCapabilities client_capabilities = 3;
     }
 
     message ImportedResource {
@@ -488,6 +551,9 @@ message ImportResourceState {
     message Response {
         repeated ImportedResource imported_resources = 1;
         repeated Diagnostic diagnostics = 2;
+        // deferred is set if the provider is deferring the change. If set the caller
+        // needs to handle the deferral.
+        Deferred deferred = 3;
     }
 }
 
@@ -532,10 +598,14 @@ message ReadDataSource {
         string type_name = 1;
         DynamicValue config = 2;
         DynamicValue provider_meta = 3;
+        ClientCapabilities client_capabilities = 4;
     }
     message Response {
         DynamicValue state = 1;
         repeated Diagnostic diagnostics = 2;
+        // deferred is set if the provider is deferring the change. If set the caller
+        // needs to handle the deferral.
+        Deferred deferred = 3;
     }
 }
 
@@ -564,7 +634,56 @@ message CallFunction {
         // result is result value after running the function logic.
         DynamicValue result = 1;
 
-        // error is any errors from the function logic.
+        // error is any error from the function logic.
         FunctionError error = 2;
+    }
+}
+
+message ValidateEphemeralResourceConfig {
+    message Request {
+        string type_name = 1;
+        DynamicValue config = 2;
+    }
+    message Response {
+        repeated Diagnostic diagnostics = 1;
+    }
+}
+
+message OpenEphemeralResource {
+    message Request {
+        string type_name = 1;
+        DynamicValue config = 2;
+        ClientCapabilities client_capabilities = 3;
+    }
+    message Response {
+        repeated Diagnostic diagnostics = 1;
+        optional google.protobuf.Timestamp renew_at = 2;
+        DynamicValue result = 3;
+        optional bytes private = 4;
+        // deferred is set if the provider is deferring the change. If set the caller
+        // needs to handle the deferral.
+        Deferred deferred = 5;
+    }
+}
+
+message RenewEphemeralResource {
+    message Request {
+        string type_name = 1;
+        optional bytes private = 2;
+    }
+    message Response {
+        repeated Diagnostic diagnostics = 1;
+        optional google.protobuf.Timestamp renew_at = 2;
+        optional bytes private = 3;
+    }
+}
+
+message CloseEphemeralResource {
+    message Request {
+        string type_name = 1;
+        optional bytes private = 2;
+    }
+    message Response {
+        repeated Diagnostic diagnostics = 1;
     }
 }

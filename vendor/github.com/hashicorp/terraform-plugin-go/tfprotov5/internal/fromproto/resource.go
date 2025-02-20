@@ -14,8 +14,9 @@ func ValidateResourceTypeConfigRequest(in *tfplugin5.ValidateResourceTypeConfig_
 	}
 
 	resp := &tfprotov5.ValidateResourceTypeConfigRequest{
-		Config:   DynamicValue(in.Config),
-		TypeName: in.TypeName,
+		ClientCapabilities: ValidateResourceTypeConfigClientCapabilities(in.ClientCapabilities),
+		Config:             DynamicValue(in.Config),
+		TypeName:           in.TypeName,
 	}
 
 	return resp
@@ -41,10 +42,11 @@ func ReadResourceRequest(in *tfplugin5.ReadResource_Request) *tfprotov5.ReadReso
 	}
 
 	resp := &tfprotov5.ReadResourceRequest{
-		CurrentState: DynamicValue(in.CurrentState),
-		Private:      in.Private,
-		ProviderMeta: DynamicValue(in.ProviderMeta),
-		TypeName:     in.TypeName,
+		CurrentState:       DynamicValue(in.CurrentState),
+		Private:            in.Private,
+		ProviderMeta:       DynamicValue(in.ProviderMeta),
+		TypeName:           in.TypeName,
+		ClientCapabilities: ReadResourceClientCapabilities(in.ClientCapabilities),
 	}
 
 	return resp
@@ -56,12 +58,13 @@ func PlanResourceChangeRequest(in *tfplugin5.PlanResourceChange_Request) *tfprot
 	}
 
 	resp := &tfprotov5.PlanResourceChangeRequest{
-		Config:           DynamicValue(in.Config),
-		PriorPrivate:     in.PriorPrivate,
-		PriorState:       DynamicValue(in.PriorState),
-		ProposedNewState: DynamicValue(in.ProposedNewState),
-		ProviderMeta:     DynamicValue(in.ProviderMeta),
-		TypeName:         in.TypeName,
+		Config:             DynamicValue(in.Config),
+		PriorPrivate:       in.PriorPrivate,
+		PriorState:         DynamicValue(in.PriorState),
+		ProposedNewState:   DynamicValue(in.ProposedNewState),
+		ProviderMeta:       DynamicValue(in.ProviderMeta),
+		TypeName:           in.TypeName,
+		ClientCapabilities: PlanResourceChangeClientCapabilities(in.ClientCapabilities),
 	}
 
 	return resp
@@ -90,8 +93,9 @@ func ImportResourceStateRequest(in *tfplugin5.ImportResourceState_Request) *tfpr
 	}
 
 	resp := &tfprotov5.ImportResourceStateRequest{
-		TypeName: in.TypeName,
-		ID:       in.Id,
+		TypeName:           in.TypeName,
+		ID:                 in.Id,
+		ClientCapabilities: ImportResourceStateClientCapabilities(in.ClientCapabilities),
 	}
 
 	return resp
