@@ -2,14 +2,18 @@ package winrm
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"io"
+	"net/url"
 	"strings"
+	"sync"
 )
 
 type commandWriter struct {
 	*Command
-	eof bool
+	mutex sync.Mutex
+	eof   bool
 }
 
 type commandReader struct {
@@ -26,7 +30,6 @@ type Command struct {
 	shell    *Shell
 	id       string
 	exitCode int
-	finished bool
 	err      error
 
 	Stdin  *commandWriter
@@ -37,7 +40,7 @@ type Command struct {
 	cancel chan struct{}
 }
 
-func newCommand(shell *Shell, ids string) *Command {
+func newCommand(ctx context.Context, shell *Shell, ids string) *Command {
 	command := &Command{
 		shell:    shell,
 		client:   shell.client,
@@ -55,7 +58,7 @@ func newCommand(shell *Shell, ids string) *Command {
 	}
 	command.Stderr = newCommandReader("stderr", command)
 
-	go fetchOutput(command)
+	go fetchOutput(ctx, command)
 
 	return command
 }
@@ -70,12 +73,21 @@ func newCommandReader(stream string, command *Command) *commandReader {
 	}
 }
 
-func fetchOutput(command *Command) {
+func fetchOutput(ctx context.Context, command *Command) {
+	ctxDone := ctx.Done()
 	for {
 		select {
 		case <-command.cancel:
+			_, _ = command.slurpAllOutput()
+			err := errors.New("canceled")
+			command.Stderr.write.CloseWithError(err)
+			command.Stdout.write.CloseWithError(err)
 			close(command.done)
 			return
+		case <-ctxDone:
+			command.err = ctx.Err()
+			ctxDone = nil
+			command.Close()
 		default:
 			finished, err := command.slurpAllOutput()
 			if finished {
@@ -131,6 +143,11 @@ func (c *Command) slurpAllOutput() (bool, error) {
 
 	response, err := c.client.sendRequest(request)
 	if err != nil {
+		var errWithTimeout *url.Error
+		if errors.As(err, &errWithTimeout) && errWithTimeout.Timeout() {
+			// Operation timeout because the server didn't respond in time
+			return false, err
+		}
 		if strings.Contains(err.Error(), "OperationTimeout") {
 			// Operation timeout because there was no command output
 			return false, err
@@ -153,26 +170,26 @@ func (c *Command) slurpAllOutput() (bool, error) {
 		return true, err
 	}
 	if stdout.Len() > 0 {
-		c.Stdout.write.Write(stdout.Bytes())
+		_, _ = c.Stdout.write.Write(stdout.Bytes())
 	}
 	if stderr.Len() > 0 {
-		c.Stderr.write.Write(stderr.Bytes())
+		_, _ = c.Stderr.write.Write(stderr.Bytes())
 	}
 	if finished {
 		c.exitCode = exitCode
-		c.Stderr.write.Close()
-		c.Stdout.write.Close()
+		_ = c.Stderr.write.Close()
+		_ = c.Stdout.write.Close()
 	}
 
 	return finished, nil
 }
 
-func (c *Command) sendInput(data []byte) error {
+func (c *Command) sendInput(data []byte, eof bool) error {
 	if err := c.check(); err != nil {
 		return err
 	}
 
-	request := NewSendInputRequest(c.client.url, c.shell.id, c.id, data, &c.client.Parameters)
+	request := NewSendInputRequest(c.client.url, c.shell.id, c.id, data, eof, &c.client.Parameters)
 	defer request.Free()
 
 	_, err := c.client.sendRequest(request)
@@ -191,28 +208,42 @@ func (c *Command) Wait() {
 }
 
 // Write data to this Pipe
-// commandWriter implements io.Writer interface
+// commandWriter implements io.Writer and io.Closer interface
 func (w *commandWriter) Write(data []byte) (int, error) {
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+
+	if w.eof {
+		return 0, io.ErrClosedPipe
+	}
 
 	var (
 		written int
 		err     error
 	)
-
+	origLen := len(data)
 	for len(data) > 0 {
-		if w.eof {
-			return written, io.EOF
-		}
 		// never send more data than our EnvelopeSize.
 		n := min(w.client.Parameters.EnvelopeSize-1000, len(data))
-		if err := w.sendInput(data[:n]); err != nil {
+		if err := w.sendInput(data[:n], false); err != nil {
 			break
 		}
 		data = data[n:]
 		written += n
 	}
 
+	// signal that we couldn't write all data
+	if err == nil && written < origLen {
+		err = io.ErrShortWrite
+	}
+
 	return written, err
+}
+
+// Write data to this Pipe and mark EOF
+func (w *commandWriter) WriteClose(data []byte) (int, error) {
+	w.eof = true
+	return w.Write(data)
 }
 
 func min(a int, b int) int {
@@ -225,14 +256,20 @@ func min(a int, b int) int {
 // Close method wrapper
 // commandWriter implements io.Closer interface
 func (w *commandWriter) Close() error {
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+
+	if w.eof {
+		return io.ErrClosedPipe
+	}
 	w.eof = true
-	return w.Close()
+	return w.sendInput(nil, w.eof)
 }
 
 // Read data from this Pipe
 func (r *commandReader) Read(buf []byte) (int, error) {
 	n, err := r.read.Read(buf)
-	if err != nil && err != io.EOF {
+	if err != nil && errors.Is(err, io.EOF) {
 		return 0, err
 	}
 	return n, err
