@@ -95,8 +95,7 @@ func (p *PSCommand) Run(conf *config.ProviderConf) (*PSCommandResult, error) {
 	if err != nil {
 		return nil, fmt.Errorf("while acquiring winrm client: %s", err)
 	}
-	defer conf.ReleaseWinRMClient(conn)
-
+	
 	encodedCmd := winrm.Powershell(p.cmd)
 
 	if !p.ExecLocally && conn != nil {
@@ -109,6 +108,7 @@ func (p *PSCommand) Run(conf *config.ProviderConf) (*PSCommandResult, error) {
 		log.Printf("[DEBUG] Executing command on local host")
 		stdout, stderr, res, err = localShell.ExecutePScmd(encodedCmd)
 	}
+	defer conf.ReleaseWinRMClient(conn)
 
 	if err != nil {
 		log.Printf("[DEBUG] run error : %s", err)
