@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package mstypes
 
 // CypherBlock implements https://msdn.microsoft.com/en-us/library/cc237040.aspx

@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 // Package transform provides a convenient utility for transforming one data
 // format to another.
 package transform

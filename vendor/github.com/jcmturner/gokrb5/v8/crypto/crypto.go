@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 // Package crypto implements cryptographic functions for Kerberos 5 implementation.
 package crypto
 

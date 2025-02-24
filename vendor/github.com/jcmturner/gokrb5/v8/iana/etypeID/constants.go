@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 // Package etypeID provides Kerberos 5 encryption type assigned numbers.
 package etypeID
 
