@@ -1,4 +1,7 @@
 #!/bin/bash
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
 cd "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 go get github.com/ChrisTrenkamp/goxpath/cmd/goxpath
 if [ $? != 0 ]; then

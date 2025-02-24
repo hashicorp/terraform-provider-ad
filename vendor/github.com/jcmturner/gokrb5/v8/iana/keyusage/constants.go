@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 // Package keyusage provides Kerberos 5 key usage assigned numbers.
 package keyusage
 

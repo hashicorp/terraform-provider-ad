@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 // Package gssapi implements Generic Security Services Application Program Interface required for SPNEGO kerberos authentication.
 package gssapi
 
