@@ -183,7 +183,7 @@ func (m *Computer) Update(conf *config.ProviderConf, changes map[string]interfac
 
 // Delete deletes an existing Computer objects from the AD tree
 func (m *Computer) Delete(conf *config.ProviderConf) error {
-	cmd := fmt.Sprintf("Remove-ADComputer -confirm:$false -Identity %q", m.GUID)
+	cmd := fmt.Sprintf("Remove-ADObject -Confirm:$false -Recursive -Identity %q", m.GUID)
 	conn, err := conf.AcquireWinRMClient()
 	if err != nil {
 		return fmt.Errorf("while acquiring winrm client: %s", err)
