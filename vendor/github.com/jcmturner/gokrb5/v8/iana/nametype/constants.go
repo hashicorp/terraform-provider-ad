@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 // Package nametype provides Kerberos 5 principal name type numbers.
 package nametype
 
