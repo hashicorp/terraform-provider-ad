@@ -1,3 +1,6 @@
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
 variable name { default = "TestOU" }
 variable path { default = "dc=yourdomain,dc=com" }
 variable description { default = "some description" }

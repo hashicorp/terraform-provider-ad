@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 // Package pac implements Microsoft Privilege Attribute Certificate (PAC) processing.
 package pac
 
