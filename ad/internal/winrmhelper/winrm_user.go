@@ -345,10 +345,10 @@ func (u *User) ModifyUser(d *schema.ResourceData, conf *config.ProviderConf) err
 					} else {
 						out = fmt.Sprintf(`"%s"`, newVal.(string))
 					}
-					toReplace = append(toReplace, fmt.Sprintf("%s=%s", SanitiseString(k), out))
+					toReplace = append(toReplace, fmt.Sprintf(`'%s'=%s`, SanitiseString(k), out))
 				}
 			} else {
-				toClear = append(toClear, SanitiseString(k))
+				toClear = append(toClear, fmt.Sprintf(`'%s'`, SanitiseString(k)))
 			}
 		}
 
@@ -366,7 +366,7 @@ func (u *User) ModifyUser(d *schema.ResourceData, conf *config.ProviderConf) err
 				} else {
 					out = newVal.(string)
 				}
-				toAdd = append(toAdd, fmt.Sprintf("%s=%s", SanitiseString(k), out))
+				toAdd = append(toAdd, fmt.Sprintf(`'%s'=%s`, SanitiseString(k), out))
 			}
 		}
 
@@ -491,7 +491,7 @@ func (u *User) getOtherAttributes() (string, error) {
 			}
 			cleanValue = strings.Join(quotedStrings, ",")
 		} else {
-			cleanValue = GetString(v.(string))
+			cleanValue = GetString(v)
 		}
 		out = append(out, fmt.Sprintf(`'%s'=%s`, cleanKey, cleanValue))
 	}
