@@ -24,7 +24,8 @@ type GroupMember struct {
 
 func groupExistsInList(g *GroupMember, memberList []*GroupMember) bool {
 	for _, item := range memberList {
-		if g.GUID == item.GUID {
+
+		if g.GUID == item.GUID || g.SamAccountName == item.SamAccountName || g.DN == item.DN || g.Name == item.Name {
 			return true
 		}
 	}
@@ -60,10 +61,24 @@ func unmarshalGroupMembership(input []byte) ([]*GroupMember, error) {
 	return gm, nil
 }
 
-func getMembershipList(g []*GroupMember) string {
+func getMembershipList(g []*GroupMember, membershipAttribute string) string {
 	out := []string{}
-	for _, member := range g {
-		out = append(out, member.GUID)
+	if strings.EqualFold(membershipAttribute, "SamAccountName") {
+		for _, member := range g {
+			out = append(out, member.SamAccountName)
+		}
+	} else if strings.EqualFold(membershipAttribute, "DN") {
+		for _, member := range g {
+			out = append(out, member.DN)
+		}
+	} else if strings.EqualFold(membershipAttribute, "Name") {
+		for _, member := range g {
+			out = append(out, member.Name)
+		}
+	} else {
+		for _, member := range g {
+			out = append(out, member.GUID)
+		}
 	}
 
 	return strings.Join(out, ",")
@@ -105,7 +120,8 @@ func (g *GroupMembership) bulkGroupMembersOp(conf *config.ProviderConf, operatio
 		return nil
 	}
 
-	memberList := getMembershipList(members)
+	membershipAttribute := conf.Settings.MembershipAttribute
+	memberList := getMembershipList(members, membershipAttribute)
 	cmd := fmt.Sprintf("%s -Identity %q %s -Confirm:$false", operation, g.GroupGUID, memberList)
 	psOpts := CreatePSCommandOpts{
 		JSONOutput:      false,
@@ -160,8 +176,9 @@ func (g *GroupMembership) Create(conf *config.ProviderConf) error {
 	if len(g.GroupMembers) == 0 {
 		return nil
 	}
+	membershipAttribute := conf.Settings.MembershipAttribute
 
-	memberList := getMembershipList(g.GroupMembers)
+	memberList := getMembershipList(g.GroupMembers, membershipAttribute)
 	cmds := []string{fmt.Sprintf("Add-ADGroupMember -Identity %q -Members %s", g.GroupGUID, memberList)}
 	psOpts := CreatePSCommandOpts{
 		JSONOutput:      false,
@@ -230,23 +247,60 @@ func NewGroupMembershipFromHost(conf *config.ProviderConf, groupID string) (*Gro
 	return result, nil
 }
 
-func NewGroupMembershipFromState(d *schema.ResourceData) (*GroupMembership, error) {
+func NewGroupMembershipFromState(d *schema.ResourceData, membershipAttribute string) (*GroupMembership, error) {
 	groupID := d.Get("group_id").(string)
 	members := d.Get("group_members").(*schema.Set)
+
 	result := &GroupMembership{
 		GroupGUID:    groupID,
 		GroupMembers: []*GroupMember{},
 	}
+	if strings.EqualFold(membershipAttribute, "SamAccountName") {
+		for _, m := range members.List() {
+			if m == "" {
+				continue
+			}
+			newMember := &GroupMember{
+				SamAccountName: m.(string),
+			}
 
-	for _, m := range members.List() {
-		if m == "" {
-			continue
+			result.GroupMembers = append(result.GroupMembers, newMember)
 		}
-		newMember := &GroupMember{
-			GUID: m.(string),
+	} else if strings.EqualFold(membershipAttribute, "DN") {
+		for _, m := range members.List() {
+			if m == "" {
+				continue
+			}
+			newMember := &GroupMember{
+				DN: m.(string),
+			}
+
+			result.GroupMembers = append(result.GroupMembers, newMember)
+		}
+	} else if strings.EqualFold(membershipAttribute, "Name") {
+		for _, m := range members.List() {
+			if m == "" {
+				continue
+			}
+			newMember := &GroupMember{
+				Name: m.(string),
+			}
+
+			result.GroupMembers = append(result.GroupMembers, newMember)
+		}
+	} else {
+		// Default to GUID
+		for _, m := range members.List() {
+			if m == "" {
+				continue
+			}
+			newMember := &GroupMember{
+				GUID: m.(string),
+			}
+
+			result.GroupMembers = append(result.GroupMembers, newMember)
 		}
 
-		result.GroupMembers = append(result.GroupMembers, newMember)
 	}
 	return result, nil
 }

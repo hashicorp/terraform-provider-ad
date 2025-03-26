@@ -110,6 +110,12 @@ func Provider() *schema.Provider {
 				DefaultFunc: schema.EnvDefaultFunc("AD_DC", ""),
 				Description: "Use a specific domain controller. (default: none, environment variable: AD_DC)",
 			},
+			"membership_attribute": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				DefaultFunc: schema.EnvDefaultFunc("MEMBERSHIP_ATTRIBUTE", ""),
+				Description: "Define which attribute (options are: SamAccountName, DN, GUID, Name) to use for ad_group_membership to not trigger an update every run. (default: GUID, environment variable: MEMBERSHIP_ATTRIBUTE)",
+			},
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"ad_user":     dataSourceADUser(),
