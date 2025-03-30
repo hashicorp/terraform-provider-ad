@@ -20,6 +20,11 @@ func dataSourceADUser() *schema.Resource {
 				Required:    true,
 				Description: "The user's identifier. It can be the group's GUID, SID, Distinguished Name, or SAM Account Name.",
 			},
+			"name": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The name of the user object.",
+			},
 			"sam_account_name": {
 				Type:        schema.TypeString,
 				Computed:    true,
@@ -204,6 +209,7 @@ func dataSourceADUserRead(d *schema.ResourceData, meta interface{}) error {
 	if u == nil {
 		return fmt.Errorf("No user found with user_id %q", userID)
 	}
+	_ = d.Set("name", u.Name)
 	_ = d.Set("sam_account_name", u.SAMAccountName)
 	_ = d.Set("display_name", u.DisplayName)
 	_ = d.Set("principal_name", u.PrincipalName)
