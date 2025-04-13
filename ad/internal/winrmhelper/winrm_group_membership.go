@@ -16,15 +16,27 @@ type GroupMembership struct {
 }
 
 type GroupMember struct {
+	Identity       string // Set in configuration file. The rest are computed
 	SamAccountName string `json:"SamAccountName"`
 	DN             string `json:"DistinguishedName"`
 	GUID           string `json:"ObjectGUID"`
-	Name           string `json:"Name"`
+	SID            struct {
+		Value string `json:"Value"`
+	}
 }
 
 func groupExistsInList(g *GroupMember, memberList []*GroupMember) bool {
 	for _, item := range memberList {
-		if g.GUID == item.GUID {
+		if g.Identity != "" && (g.Identity == item.DN ||
+			g.Identity == item.GUID ||
+			g.Identity == item.SamAccountName ||
+			g.Identity == item.SID.Value) {
+			return true
+		}
+		if g.DN == item.DN ||
+			g.GUID == item.GUID ||
+			g.SamAccountName == item.SamAccountName ||
+			g.SID.Value == item.SID.Value {
 			return true
 		}
 	}
@@ -63,7 +75,11 @@ func unmarshalGroupMembership(input []byte) ([]*GroupMember, error) {
 func getMembershipList(g []*GroupMember) string {
 	out := []string{}
 	for _, member := range g {
-		out = append(out, member.GUID)
+		if member.Identity != "" {
+			out = append(out, member.Identity)
+		} else {
+			out = append(out, member.GUID)
+		}
 	}
 
 	return strings.Join(out, ",")
@@ -233,6 +249,8 @@ func NewGroupMembershipFromHost(conf *config.ProviderConf, groupID string) (*Gro
 func NewGroupMembershipFromState(d *schema.ResourceData) (*GroupMembership, error) {
 	groupID := d.Get("group_id").(string)
 	members := d.Get("group_members").(*schema.Set)
+	memberDetails := d.Get("group_members_details").(*schema.Set).List()
+
 	result := &GroupMembership{
 		GroupGUID:    groupID,
 		GroupMembers: []*GroupMember{},
@@ -242,8 +260,21 @@ func NewGroupMembershipFromState(d *schema.ResourceData) (*GroupMembership, erro
 		if m == "" {
 			continue
 		}
+		var id = m.(string)
 		newMember := &GroupMember{
-			GUID: m.(string),
+			Identity: id,
+		}
+		for _, member := range memberDetails {
+			details := member.(map[string]any)
+			// Check if the new value matches any of the attribute values in the details map
+			if id == details["identity"] {
+				// Match found, suppress the diff
+				newMember.GUID = details["guid"].(string)
+				newMember.DN = details["dn"].(string)
+				newMember.SamAccountName = details["sam_account_name"].(string)
+				newMember.SID.Value = details["sid"].(string)
+				break
+			}
 		}
 
 		result.GroupMembers = append(result.GroupMembers, newMember)
