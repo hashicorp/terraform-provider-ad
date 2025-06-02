@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 // Package ed25519 implements the ed25519 signature algorithm for OpenPGP
 // as defined in the Open PGP crypto refresh.
 package ed25519

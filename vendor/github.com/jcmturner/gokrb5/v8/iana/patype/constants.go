@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 // Package patype provides Kerberos 5 pre-authentication type assigned numbers.
 package patype
 

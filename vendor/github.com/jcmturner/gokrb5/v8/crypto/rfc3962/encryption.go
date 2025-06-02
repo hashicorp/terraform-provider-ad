@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 // Package rfc3962 provides encryption and checksum methods as specified in RFC 3962
 package rfc3962
 

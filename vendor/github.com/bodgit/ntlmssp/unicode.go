@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package ntlmssp
 
 import "golang.org/x/text/encoding/unicode"

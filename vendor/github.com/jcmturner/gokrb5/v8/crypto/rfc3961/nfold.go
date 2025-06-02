@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package rfc3961
 
 // Implementation of the n-fold algorithm as defined in RFC 3961.

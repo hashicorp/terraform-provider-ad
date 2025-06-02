@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 // Package windows is a collection of types native to Windows platforms but
 // are useful on non-Windows platforms.
 package windows
