@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package ntlmssp
 
 // Version is a struct representing https://msdn.microsoft.com/en-us/library/cc236654.aspx

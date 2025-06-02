@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 // Package asnAppTag provides ASN1 application tag numbers.
 package asnAppTag
 

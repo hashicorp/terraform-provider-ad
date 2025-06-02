@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 // Package asn1tools provides tools for managing ASN1 marshaled data.
 package asn1tools
 

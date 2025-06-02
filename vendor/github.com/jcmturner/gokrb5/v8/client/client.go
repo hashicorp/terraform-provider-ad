@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 // Package client provides a client library and methods for Kerberos 5 authentication.
 package client
 
