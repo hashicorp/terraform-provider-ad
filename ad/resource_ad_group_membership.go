@@ -40,7 +40,7 @@ func resourceADGroupMembership() *schema.Resource {
 }
 
 func resourceADGroupMembershipRead(d *schema.ResourceData, meta interface{}) error {
-	toks := strings.Split(d.Id(), "_")
+	toks := strings.Split(d.Id(), "/")
 
 	gm, err := winrmhelper.NewGroupMembershipFromHost(meta.(*config.ProviderConf), toks[0])
 	if err != nil {
@@ -72,7 +72,7 @@ func resourceADGroupMembershipCreate(d *schema.ResourceData, meta interface{}) e
 		return fmt.Errorf("while generating UUID to use as unique membership ID: %s", err)
 	}
 
-	id := fmt.Sprintf("%s_%s", gm.GroupGUID, membershipUUID)
+	id := fmt.Sprintf("%s/%s", gm.GroupGUID, membershipUUID)
 	d.SetId(id)
 
 	return nil
