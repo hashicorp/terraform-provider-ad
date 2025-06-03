@@ -187,3 +187,5 @@ provider "ad" {
 - `winrm_port` (Number) The port WinRM is listening for connections. (default: 5985, environment variable: AD_PORT)
 - `winrm_proto` (String) The WinRM protocol we will use. (default: http, environment variable: AD_PROTO)
 - `winrm_use_ntlm` (Boolean) Use NTLM authentication. (default: false, environment variable: AD_WINRM_USE_NTLM)
+- `membership_attribute` (String) Define which attribute (options are: SamAccountName, DN, GUID, Name) to use for ad_group_membership to not trigger an update every run. (default: GUID, environment variable: MEMBERSHIP_ATTRIBUTE)
+
