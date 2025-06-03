@@ -26,6 +26,12 @@ func resourceADUser() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema: map[string]*schema.Schema{
+			"name": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Description: "The Name of an Active Directory user.",
+			},
 			"display_name": {
 				Type:        schema.TypeString,
 				Required:    true,
@@ -304,6 +310,7 @@ func resourceADUserRead(d *schema.ResourceData, meta interface{}) error {
 		d.SetId("")
 		return nil
 	}
+	_ = d.Set("name", u.Name)
 	_ = d.Set("sam_account_name", u.SAMAccountName)
 	_ = d.Set("display_name", u.DisplayName)
 	_ = d.Set("principal_name", u.PrincipalName)
